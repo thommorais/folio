@@ -1,4 +1,5 @@
 import { Badge } from '@thom/ui/badge'
+import { RecordGone } from '_/components/record/record-gone'
 import { cn } from '@thom/libs/cn'
 import { useTodo } from '_/app/use-todo'
 import type { Todo, TodoStatus } from '_/core/domain/todo'
@@ -82,6 +83,10 @@ type Props = {
 
 const TodoDetails = ({ project, todoId }: Props) => {
 	const state = useTodo(project, todoId)
+
+	if (state.status === 'gone') {
+		return <RecordGone title={state.title} />
+	}
 
 	if (state.status === 'failed') {
 		return <p className='text-destructive text-sm'>{state.message}</p>

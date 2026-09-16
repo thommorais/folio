@@ -8,7 +8,7 @@ export type AsyncState<T> =
 
 type Load<T> = () => Promise<Result<T>>
 
-export const useAsyncState = <T>(load: Load<T>, deps: readonly unknown[]) => {
+export const useAsyncState = <T>(load: Load<T>, deps: readonly unknown[], skip = false) => {
 	const [state, setState] = useState<AsyncState<T>>({ status: 'loading' })
 	const generation = useRef(0)
 
@@ -22,6 +22,8 @@ export const useAsyncState = <T>(load: Load<T>, deps: readonly unknown[]) => {
 		)
 	})
 
+	const effectDeps = [...deps, skip]
+
 	const refetch = useCallback(async () => {
 		await run(generation.current)
 	}, [])
@@ -34,12 +36,13 @@ export const useAsyncState = <T>(load: Load<T>, deps: readonly unknown[]) => {
 	useEffect(() => {
 		generation.current += 1
 		setState({ status: 'loading' })
+		if (skip) return
 		void run(generation.current)
 
 		return () => {
 			generation.current += 1
 		}
-	}, deps)
+	}, effectDeps)
 
 	return { state, refetch, patch }
 }

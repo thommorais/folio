@@ -1,36 +1,24 @@
 import type { Ticket } from '_/core/domain/ticket'
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useLiveRecord } from './realtime/use-live-record'
 import { useContainer } from './container'
 
 type TicketState =
 	| { readonly status: 'idle' }
 	| { readonly status: 'loading' }
 	| { readonly status: 'ready'; readonly ticket: Ticket }
+	| { readonly status: 'gone'; readonly title: string }
 	| { readonly status: 'failed'; readonly message: string }
 
-// A single ticket is addressed by its project-scoped slug, the same way the
-// CLI and the API address one.
 export const useTicket = (project: string, slug: string): TicketState => {
-	const { tickets } = useContainer()
-	const [state, setState] = useState<TicketState>({ status: 'idle' })
+	const { tickets, connection } = useContainer()
 
-	const load = useEffectEvent(async () => {
-		setState({ status: 'loading' })
-		const result = await tickets.get(project, slug)
-
-		setState(
-			result.success ? { status: 'ready', ticket: result.value } : { status: 'failed', message: result.error.message },
-		)
+	const state = useLiveRecord<Ticket>({
+		load: () => tickets.get(project, slug),
+		subscribe: (id, onChange, onGone) => tickets.subscribeToRecord(project, id, onChange, onGone),
+		connection,
+		deps: [project, slug],
+		skip: !slug,
 	})
 
-	useEffect(() => {
-		if (!slug) {
-			setState({ status: 'idle' })
-			return
-		}
-
-		load()
-	}, [project, slug])
-
-	return state
+	return state.status === 'ready' ? { status: 'ready', ticket: state.data } : state
 }

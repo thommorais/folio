@@ -1,34 +1,24 @@
 import type { JournalEntry } from '_/core/domain/journal'
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useLiveRecord } from './realtime/use-live-record'
 import { useContainer } from './container'
 
 type JournalEntryState =
 	| { readonly status: 'idle' }
 	| { readonly status: 'loading' }
 	| { readonly status: 'ready'; readonly entry: JournalEntry }
+	| { readonly status: 'gone'; readonly title: string }
 	| { readonly status: 'failed'; readonly message: string }
 
 export const useJournalEntry = (project: string, slug: string): JournalEntryState => {
-	const { journal } = useContainer()
-	const [state, setState] = useState<JournalEntryState>({ status: 'idle' })
+	const { journal, connection } = useContainer()
 
-	const load = useEffectEvent(async () => {
-		setState({ status: 'loading' })
-		const result = await journal.get(project, slug)
-
-		setState(
-			result.success ? { status: 'ready', entry: result.value } : { status: 'failed', message: result.error.message },
-		)
+	const state = useLiveRecord<JournalEntry>({
+		load: () => journal.get(project, slug),
+		subscribe: (id, onChange, onGone) => journal.subscribeToRecord(project, id, onChange, onGone),
+		connection,
+		deps: [project, slug],
+		skip: !slug,
 	})
 
-	useEffect(() => {
-		if (!slug) {
-			setState({ status: 'idle' })
-			return
-		}
-
-		load()
-	}, [project, slug])
-
-	return state
+	return state.status === 'ready' ? { status: 'ready', entry: state.data } : state
 }

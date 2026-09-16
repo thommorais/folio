@@ -1,4 +1,5 @@
-import { useParams } from '@tanstack/react-router'
+import { Link, useParams } from '@tanstack/react-router'
+import { RecordGone } from '_/components/record/record-gone'
 import { Badge } from '@thom/ui/badge'
 import { Heading } from '@thom/ui/heading'
 import { Markdown } from '_/components/markdown'
@@ -34,6 +35,16 @@ const DocDetail = () => {
 
 	if (state.status === 'idle' || state.status === 'loading') {
 		return <div className='bg-accent/40 h-32 animate-pulse' />
+	}
+
+	if (state.status === 'gone') {
+		return (
+			<RecordGone title={state.title}>
+				<Link to='/$slug/docs' params={{ slug }} className='text-sm underline'>
+					Back to docs
+				</Link>
+			</RecordGone>
+		)
 	}
 
 	if (state.status === 'failed') {

@@ -113,6 +113,28 @@ describe('useAsyncState', () => {
 		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: ['a'] }))
 	})
 
+	it('does not load while skipped', async () => {
+		const load = vi.fn(async () => ok('value'))
+
+		const { result } = renderHook(() => useAsyncState(load, [], true))
+
+		expect(load).not.toHaveBeenCalled()
+		expect(result.current.state).toEqual({ status: 'loading' })
+	})
+
+	it('loads once it stops being skipped', async () => {
+		const load = vi.fn(async () => ok('value'))
+
+		const { result, rerender } = renderHook(({ skip }) => useAsyncState(load, [], skip), {
+			initialProps: { skip: true },
+		})
+		expect(load).not.toHaveBeenCalled()
+
+		rerender({ skip: false })
+
+		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: 'value' }))
+	})
+
 	it('hands back a stable refetch across renders', async () => {
 		const load = vi.fn(async () => ok('value'))
 

@@ -1,4 +1,5 @@
 import { Badge } from '@thom/ui/badge'
+import { RecordGone } from '_/components/record/record-gone'
 import { cn } from '@thom/libs/cn'
 import { usePlan } from '_/app/use-plan'
 import type { Plan, PlanStatus } from '_/core/domain/plan'
@@ -78,6 +79,10 @@ type Props = {
 
 const PlanDetails = ({ project, planId }: Props) => {
 	const state = usePlan(project, planId)
+
+	if (state.status === 'gone') {
+		return <RecordGone title={state.title} />
+	}
 
 	if (state.status === 'failed') {
 		return <p className='text-destructive text-sm'>{state.message}</p>
