@@ -59,7 +59,7 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 		Cycles:   services.NewCycleService(cycleRepo, ticketRepo, guard, clock, ids, log),
 		WorkLogs: services.NewWorkLogService(ticketLogRepo, planLogRepo, todoLogRepo, ticketRepo, planRepo, todoRepo, cycleRepo, guard, clock, ids, log),
 		Docs:     services.NewDocService(docRepo, ticketRepo, guard, clock, ids, log),
-		Search:   services.NewSearchService(searchRepo, guard),
+		Search:   services.NewSearchService(searchRepo, guard, projectRepo),
 	}
 }
 

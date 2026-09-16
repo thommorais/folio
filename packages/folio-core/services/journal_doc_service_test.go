@@ -45,7 +45,7 @@ func newKnowledgeFixture(t *testing.T) *knowledgeFixture {
 		clock: clock, logs: logs, docs: docs, tickets: tickets, project: "p001",
 		journalSvc: services.NewJournalService(logs, tickets, guard, clock, &seqIDs{prefix: "l"}, nopLogger{}),
 		docSvc:     services.NewDocService(docs, tickets, guard, clock, &seqIDs{prefix: "d"}, nopLogger{}),
-		searchSvc:  services.NewSearchService(search, guard),
+		searchSvc:  services.NewSearchService(search, guard, projects),
 		owner:      ports.Actor{UserID: "u-owner"},
 		viewer:     ports.Actor{UserID: "u-viewer"},
 		outside:    ports.Actor{UserID: "u-stranger"},

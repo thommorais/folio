@@ -39,18 +39,39 @@ const snippetLen = 200
 const bm25Weights = "0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0"
 
 type searchRow struct {
-	Kind    string `db:"kind"`
-	RecID   string `db:"rec_id"`
-	Project string `db:"project"`
-	Tags    string `db:"tags"`
-	Created string `db:"created"`
-	Title   string `db:"title"`
-	Body    string `db:"body"`
+	Kind        string `db:"kind"`
+	RecID       string `db:"rec_id"`
+	Project     string `db:"project"`
+	ProjectSlug string `db:"project_slug"`
+	Tags        string `db:"tags"`
+	Created     string `db:"created"`
+	Title       string `db:"title"`
+	Body        string `db:"body"`
 }
 
 func (r *SearchRepository) Search(ctx context.Context, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
-	where := []string{"project = {:project}"}
-	params := dbx.Params{"project": string(project)}
+	return r.search(ctx, []domain.ProjectID{project}, q)
+}
+
+// SearchAcross ranks one result set spanning several projects. The index holds
+// every project already, so this is the same single query with a wider scope
+// rather than a fan-out whose scores could not be compared.
+func (r *SearchRepository) SearchAcross(ctx context.Context, projects []domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+	if len(projects) == 0 {
+		return []domain.SearchHit{}, nil
+	}
+	return r.search(ctx, projects, q)
+}
+
+func (r *SearchRepository) search(ctx context.Context, projects []domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+	placeholders := make([]string, 0, len(projects))
+	params := dbx.Params{}
+	for i, id := range projects {
+		key := "project" + strconv.Itoa(i)
+		placeholders = append(placeholders, "{:"+key+"}")
+		params[key] = string(id)
+	}
+	where := []string{SearchIndex + ".project IN (" + strings.Join(placeholders, ", ") + ")"}
 
 	if match := rules.FTSQuery(q.Text); match != "" {
 		where = append(where, SearchIndex+" MATCH {:match}")
@@ -64,7 +85,7 @@ func (r *SearchRepository) Search(ctx context.Context, project domain.ProjectID,
 			placeholders = append(placeholders, "{:"+key+"}")
 			params[key] = string(kind)
 		}
-		where = append(where, "kind IN ("+strings.Join(placeholders, ", ")+")")
+		where = append(where, SearchIndex+".kind IN ("+strings.Join(placeholders, ", ")+")")
 	}
 
 	// Tags are stored as a JSON array, so a containment test is a LIKE over
@@ -72,20 +93,25 @@ func (r *SearchRepository) Search(ctx context.Context, project domain.ProjectID,
 	// no tags simply stop matching, which is what a tag filter should mean.
 	for i, tag := range q.Tags {
 		key := "tag" + strconv.Itoa(i)
-		where = append(where, "tags LIKE {:"+key+"}")
+		where = append(where, SearchIndex+".tags LIKE {:"+key+"}")
 		params[key] = `%"` + tag + `"%`
 	}
 
 	// Ranking only means something once a MATCH has scored the rows. Without
 	// one, newest first is the honest order and matches the old behaviour.
-	order := "created DESC"
+	order := SearchIndex + ".created DESC"
 	if _, matched := params["match"]; matched {
-		order = fmt.Sprintf("bm25(%s, %s) ASC, created DESC", SearchIndex, bm25Weights)
+		order = fmt.Sprintf("bm25(%s, %s) ASC, %s.created DESC", SearchIndex, bm25Weights, SearchIndex)
 	}
 
+	// The index stores the project id; the slug is what names a hit in a
+	// global result, so it is joined in rather than resolved per row later.
 	query := fmt.Sprintf(
-		`SELECT kind, rec_id, project, tags, created, title, body FROM %s WHERE %s ORDER BY %s LIMIT {:limit} OFFSET {:offset}`,
-		SearchIndex, strings.Join(where, " AND "), order,
+		`SELECT %[1]s.kind, %[1]s.rec_id, %[1]s.project, COALESCE(p.slug, '') AS project_slug,
+		        %[1]s.tags, %[1]s.created, %[1]s.title, %[1]s.body
+		 FROM %[1]s LEFT JOIN %[2]s p ON p.id = %[1]s.project
+		 WHERE %[3]s ORDER BY %[4]s LIMIT {:limit} OFFSET {:offset}`,
+		SearchIndex, ColProjects, strings.Join(where, " AND "), order,
 	)
 
 	limit := q.Limit
@@ -103,13 +129,14 @@ func (r *SearchRepository) Search(ctx context.Context, project domain.ProjectID,
 	hits := make([]domain.SearchHit, 0, len(rows))
 	for _, row := range rows {
 		hits = append(hits, domain.SearchHit{
-			Kind:      domain.SearchKind(row.Kind),
-			ID:        row.RecID,
-			ProjectID: domain.ProjectID(row.Project),
-			Title:     title(row),
-			Snippet:   rules.Snippet(row.Body, snippetLen),
-			Tags:      parseTags(row.Tags),
-			CreatedAt: parseCreated(row.Created),
+			Kind:        domain.SearchKind(row.Kind),
+			ID:          row.RecID,
+			ProjectID:   domain.ProjectID(row.Project),
+			ProjectSlug: row.ProjectSlug,
+			Title:       title(row),
+			Snippet:     rules.Snippet(row.Body, snippetLen),
+			Tags:        parseTags(row.Tags),
+			CreatedAt:   parseCreated(row.Created),
 		})
 	}
 
