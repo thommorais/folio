@@ -57,6 +57,7 @@ export const CommandItem = ({ className, ...props }: ComponentPropsWithRef<typeo
 		{...props}
 		className={cn(
 			'relative flex cursor-default items-center px-2 py-1.5 text-sm outline-none select-none',
+			'transition-colors duration-100',
 			'aria-selected:bg-accent aria-selected:text-accent-foreground',
 			className,
 		)}
@@ -78,15 +79,16 @@ export const CommandDialogContent = ({
 		<DialogPrimitive.Overlay
 			className={cn(
 				// Literal colors: an opacity modifier on an hsl() token resolves to transparent in v4.
-				'fixed inset-0 z-50 bg-[#f6f6f3]/60 dark:bg-[#0c0c0c]/80',
-				'data-[state=closed]:animate-[dialog-overlay-hide_100ms] data-[state=open]:animate-[dialog-overlay-show_100ms]',
+				'fixed inset-0 z-50 bg-[#f6f6f3]/60 backdrop-blur-[2px] dark:bg-[#0c0c0c]/80',
+				'data-[state=closed]:animate-[dialog-overlay-hide_140ms_ease-in] data-[state=open]:animate-[dialog-overlay-show_180ms_ease-out]',
 			)}
 		/>
 		<DialogPrimitive.Content
 			{...props}
 			className={cn(
-				'text-foreground fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 select-text',
-				'data-[state=closed]:animate-[dialog-content-hide_100ms] data-[state=open]:animate-[dialog-content-show_100ms]',
+				'text-foreground fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 will-change-transform select-text',
+				'data-[state=closed]:animate-[dialog-content-hide_140ms_cubic-bezier(0.4,0,1,1)]',
+				'data-[state=open]:animate-[dialog-content-show_240ms_cubic-bezier(0.16,1,0.3,1)]',
 				className,
 			)}
 		>

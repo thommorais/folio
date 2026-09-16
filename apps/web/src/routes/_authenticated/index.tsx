@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
 import { Card, CardDescription, CardHeader, CardTitle } from '@thom/ui/card'
+import { Skeleton } from '_/components/motion/skeleton'
+import { StaggerItem } from '_/components/motion/stagger'
 import { useProjects } from '_/app/use-projects'
 import { buildInsights } from '_/pages/projects/insights'
 import { SummaryTicker } from '_/pages/projects/summary-ticker'
@@ -19,7 +21,7 @@ const Projects = () => {
 			{state.status === 'loading' && (
 				<div className='grid gap-4 sm:grid-cols-2'>
 					{[0, 1].map(key => (
-						<div key={key} className='border-border bg-accent/40 h-[124px] animate-pulse border' />
+						<Skeleton key={key} className='border-border h-[124px] border' />
 					))}
 				</div>
 			)}
@@ -30,27 +32,29 @@ const Projects = () => {
 
 			{state.status === 'ready' && state.projects.length > 0 && (
 				<div className='grid gap-4 sm:grid-cols-2'>
-					{state.projects.map(project => (
-						<Link key={project.id} to='/$slug' params={{ slug: project.slug }} className='block'>
-							<Card interactive>
-								<CardHeader>
-									<div className='flex items-start justify-between gap-4'>
-										<CardTitle>{project.name}</CardTitle>
-										{project.archived && <Badge color='muted'>Archived</Badge>}
-									</div>
+					{state.projects.map((project, index) => (
+						<StaggerItem key={project.id} index={index}>
+							<Link to='/$slug' params={{ slug: project.slug }} className='block'>
+								<Card interactive>
+									<CardHeader>
+										<div className='flex items-start justify-between gap-4'>
+											<CardTitle>{project.name}</CardTitle>
+											{project.archived && <Badge color='muted'>Archived</Badge>}
+										</div>
 
-									<CardDescription>{project.descr || 'No description.'}</CardDescription>
+										<CardDescription>{project.descr || 'No description.'}</CardDescription>
 
-									<div className='text-dimmer flex items-center gap-2 pt-2 text-xs'>
-										<span>{project.slug}</span>
-										<span>&middot;</span>
-										<span>
-											{project.members.length} {project.members.length === 1 ? 'member' : 'members'}
-										</span>
-									</div>
-								</CardHeader>
-							</Card>
-						</Link>
+										<div className='text-dimmer flex items-center gap-2 pt-2 text-xs'>
+											<span>{project.slug}</span>
+											<span>&middot;</span>
+											<span>
+												{project.members.length} {project.members.length === 1 ? 'member' : 'members'}
+											</span>
+										</div>
+									</CardHeader>
+								</Card>
+							</Link>
+						</StaggerItem>
 					))}
 				</div>
 			)}

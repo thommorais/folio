@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { BookText, FolderKanban, ListTodo, NotebookPen, Search as SearchIcon } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@thom/ui/command'
@@ -28,16 +29,30 @@ const groupLabels: Record<string, string> = {
 	plan: 'Plans',
 }
 
-const HitRow = ({ hit }: { hit: SearchHit }) => {
+const HitRow = ({ hit, index }: { hit: SearchHit; index: number }) => {
 	const Icon = kindIcons[hit.kind]
+	const reduced = useReducedMotion()
 
-	return (
+	const content = (
 		<div className='flex w-full items-center gap-2'>
 			<Icon className='text-dim size-4 shrink-0' />
 			<span className='truncate'>{hit.title}</span>
 			{hit.snippet && <span className='text-dim hidden truncate text-xs md:block'>{hit.snippet}</span>}
 			<span className='text-dimmer ml-auto shrink-0 text-xs'>{hit.projectSlug}</span>
 		</div>
+	)
+
+	if (reduced) return content
+
+	return (
+		<motion.div
+			className='w-full'
+			initial={{ opacity: 0, y: 4 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1], delay: Math.min(index, 6) * 0.02 }}
+		>
+			{content}
+		</motion.div>
 	)
 }
 
@@ -169,13 +184,13 @@ export const Search = () => {
 
 					{Object.entries(grouped).map(([kind, items]) => (
 						<CommandGroup key={kind} heading={groupLabels[kind]}>
-							{items.map(hit => (
+							{items.map((hit, index) => (
 								<CommandItem
 									key={`${hit.kind}-${hit.id}`}
 									value={`${hit.kind}-${hit.id}`}
 									className='group/item flex flex-col items-start gap-1 py-2 text-sm'
 								>
-									<HitRow hit={hit} />
+									<HitRow hit={hit} index={index} />
 								</CommandItem>
 							))}
 						</CommandGroup>

@@ -192,3 +192,78 @@
 	margin: 0;
 	padding: calc(var(--spacing) * 4);
 }
+
+/* Skeletons: a travelling highlight reads as "loading" where a pulse reads as
+   a disabled block, and it keeps a steady rhythm across differently sized rows. */
+@keyframes skeleton-shimmer {
+	from {
+		background-position: 200% 0;
+	}
+	to {
+		background-position: -200% 0;
+	}
+}
+
+.skeleton {
+	background-color: var(--color-accent);
+	background-image: linear-gradient(
+		90deg,
+		transparent 0%,
+		color-mix(in oklab, var(--color-foreground) 6%, transparent) 50%,
+		transparent 100%
+	);
+	background-size: 200% 100%;
+	animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+/* The sheet slides in from its edge; Radix drives the state, so the panel needs
+   the matching keyframes rather than the tailwindcss-animate utilities. */
+@keyframes sheet-in-right {
+	from {
+		transform: translateX(100%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+
+@keyframes sheet-out-right {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(100%);
+	}
+}
+
+@keyframes sheet-in-left {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+
+@keyframes sheet-out-left {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(-100%);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.skeleton {
+		animation: none;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}

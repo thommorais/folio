@@ -1,5 +1,7 @@
 import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
+import { Skeleton } from '_/components/motion/skeleton'
+import { StaggerItem } from '_/components/motion/stagger'
 import { useJournal } from '_/app/use-journal'
 import { LogsFilters } from './journal-filters'
 
@@ -22,7 +24,7 @@ const Logs = () => {
 			return (
 				<div className='border-border divide-border divide-y border'>
 					{[0, 1, 2].map(key => (
-						<div key={key} className='bg-accent/40 h-24 animate-pulse' />
+						<Skeleton key={key} className='h-24' />
 					))}
 				</div>
 			)
@@ -38,31 +40,32 @@ const Logs = () => {
 
 		return (
 			<div className='border-border divide-border divide-y border'>
-				{state.journal.map(entry => (
-					<Link
-						key={entry.id}
-						to='/$slug/journal/$entry'
-						params={{ slug, entry: entry.slug }}
-						className='hover:bg-accent/40 block space-y-2 px-4 py-4 transition-colors'
-					>
-						<div className='flex items-start justify-between gap-4'>
-							<h3 className='text-sm font-medium'>{entry.title}</h3>
-							<span className='text-dimmer shrink-0 text-xs'>{dayMonth.format(entry.createdAt)}</span>
-						</div>
+				{state.journal.map((entry, index) => (
+					<StaggerItem key={entry.id} index={index}>
+						<Link
+							to='/$slug/journal/$entry'
+							params={{ slug, entry: entry.slug }}
+							className='hover:bg-accent/40 block space-y-2 px-4 py-4 transition-colors'
+						>
+							<div className='flex items-start justify-between gap-4'>
+								<h3 className='text-sm font-medium'>{entry.title}</h3>
+								<span className='text-dimmer shrink-0 text-xs'>{dayMonth.format(entry.createdAt)}</span>
+							</div>
 
-						{entry.body && <p className='text-dim line-clamp-2 text-sm'>{entry.body}</p>}
+							{entry.body && <p className='text-dim line-clamp-2 text-sm'>{entry.body}</p>}
 
-						<div className='flex flex-wrap items-center gap-2 pt-1'>
-							{entry.branch && <span className='text-dimmer font-mono text-xs'>{entry.branch}</span>}
-							{entry.externalRef && <span className='text-dimmer font-mono text-xs'>{entry.externalRef}</span>}
-							{entry.pr && <span className='text-dimmer font-mono text-xs'>#{entry.pr}</span>}
-							{entry.tags.map(tag => (
-								<Badge key={tag} color='muted'>
-									{tag}
-								</Badge>
-							))}
-						</div>
-					</Link>
+							<div className='flex flex-wrap items-center gap-2 pt-1'>
+								{entry.branch && <span className='text-dimmer font-mono text-xs'>{entry.branch}</span>}
+								{entry.externalRef && <span className='text-dimmer font-mono text-xs'>{entry.externalRef}</span>}
+								{entry.pr && <span className='text-dimmer font-mono text-xs'>#{entry.pr}</span>}
+								{entry.tags.map(tag => (
+									<Badge key={tag} color='muted'>
+										{tag}
+									</Badge>
+								))}
+							</div>
+						</Link>
+					</StaggerItem>
 				))}
 			</div>
 		)

@@ -1,5 +1,9 @@
 import { createFileRoute, useParams } from '@tanstack/react-router'
+import { motion } from 'motion/react'
 import { Card, CardDescription, CardHeader, CardTitle } from '@thom/ui/card'
+import { AnimatedNumber } from '_/components/motion/animated-number'
+import { Skeleton } from '_/components/motion/skeleton'
+import { StaggerItem } from '_/components/motion/stagger'
 import { useCounts } from '_/app/use-counts'
 import { entities, type Entity } from '_/app/counts'
 
@@ -20,17 +24,21 @@ const Counts = ({ slug }: { readonly slug: string }) => {
 
 	return (
 		<div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-5'>
-			{entities.map(entity => (
-				<Card key={entity}>
-					<CardHeader>
-						<span className='text-dim text-xs'>{labels[entity]}</span>
-						{state.status === 'loading' ? (
-							<span className='bg-accent/40 mt-1 h-8 w-10 animate-pulse' />
-						) : (
-							<span className='font-serif text-2xl'>{state.counts[entity]}</span>
-						)}
-					</CardHeader>
-				</Card>
+			{entities.map((entity, index) => (
+				<StaggerItem key={entity} index={index}>
+					<Card>
+						<CardHeader>
+							<span className='text-dim text-xs'>{labels[entity]}</span>
+							{state.status === 'loading' ? (
+								<Skeleton className='mt-1 h-8 w-10' />
+							) : (
+								<span className='font-serif text-2xl tabular-nums'>
+									<AnimatedNumber value={state.counts[entity]} />
+								</span>
+							)}
+						</CardHeader>
+					</Card>
+				</StaggerItem>
 			))}
 		</div>
 	)
@@ -50,7 +58,13 @@ const Overview = () => {
 
 					<div className='pt-4'>
 						<div className='bg-accent h-1 w-full'>
-							<div className='bg-foreground h-1' style={{ width: '40%' }} />
+							<motion.div
+								className='bg-foreground h-1 origin-left'
+								initial={{ scaleX: 0 }}
+								animate={{ scaleX: 0.4 }}
+								transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+								style={{ width: '100%' }}
+							/>
 						</div>
 						<span className='text-dimmer pt-2 text-xs'>2 of 5 done</span>
 					</div>
