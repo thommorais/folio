@@ -2,6 +2,7 @@ import { Link, useMatches, useParams } from '@tanstack/react-router'
 import { House } from 'lucide-react'
 import { useDoc } from '_/app/use-doc'
 import { useJournalEntry } from '_/app/use-journal-entry'
+import { usePlan } from '_/app/use-plan'
 import { useTicket } from '_/app/use-ticket'
 
 const sectionLabels: Record<string, string> = {
@@ -32,6 +33,7 @@ const useLeafLabel = (project: string | undefined, params: LeafParams) => {
 	const ticket = useTicket(project ?? '', params.ticket ?? '')
 	const doc = useDoc(project ?? '', params.doc ?? '')
 	const entry = useJournalEntry(project ?? '', params.entry ?? '')
+	const plan = usePlan(project ?? '', params.plan)
 
 	if (project === undefined) return undefined
 
@@ -44,6 +46,11 @@ const useLeafLabel = (project: string | undefined, params: LeafParams) => {
 	if (params.entry !== undefined) {
 		return entry.status === 'ready' ? entry.entry.title : params.entry
 	}
+	// A plan is addressed by id, which would read as noise in the trail, so it
+	// waits for the title rather than falling back to the URL.
+	if (params.plan !== undefined) {
+		return plan.status === 'ready' ? plan.plan.title : undefined
+	}
 
 	return undefined
 }
@@ -52,6 +59,7 @@ type LeafParams = {
 	readonly ticket: string | undefined
 	readonly doc: string | undefined
 	readonly entry: string | undefined
+	readonly plan: string | undefined
 }
 
 export const Breadcrumbs = () => {
@@ -62,6 +70,7 @@ export const Breadcrumbs = () => {
 		ticket: typeof params.ticket === 'string' ? params.ticket : undefined,
 		doc: typeof params.doc === 'string' ? params.doc : undefined,
 		entry: typeof params.entry === 'string' ? params.entry : undefined,
+		plan: typeof params.plan === 'string' ? params.plan : undefined,
 	}
 	const leafLabel = useLeafLabel(slug, leaf)
 

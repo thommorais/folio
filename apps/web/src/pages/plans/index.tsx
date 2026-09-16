@@ -1,23 +1,18 @@
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
+import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { cn } from '@thom/libs/cn'
 import { Badge } from '@thom/ui/badge'
-import { Sheet, SheetContent } from '@thom/ui/sheet'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { usePlans } from '_/app/use-plans'
 import type { Plan } from '_/core/domain/plan'
-import type { PlansSearch } from '_/routes/_authenticated/$slug/plans'
-import { PlanDetails } from './plan-details'
 import { PlanFilters } from './plan-filters'
 import { PLAN_STATUS_LABELS } from './status-labels'
 
-const Row = ({ plan, onOpen }: { readonly plan: Plan; readonly onOpen: (id: string) => void }) => (
-	<button
-		type='button'
-		onClick={() => {
-			onOpen(plan.id)
-		}}
-		className='hover:bg-accent/40 w-full space-y-2 px-4 py-4 text-left transition-colors'
+const Row = ({ plan, project }: { readonly plan: Plan; readonly project: string }) => (
+	<Link
+		to='/$slug/plans/$plan'
+		params={{ slug: project, plan: plan.id }}
+		className='hover:bg-accent/40 block space-y-2 px-4 py-4 transition-colors'
 	>
 		<div className='flex items-start justify-between gap-4'>
 			<h3 className={cn('text-sm font-medium', plan.status === 'done' && 'text-dim line-through')}>{plan.title}</h3>
@@ -35,13 +30,12 @@ const Row = ({ plan, onOpen }: { readonly plan: Plan; readonly onOpen: (id: stri
 				))}
 			</div>
 		)}
-	</button>
+	</Link>
 )
 
 const Plans = () => {
-	const { slug } = useParams({ from: '/_authenticated/$slug/plans' })
-	const search = useSearch({ from: '/_authenticated/$slug/plans' })
-	const navigate = useNavigate()
+	const { slug } = useParams({ from: '/_authenticated/$slug/plans/' })
+	const search = useSearch({ from: '/_authenticated/$slug/plans/' })
 
 	const state = usePlans(slug, {
 		ticketId: search.ticket,
@@ -50,10 +44,6 @@ const Plans = () => {
 		search: search.q,
 		sort: search.sort,
 	})
-
-	const setPlan = (plan: string | undefined) => {
-		void navigate({ from: '/$slug/plans', to: '.', search: (prev: PlansSearch) => ({ ...prev, plan }) })
-	}
 
 	const filtered = search.q !== undefined || search.statuses !== undefined || search.tags !== undefined
 
@@ -79,24 +69,11 @@ const Plans = () => {
 				<ul className='border-border divide-border divide-y border'>
 					{state.plans.map((plan, index) => (
 						<StaggerItem key={plan.id} index={index} as='li'>
-							<Row plan={plan} onOpen={setPlan} />
+							<Row plan={plan} project={slug} />
 						</StaggerItem>
 					))}
 				</ul>
 			)}
-
-			<Sheet
-				open={Boolean(search.plan)}
-				onOpenChange={open => {
-					if (!open) {
-						setPlan(undefined)
-					}
-				}}
-			>
-				<SheetContent title='Plan details'>
-					<PlanDetails project={slug} planId={search.plan} />
-				</SheetContent>
-			</Sheet>
 		</div>
 	)
 }
