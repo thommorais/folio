@@ -28,4 +28,10 @@ export type TodosPort = {
 		update: (todo: Todo, action: ActionEvent) => void,
 		filter?: TodoFilter,
 	) => Promise<Result<Unsubscribe>>
+	readonly subscribeToRecord: (
+		project: string,
+		id: string,
+		onChange: (record: Todo) => void,
+		onGone: () => void,
+	) => Promise<Result<Unsubscribe>>
 }

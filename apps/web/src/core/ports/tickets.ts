@@ -25,4 +25,10 @@ export type TicketsPort = {
 		update: (ticket: Ticket, action: ActionEvent) => void,
 		filter?: TicketFilter,
 	) => Promise<Result<Unsubscribe>>
+	readonly subscribeToRecord: (
+		project: string,
+		id: string,
+		onChange: (record: Ticket) => void,
+		onGone: () => void,
+	) => Promise<Result<Unsubscribe>>
 }

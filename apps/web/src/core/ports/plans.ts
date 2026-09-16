@@ -23,4 +23,10 @@ export type PlansPort = {
 		update: (plan: Plan, action: ActionEvent) => void,
 		filter?: PlanFilter,
 	) => Promise<Result<Unsubscribe>>
+	readonly subscribeToRecord: (
+		project: string,
+		id: string,
+		onChange: (record: Plan) => void,
+		onGone: () => void,
+	) => Promise<Result<Unsubscribe>>
 }

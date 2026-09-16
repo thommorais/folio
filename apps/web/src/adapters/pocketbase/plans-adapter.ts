@@ -10,6 +10,7 @@ import { tryCatch } from '_/lib/try-catch'
 import { Collections, type JournPlansResponse } from '_/pocketbase-types'
 import type { ActionEvent } from '_/types'
 import { getPocketBaseClient } from './client'
+import { subscribeToRecord as subscribe } from './subscribe-to-record'
 import { filterFor } from './filter-builder'
 import { countRows } from './count-rows'
 import { paginate } from './paginate'
@@ -106,5 +107,8 @@ export const createPlansAdapter = (): PlansPort => {
 				return err(new Error(`Failed to subscribe to plans: ${message(error)}`))
 			}
 		},
+
+		subscribeToRecord: async (_project, id, onChange, onGone): Promise<Result<Unsubscribe>> =>
+			subscribe(collection, id, toPlan, onChange, onGone, 'plan'),
 	}
 }
