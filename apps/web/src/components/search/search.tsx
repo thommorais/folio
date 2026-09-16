@@ -15,6 +15,7 @@ import { useHotkeys } from 'react-hotkeys-hook'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@thom/ui/command'
 import type { SearchHit, SearchKind } from '_/core/ports/search'
 import { useSearch } from '_/app/use-search'
+import { usePreviewStore } from '_/app/preview-store'
 import { useSearchStore } from '_/app/search-store'
 
 type Shortcut = {
@@ -74,6 +75,7 @@ const HitRow = ({ hit, index }: { hit: SearchHit; index: number }) => {
 export const Search = () => {
 	const navigate = useNavigate()
 	const setOpen = useSearchStore(state => state.setOpen)
+	const openPreview = usePreviewStore(state => state.openPreview)
 	const [term, setTerm] = useState('')
 	const [debounced, setDebounced] = useState('')
 	const wrapper = useRef<HTMLDivElement>(null)
@@ -104,6 +106,40 @@ export const Search = () => {
 		],
 		[navigate, setOpen],
 	)
+
+	const openHit = (hit: SearchHit) => {
+		const project = { slug: hit.projectSlug }
+		setOpen(false)
+
+		if (hit.kind === 'todo') {
+			openPreview({ kind: 'todo', project: hit.projectSlug, id: hit.id })
+			return
+		}
+
+		if (hit.kind === 'plan') {
+			void navigate({ to: '/$slug/plans/$plan', params: { ...project, plan: hit.id } })
+			return
+		}
+
+		if (hit.kind === 'doc') {
+			void navigate({ to: '/$slug/docs/$doc', params: { ...project, doc: hit.slug } })
+			return
+		}
+
+		if (hit.kind === 'journal') {
+			void navigate({ to: '/$slug/journal/$entry', params: { ...project, entry: hit.slug } })
+			return
+		}
+
+		if (hit.kind === 'ticket') {
+			void navigate({ to: '/$slug/tickets/$ticket', params: { ...project, ticket: hit.slug } })
+			return
+		}
+
+		// A work log and a resolution live inside a ticket that the hit does not
+		// name, so the ticket list is the closest reachable place.
+		void navigate({ to: '/$slug/tickets', params: project })
+	}
 
 	// Groups follow the order their best hit arrived in, because the server
 	// ranks by relevance and a fixed kind order would sink the top result
@@ -199,7 +235,10 @@ export const Search = () => {
 								<CommandItem
 									key={`${hit.kind}-${hit.id}`}
 									value={`${hit.kind}-${hit.id}`}
-									className='group/item flex flex-col items-start gap-1 py-2 text-sm'
+									onSelect={() => {
+										openHit(hit)
+									}}
+									className='group/item flex cursor-pointer flex-col items-start gap-1 py-2 text-sm'
 								>
 									<HitRow hit={hit} index={index} />
 								</CommandItem>

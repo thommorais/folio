@@ -41,6 +41,7 @@ const bm25Weights = "0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0"
 type searchRow struct {
 	Kind        string `db:"kind"`
 	RecID       string `db:"rec_id"`
+	Slug        string `db:"slug"`
 	Project     string `db:"project"`
 	ProjectSlug string `db:"project_slug"`
 	Tags        string `db:"tags"`
@@ -107,7 +108,7 @@ func (r *SearchRepository) search(ctx context.Context, projects []domain.Project
 	// The index stores the project id; the slug is what names a hit in a
 	// global result, so it is joined in rather than resolved per row later.
 	query := fmt.Sprintf(
-		`SELECT %[1]s.kind, %[1]s.rec_id, %[1]s.project, COALESCE(p.slug, '') AS project_slug,
+		`SELECT %[1]s.kind, %[1]s.rec_id, %[1]s.slug, %[1]s.project, COALESCE(p.slug, '') AS project_slug,
 		        %[1]s.tags, %[1]s.created, %[1]s.title, %[1]s.body
 		 FROM %[1]s LEFT JOIN %[2]s p ON p.id = %[1]s.project
 		 WHERE %[3]s ORDER BY %[4]s LIMIT {:limit} OFFSET {:offset}`,
@@ -133,6 +134,7 @@ func (r *SearchRepository) search(ctx context.Context, projects []domain.Project
 			ID:          row.RecID,
 			ProjectID:   domain.ProjectID(row.Project),
 			ProjectSlug: row.ProjectSlug,
+			Slug:        row.Slug,
 			Title:       title(row),
 			Snippet:     rules.Snippet(row.Body, snippetLen),
 			Tags:        parseTags(row.Tags),

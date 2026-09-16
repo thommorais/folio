@@ -16,6 +16,7 @@ type SearchHitResponse = {
 	readonly id: string
 	readonly project_id: string
 	readonly project_slug: string
+	readonly slug?: string
 	readonly title: string
 	readonly snippet?: string
 	readonly tags: readonly string[] | null
@@ -32,6 +33,7 @@ const toHit = (raw: SearchHitResponse): SearchHit | undefined => {
 		id: raw.id,
 		projectId: toProjectId(raw.project_id),
 		projectSlug: raw.project_slug,
+		slug: raw.slug ?? '',
 		title: raw.title,
 		snippet: raw.snippet ?? '',
 		tags: raw.tags ?? [],

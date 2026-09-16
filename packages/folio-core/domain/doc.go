@@ -50,10 +50,13 @@ type SearchHit struct {
 	// ProjectSlug names the hit's project, which a global search needs and a
 	// project-scoped one already knows.
 	ProjectSlug string
-	Title       string
-	Snippet     string
-	Tags        []string
-	CreatedAt   time.Time
+	// Slug addresses the record in its own routes. Empty for kinds that have
+	// none, such as todos and plans.
+	Slug      string
+	Title     string
+	Snippet   string
+	Tags      []string
+	CreatedAt time.Time
 }
 
 // SearchQuery asks for matches across the kinds listed; empty Kinds means all.

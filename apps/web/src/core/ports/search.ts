@@ -13,6 +13,7 @@ export type SearchHit = {
 	readonly id: string
 	readonly projectId: ProjectId
 	readonly projectSlug: string
+	readonly slug: string
 	readonly title: string
 	readonly snippet: string
 	readonly tags: readonly string[]

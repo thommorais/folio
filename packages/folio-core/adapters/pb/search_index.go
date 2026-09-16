@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 
 	"folio/folio-core/domain"
@@ -24,16 +25,25 @@ type indexed struct {
 	StaticTitle string
 	// Extra SQL predicate a row must satisfy to be indexed at all.
 	Where string
+	// Set when the collection addresses records by slug in its routes.
+	HasSlug bool
+}
+
+func (s indexed) slugExpr(alias string) string {
+	if s.HasSlug {
+		return alias + ".slug"
+	}
+	return "''"
 }
 
 // sources is the whole searchable surface. Adding a kind here gives it an
 // index, triggers and a backfill; nothing else needs to change.
 var sources = []indexed{
-	{Collection: ColJournal, Kind: domain.SearchKindJournal, Title: "title", Body: "body"},
-	{Collection: ColDocs, Kind: domain.SearchKindDoc, Title: "title", Body: "body"},
+	{Collection: ColJournal, Kind: domain.SearchKindJournal, Title: "title", Body: "body", HasSlug: true},
+	{Collection: ColDocs, Kind: domain.SearchKindDoc, Title: "title", Body: "body", HasSlug: true},
 	{Collection: ColTodos, Kind: domain.SearchKindTodo, Title: "title", Body: "details"},
 	{Collection: ColPlans, Kind: domain.SearchKindPlan, Title: "title", Body: "goal"},
-	{Collection: ColTickets, Kind: domain.SearchKindTicket, Title: "title", Body: "body"},
+	{Collection: ColTickets, Kind: domain.SearchKindTicket, Title: "title", Body: "body", HasSlug: true},
 
 	{Collection: ColTicketLogs, Kind: domain.SearchKindWorkLog, Body: "body", StaticTitle: "Ticket work log"},
 	{Collection: ColPlanLogs, Kind: domain.SearchKindWorkLog, Body: "body", StaticTitle: "Plan work log"},
@@ -86,6 +96,7 @@ func ensureSearchIndex(app core.App) error {
 		CREATE VIRTUAL TABLE IF NOT EXISTS %s USING fts5(
 			kind UNINDEXED,
 			rec_id UNINDEXED,
+			slug UNINDEXED,
 			project UNINDEXED,
 			tags UNINDEXED,
 			created UNINDEXED,
@@ -93,6 +104,19 @@ func ensureSearchIndex(app core.App) error {
 			body,
 			tokenize='porter unicode61'
 		)`, SearchIndex)
+
+	// An index built by an earlier version has fewer columns, and FTS5 cannot
+	// alter one in place, so it is dropped and rebuilt from the sources.
+	var existing string
+	if err := db.NewQuery(`SELECT COALESCE(max(sql), '') FROM sqlite_master WHERE name = {:name}`).
+		Bind(dbx.Params{"name": SearchIndex}).Row(&existing); err != nil {
+		return fmt.Errorf("inspect %s: %w", SearchIndex, err)
+	}
+	if existing != "" && !strings.Contains(existing, "slug") {
+		if _, err := db.NewQuery(fmt.Sprintf(`DROP TABLE %s`, SearchIndex)).Execute(); err != nil {
+			return fmt.Errorf("drop stale %s: %w", SearchIndex, err)
+		}
+	}
 
 	if _, err := db.NewQuery(create).Execute(); err != nil {
 		return fmt.Errorf("create %s: %w", SearchIndex, err)
@@ -123,8 +147,8 @@ func ensureTriggers(app core.App, s indexed) error {
 	}
 
 	insert := fmt.Sprintf(
-		`INSERT INTO %s(kind, rec_id, project, tags, created, title, body) SELECT '%s', new.id, new.project, %s, new.created, %s, new.%s WHERE %s;`,
-		SearchIndex, s.Kind, s.tagsExpr("new"), s.titleExpr("new"), s.Body, condition,
+		`INSERT INTO %s(kind, rec_id, slug, project, tags, created, title, body) SELECT '%s', new.id, %s, new.project, %s, new.created, %s, new.%s WHERE %s;`,
+		SearchIndex, s.Kind, s.slugExpr("new"), s.tagsExpr("new"), s.titleExpr("new"), s.Body, condition,
 	)
 	remove := fmt.Sprintf(`DELETE FROM %s WHERE kind = '%s' AND rec_id = old.id;`, SearchIndex, s.Kind)
 
@@ -186,8 +210,8 @@ func backfillSearchIndex(app core.App) error {
 
 	for _, source := range sources {
 		fill := fmt.Sprintf(
-			`INSERT INTO %s(kind, rec_id, project, tags, created, title, body) SELECT '%s', s.id, s.project, %s, s.created, %s, s.%s FROM %s s`,
-			SearchIndex, source.Kind, source.tagsExpr("s"), source.titleExpr("s"), source.Body, source.Collection,
+			`INSERT INTO %s(kind, rec_id, slug, project, tags, created, title, body) SELECT '%s', s.id, %s, s.project, %s, s.created, %s, s.%s FROM %s s`,
+			SearchIndex, source.Kind, source.slugExpr("s"), source.tagsExpr("s"), source.titleExpr("s"), source.Body, source.Collection,
 		)
 		if source.Where != "" {
 			fill += " WHERE s." + source.Where
