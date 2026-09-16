@@ -240,4 +240,6 @@ type UpdateDocInput struct {
 
 type SearchUseCase interface {
 	Search(ctx context.Context, actor Actor, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error)
+	// SearchAll spans every project the actor can read.
+	SearchAll(ctx context.Context, actor Actor, q domain.SearchQuery) ([]domain.SearchHit, error)
 }

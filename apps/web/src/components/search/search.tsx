@@ -1,5 +1,14 @@
 import { useNavigate } from '@tanstack/react-router'
-import { BookText, FolderKanban, ListTodo, NotebookPen, Search as SearchIcon } from 'lucide-react'
+import {
+	BookText,
+	CircleCheck,
+	FolderKanban,
+	ListTodo,
+	NotebookPen,
+	PenLine,
+	Search as SearchIcon,
+	Ticket,
+} from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
@@ -15,10 +24,13 @@ type Shortcut = {
 }
 
 const kindIcons: Record<SearchKind, typeof BookText> = {
-	log: BookText,
+	journal: BookText,
 	doc: NotebookPen,
 	todo: ListTodo,
 	plan: FolderKanban,
+	ticket: Ticket,
+	worklog: PenLine,
+	resolution: CircleCheck,
 }
 
 const groupLabels: Record<string, string> = {
@@ -27,6 +39,9 @@ const groupLabels: Record<string, string> = {
 	doc: 'Docs',
 	todo: 'Todos',
 	plan: 'Plans',
+	ticket: 'Tickets',
+	worklog: 'Work logs',
+	resolution: 'Resolutions',
 }
 
 const HitRow = ({ hit, index }: { hit: SearchHit; index: number }) => {
@@ -90,22 +105,18 @@ export const Search = () => {
 		[navigate, setOpen],
 	)
 
+	// Groups follow the order their best hit arrived in, because the server
+	// ranks by relevance and a fixed kind order would sink the top result
+	// whenever its kind happened to sort late.
 	const grouped = useMemo(() => {
 		const groups: Record<string, SearchHit[]> = {}
 
 		for (const hit of hits) {
-			const key = hit.kind
-			groups[key] ??= []
-			groups[key].push(hit)
+			const group = (groups[hit.kind] ??= [])
+			group.push(hit)
 		}
 
-		const ordered: Record<string, SearchHit[]> = {}
-		for (const key of ['log', 'doc', 'todo', 'plan']) {
-			const group = groups[key]
-			if (group && group.length > 0) ordered[key] = group
-		}
-
-		return ordered
+		return groups
 	}, [hits])
 
 	const matchingShortcuts = debounced

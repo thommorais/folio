@@ -47,10 +47,13 @@ type SearchHit struct {
 	Kind      SearchKind
 	ID        string
 	ProjectID ProjectID
-	Title     string
-	Snippet   string
-	Tags      []string
-	CreatedAt time.Time
+	// ProjectSlug names the hit's project, which a global search needs and a
+	// project-scoped one already knows.
+	ProjectSlug string
+	Title       string
+	Snippet     string
+	Tags        []string
+	CreatedAt   time.Time
 }
 
 // SearchQuery asks for matches across the kinds listed; empty Kinds means all.

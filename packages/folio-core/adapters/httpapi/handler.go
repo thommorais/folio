@@ -118,6 +118,7 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.DELETE("/docs/{doc}", h.deleteDoc)
 
 	g.GET("/projects/{project}/search", h.searchProject)
+	g.GET("/search", h.searchAll)
 }
 
 // actorOf builds the domain actor from the record PocketBase authenticated.

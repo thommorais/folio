@@ -282,18 +282,19 @@ func toDocView(d domain.Doc) docView {
 }
 
 type searchHitView struct {
-	Kind      string   `json:"kind"`
-	ID        string   `json:"id"`
-	ProjectID string   `json:"project_id"`
-	Title     string   `json:"title"`
-	Snippet   string   `json:"snippet,omitempty"`
-	Tags      []string `json:"tags"`
-	CreatedAt string   `json:"created_at"`
+	Kind        string   `json:"kind"`
+	ID          string   `json:"id"`
+	ProjectID   string   `json:"project_id"`
+	ProjectSlug string   `json:"project_slug"`
+	Title       string   `json:"title"`
+	Snippet     string   `json:"snippet,omitempty"`
+	Tags        []string `json:"tags"`
+	CreatedAt   string   `json:"created_at"`
 }
 
 func toSearchHitView(h domain.SearchHit) searchHitView {
 	return searchHitView{
-		Kind: string(h.Kind), ID: h.ID, ProjectID: string(h.ProjectID),
+		Kind: string(h.Kind), ID: h.ID, ProjectID: string(h.ProjectID), ProjectSlug: h.ProjectSlug,
 		Title: h.Title, Snippet: h.Snippet, Tags: orEmpty(h.Tags),
 		CreatedAt: rfc3339(h.CreatedAt),
 	}

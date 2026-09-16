@@ -494,13 +494,30 @@ func (r *fakeDocs) Delete(_ context.Context, id domain.DocID) error {
 }
 
 type fakeSearch struct {
-	hits []domain.SearchHit
+	hits      []domain.SearchHit
+	lastLimit int
 }
 
 func (r *fakeSearch) Search(_ context.Context, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+	r.lastLimit = q.Limit
 	out := []domain.SearchHit{}
 	for _, h := range r.hits {
 		if h.ProjectID == project {
+			out = append(out, h)
+		}
+	}
+	return out, nil
+}
+
+func (r *fakeSearch) SearchAcross(_ context.Context, projects []domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+	r.lastLimit = q.Limit
+	allowed := map[domain.ProjectID]bool{}
+	for _, p := range projects {
+		allowed[p] = true
+	}
+	out := []domain.SearchHit{}
+	for _, h := range r.hits {
+		if allowed[h.ProjectID] {
 			out = append(out, h)
 		}
 	}

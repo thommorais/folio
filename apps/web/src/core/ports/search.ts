@@ -1,7 +1,10 @@
 import type { Result } from '_/lib/result'
 import type { ProjectId } from '../domain/project'
 
-export const SEARCH_KINDS = ['log', 'doc', 'todo', 'plan'] as const
+// These are the API's own kind names, so a hit needs no translation at the
+// boundary. 'journal' was called 'log' while the client searched collections
+// directly and had to pick its own vocabulary.
+export const SEARCH_KINDS = ['journal', 'doc', 'todo', 'plan', 'ticket', 'worklog', 'resolution'] as const
 
 export type SearchKind = (typeof SEARCH_KINDS)[number]
 
