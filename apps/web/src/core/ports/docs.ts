@@ -22,4 +22,10 @@ export type DocsPort = {
 		update: (doc: Doc, action: ActionEvent) => void,
 		filter?: DocFilter,
 	) => Promise<Result<Unsubscribe>>
+	readonly subscribeToRecord: (
+		project: string,
+		id: string,
+		onChange: (record: Doc) => void,
+		onGone: () => void,
+	) => Promise<Result<Unsubscribe>>
 }

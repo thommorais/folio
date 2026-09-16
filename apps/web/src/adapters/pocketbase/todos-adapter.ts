@@ -11,6 +11,7 @@ import { err, ok, type Result } from '_/lib/result'
 import { tryCatch } from '_/lib/try-catch'
 import { Collections, type JournTodosResponse } from '_/pocketbase-types'
 import { getPocketBaseClient } from './client'
+import { subscribeToRecord as subscribe } from './subscribe-to-record'
 import { filterFor } from './filter-builder'
 import { countRows } from './count-rows'
 import { paginate } from './paginate'
@@ -114,5 +115,8 @@ export const createTodosAdapter = (): TodosPort => {
 				return err(new Error(`Failed to subscribe to list: ${message(error)}`))
 			}
 		},
+
+		subscribeToRecord: async (_project, id, onChange, onGone): Promise<Result<Unsubscribe>> =>
+			subscribe(collection, id, toTodo, onChange, onGone, 'todo'),
 	}
 }

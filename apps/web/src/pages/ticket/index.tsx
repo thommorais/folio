@@ -1,19 +1,22 @@
-import { Link, useParams } from '@tanstack/react-router'
-import { cn } from '@thom/libs/cn'
-import { Badge } from '@thom/ui/badge'
-import { Heading } from '@thom/ui/heading'
-import { useCycles } from '_/app/use-cycles'
-import { useDocs } from '_/app/use-docs'
-import { useJournal } from '_/app/use-journal'
-import { usePlans } from '_/app/use-plans'
-import { useTicket } from '_/app/use-ticket'
-import { useTicketLogs } from '_/app/use-ticket-logs'
-import { useTickets } from '_/app/use-tickets'
-import { useTodos } from '_/app/use-todos'
-import { isResolved } from '_/core/domain/cycle'
-import type { TicketStatus } from '_/core/domain/ticket'
-import { TODO_STATUS_LABELS } from '_/pages/todos/status-labels'
-import { MapFrontier } from './map-frontier'
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { cn } from '@thom/libs/cn';
+import { Badge } from '@thom/ui/badge';
+import { Heading } from '@thom/ui/heading';
+import { useCycles } from '_/app/use-cycles';
+import { useDocs } from '_/app/use-docs';
+import { useJournal } from '_/app/use-journal';
+import { usePlans } from '_/app/use-plans';
+import { useTicket } from '_/app/use-ticket';
+import { useTicketLogs } from '_/app/use-ticket-logs';
+import { useTickets } from '_/app/use-tickets';
+import { useTodos } from '_/app/use-todos';
+import { Markdown } from '_/components/markdown';
+import { RecordGone } from '_/components/record/record-gone';
+import { isResolved } from '_/core/domain/cycle';
+import type { TicketStatus } from '_/core/domain/ticket';
+import { TODO_STATUS_LABELS } from '_/pages/todos/status-labels';
+import { useSlugSync } from '_/routing/use-slug-sync';
+import { MapFrontier } from './map-frontier';
 
 const statusLabels: Record<TicketStatus, string> = {
 	open: 'Open',
@@ -39,8 +42,27 @@ const TicketDetail = () => {
 	const { slug, ticket: ticketSlug } = useParams({ from: '/_authenticated/$slug/tickets/$ticket' })
 	const state = useTicket(slug, ticketSlug)
 
+	const navigate = useNavigate()
+
+	useSlugSync({
+		current: ticketSlug,
+		record: state.status === 'ready' ? state.ticket : undefined,
+		rename: renamed =>
+			void navigate({ to: '/$slug/tickets/$ticket', params: { slug, ticket: renamed }, replace: true }),
+	})
+
 	if (state.status === 'idle' || state.status === 'loading') {
 		return <div className='bg-accent/40 h-32 animate-pulse' />
+	}
+
+	if (state.status === 'gone') {
+		return (
+			<RecordGone title={state.title}>
+				<Link to='/$slug/tickets' params={{ slug }} className='text-sm underline'>
+					Back to tickets
+				</Link>
+			</RecordGone>
+		)
 	}
 
 	if (state.status === 'failed') {
@@ -93,7 +115,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 					))}
 				</div>
 
-				{ticket.body && <p className='text-dim text-sm whitespace-pre-line'>{ticket.body}</p>}
+				{ticket.body &&<Markdown>{ticket.body}</Markdown>}
 
 				{(parent !== undefined || ticket.dependsOn.length > 0) && (
 					<div className='text-dimmer flex flex-wrap items-center gap-3 text-xs'>
@@ -232,4 +254,4 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	)
 }
 
-export { TicketDetail }
+export { TicketDetail };

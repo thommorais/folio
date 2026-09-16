@@ -10,6 +10,7 @@ import { tryCatch } from '_/lib/try-catch'
 import { Collections, type JournTicketsResponse } from '_/pocketbase-types'
 import type { ActionEvent } from '_/types'
 import { getPocketBaseClient } from './client'
+import { subscribeToRecord as subscribe } from './subscribe-to-record'
 import { countRows } from './count-rows'
 import { filterFor } from './filter-builder'
 import { paginate } from './paginate'
@@ -95,9 +96,7 @@ export const createTicketsAdapter = (): TicketsPort => {
 				{ field: 'slug', comparator: 'eq', value: slug },
 			])
 
-			const { data, error } = await tryCatch(
-				collection().getFirstListItem<TicketRecord>(client.filter(expr, params)),
-			)
+			const { data, error } = await tryCatch(collection().getFirstListItem<TicketRecord>(client.filter(expr, params)))
 
 			return error
 				? err(new Error(`Failed to load ticket ${slug}: ${error.message}`, { cause: error }))
@@ -121,5 +120,8 @@ export const createTicketsAdapter = (): TicketsPort => {
 				return err(new Error(`Failed to subscribe to tickets: ${message(error)}`))
 			}
 		},
+
+		subscribeToRecord: async (_project, id, onChange, onGone): Promise<Result<Unsubscribe>> =>
+			subscribe(collection(), id, toTicket, onChange, onGone, 'ticket'),
 	}
 }

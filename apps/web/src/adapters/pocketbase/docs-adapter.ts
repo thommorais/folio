@@ -10,6 +10,7 @@ import { tryCatch } from '_/lib/try-catch'
 import { Collections, type JournDocsResponse } from '_/pocketbase-types'
 import type { ActionEvent } from '_/types'
 import { getPocketBaseClient } from './client'
+import { subscribeToRecord as subscribe } from './subscribe-to-record'
 import { filterFor } from './filter-builder'
 import { countRows } from './count-rows'
 import { paginate } from './paginate'
@@ -105,5 +106,8 @@ export const createDocsAdapter = (): DocsPort => {
 				return err(new Error(`Failed to subscribe to docs: ${message(error)}`))
 			}
 		},
+
+		subscribeToRecord: async (_project, id, onChange, onGone): Promise<Result<Unsubscribe>> =>
+			subscribe(collection, id, toDoc, onChange, onGone, 'doc'),
 	}
 }

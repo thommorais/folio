@@ -1,12 +1,12 @@
-import { resolve } from 'node:path'
-import babel from '@rolldown/plugin-babel'
-import tailwindcss from '@tailwindcss/vite'
-import tanstackRouter from '@tanstack/router-plugin/vite'
-import react, { reactCompilerPreset } from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
-import { intlayer } from 'vite-intlayer'
-import { comlink } from 'vite-plugin-comlink'
-import { VitePWA } from 'vite-plugin-pwa'
+import babel from '@rolldown/plugin-babel';
+import tailwindcss from '@tailwindcss/vite';
+import tanstackRouter from '@tanstack/router-plugin/vite';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import { resolve } from 'node:path';
+import { intlayer } from 'vite-intlayer';
+import { comlink } from 'vite-plugin-comlink';
+import { VitePWA } from 'vite-plugin-pwa';
+import { defineConfig } from 'vitest/config';
 
 // oxlint-disable-next-line import/no-default-export
 export default defineConfig({
@@ -44,7 +44,23 @@ export default defineConfig({
 			target: 'react',
 		}),
 		react(),
-		babel({ presets: [reactCompilerPreset()] }),
+		babel({ presets: [reactCompilerPreset({
+  logger: {
+    logEvent(filename, event) {
+      switch (event.kind) {
+        case 'CompileSuccess': {
+          console.log(`✅ Compiled: ${filename}`);
+          break;
+        }
+        case 'CompileError': {
+          console.log(`❌ Skipped: ${filename}`);
+          break;
+        }
+        default: {}
+      }
+    }
+  }
+})] }),
 		tailwindcss(),
 		intlayer(),
 		comlink(),
@@ -122,6 +138,10 @@ export default defineConfig({
 			devOptions: { enabled: false },
 		}),
 	],
+	test: {
+		environment: 'happy-dom',
+		setupFiles: ['./src/test/setup-env.ts'],
+	},
 	worker: {
 		plugins: () => [comlink()],
 	},

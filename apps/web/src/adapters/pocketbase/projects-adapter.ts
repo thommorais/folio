@@ -1,6 +1,8 @@
 import type { Member, Project, Role } from '_/core/domain/project'
 import { projectId as toProjectId, userId as toUserId } from '_/core/domain/project'
 import type { ProjectFilter, ProjectsPort } from '_/core/ports/projects'
+import type { Unsubscribe } from '_/core/ports/subscription'
+import type { ActionEvent } from '_/types'
 import { err, ok, type Result } from '_/lib/result'
 import { tryCatch } from '_/lib/try-catch'
 import {
@@ -35,6 +37,14 @@ const toMember = (record: MemberRecord): Member => ({
 	name: record.expand?.user?.name ?? '',
 })
 
+const columns = (filter: ProjectFilter) =>
+	filterFor<ProjectColumns>()([
+		{ field: 'archived', comparator: 'eq', value: filter.includeArchived ? undefined : false },
+		{ field: 'name', comparator: 'contains', value: filter.search },
+	])
+
+const message = (error: unknown): string => (error instanceof Error ? error.message : 'Unknown error')
+
 const toProject = (record: ProjectRecord): Project => ({
 	id: toProjectId(record.id),
 	slug: record.slug,
@@ -52,10 +62,7 @@ export const createProjectsAdapter = (): ProjectsPort => {
 
 	return {
 		list: async (filter: ProjectFilter = {}): Promise<Result<readonly Project[]>> => {
-			const { expr, params } = filterFor<ProjectColumns>()([
-				{ field: 'archived', comparator: 'eq', value: filter.includeArchived ? undefined : false },
-				{ field: 'name', comparator: 'contains', value: filter.search },
-			])
+			const { expr, params } = columns(filter)
 
 			const { data, error } = await tryCatch(
 				paginate<ProjectRecord>(projects(), filter, {
@@ -80,6 +87,24 @@ export const createProjectsAdapter = (): ProjectsPort => {
 			return error
 				? err(new Error(`Failed to load project ${ref}: ${error.message}`, { cause: error }))
 				: ok(toProject(data))
+		},
+
+		subscribeToList: async (update, filter: ProjectFilter = {}): Promise<Result<Unsubscribe>> => {
+			const { expr, params } = columns(filter)
+
+			try {
+				const unsubscribe = await projects().subscribe<ProjectRecord>(
+					'*',
+					event => {
+						update(toProject(event.record), event.action as ActionEvent)
+					},
+					{ filter: client.filter(expr, params), expand: MEMBER_EXPAND },
+				)
+
+				return ok(unsubscribe)
+			} catch (error) {
+				return err(new Error(`Failed to subscribe to projects: ${message(error)}`))
+			}
 		},
 	}
 }

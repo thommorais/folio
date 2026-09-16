@@ -26,4 +26,10 @@ export type JournalPort = {
 		update: (entry: JournalEntry, action: ActionEvent) => void,
 		filter?: JournalFilter,
 	) => Promise<Result<Unsubscribe>>
+	readonly subscribeToRecord: (
+		project: string,
+		id: string,
+		onChange: (record: JournalEntry) => void,
+		onGone: () => void,
+	) => Promise<Result<Unsubscribe>>
 }

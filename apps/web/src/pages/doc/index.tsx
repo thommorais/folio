@@ -1,4 +1,6 @@
-import { useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { useSlugSync } from '_/routing/use-slug-sync'
+import { RecordGone } from '_/components/record/record-gone'
 import { Badge } from '@thom/ui/badge'
 import { Heading } from '@thom/ui/heading'
 import { Markdown } from '_/components/markdown'
@@ -32,8 +34,26 @@ const DocDetail = () => {
 	const { slug, doc } = useParams({ from: '/_authenticated/$slug/docs/$doc' })
 	const state = useDoc(slug, doc)
 
+	const navigate = useNavigate()
+
+	useSlugSync({
+		current: doc,
+		record: state.status === 'ready' ? state.doc : undefined,
+		rename: renamed => void navigate({ to: '/$slug/docs/$doc', params: { slug, doc: renamed }, replace: true }),
+	})
+
 	if (state.status === 'idle' || state.status === 'loading') {
 		return <div className='bg-accent/40 h-32 animate-pulse' />
+	}
+
+	if (state.status === 'gone') {
+		return (
+			<RecordGone title={state.title}>
+				<Link to='/$slug/docs' params={{ slug }} className='text-sm underline'>
+					Back to docs
+				</Link>
+			</RecordGone>
+		)
 	}
 
 	if (state.status === 'failed') {

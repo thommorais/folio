@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { foldUpdates } from '_/adapters/pocketbase/fold-updates'
 import type { Project } from '_/core/domain/project'
 import type { ProjectFilter } from '_/core/ports/projects'
+import { useFilterKey } from './realtime/use-filter-key'
+import { useLiveList } from './realtime/use-live-list'
 import { useContainer } from './container'
 
 type ProjectsState =
@@ -9,28 +11,16 @@ type ProjectsState =
 	| { readonly status: 'failed'; readonly message: string }
 
 export const useProjects = (filter?: ProjectFilter): ProjectsState => {
-	const { projects } = useContainer()
-	const [state, setState] = useState<ProjectsState>({ status: 'loading' })
+	const { projects, connection } = useContainer()
+	const key = useFilterKey(filter)
 
-	const key = JSON.stringify(filter ?? {})
+	const state = useLiveList<Project>({
+		load: () => projects.list(JSON.parse(key) as ProjectFilter),
+		subscribe: update => projects.subscribeToList(update, JSON.parse(key) as ProjectFilter),
+		fold: foldUpdates,
+		connection,
+		deps: [key, projects],
+	})
 
-	const load = useCallback(async () => {
-		setState({ status: 'loading' })
-		const result = await projects.list(JSON.parse(key) as ProjectFilter)
-
-		setState(
-			result.success
-				? { status: 'ready', projects: result.value }
-				: {
-						status: 'failed',
-						message: result.error instanceof Error ? result.error.message : 'Could not load projects',
-					},
-		)
-	}, [projects, key])
-
-	useEffect(() => {
-		void load()
-	}, [load])
-
-	return state
+	return state.status === 'ready' ? { status: 'ready', projects: state.data } : state
 }
