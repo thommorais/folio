@@ -12,6 +12,7 @@ import (
 
 	"folio/cli/internal/client"
 	"folio/cli/internal/config"
+	"folio/cli/internal/git"
 )
 
 func bodyFrom(value string) (string, error) {
@@ -129,7 +130,7 @@ func journalWriteCommand() *cobra.Command {
 		Use:   "write <title>",
 		Short: "Write a journal entry, with --body - to read markdown from stdin",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			project, err := resolveProject()
 			if err != nil {
 				return err
@@ -138,6 +139,16 @@ func journalWriteCommand() *cobra.Command {
 			text, err := bodyFrom(body)
 			if err != nil {
 				return err
+			}
+
+			// Changed rather than an empty check, so --branch "" records no
+			// branch instead of being refilled by detection.
+			wd, _ := os.Getwd()
+			if !cmd.Flags().Changed("branch") {
+				branch = git.Branch(wd)
+			}
+			if !cmd.Flags().Changed("pr") {
+				pr = git.PR(wd)
 			}
 
 			in := client.LogInput{Title: &args[0]}
@@ -169,7 +180,7 @@ func journalWriteCommand() *cobra.Command {
 	cmd.Flags().StringVar(&slug, "slug", "", "derived from the title when omitted")
 	cmd.Flags().StringVar(&body, "body", "", "markdown body, or - for stdin")
 	cmd.Flags().StringVar(&branch, "branch", "", "git branch")
-	cmd.Flags().StringVar(&pr, "pr", "", "pull request number")
+	cmd.Flags().StringVar(&pr, "pr", "", "pull request url")
 	cmd.Flags().StringVar(&ticket, "ticket", "", "ticket this belongs to")
 	cmd.Flags().StringVar(&externalRef, "external-ref", "", "key in another tracker, e.g. JIRA-123")
 	cmd.Flags().StringVar(&plan, "plan", "", "plan this documents")
@@ -224,7 +235,7 @@ func journalUpdateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&title, "title", "", "new title")
 	cmd.Flags().StringVar(&body, "body", "", "replace the body, or - for stdin")
 	cmd.Flags().StringVar(&branch, "branch", "", "git branch")
-	cmd.Flags().StringVar(&pr, "pr", "", "pull request number")
+	cmd.Flags().StringVar(&pr, "pr", "", "pull request url")
 	cmd.Flags().StringVar(&ticket, "ticket", "", "ticket this belongs to")
 	cmd.Flags().StringVar(&externalRef, "external-ref", "", "key in another tracker")
 	cmd.Flags().StringVar(&tags, "tags", "", "replace the tags; "+tagHelp())
