@@ -1,0 +1,14 @@
+{
+	"name": "@thom/cli",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "./scripts/dev.sh",
+		"install:cli": "./scripts/install.sh",
+		"build": "make build",
+		"test": "make test",
+		"lint": "make check",
+		"format": "make format",
+		"clean": "make clean"
+	}
+}

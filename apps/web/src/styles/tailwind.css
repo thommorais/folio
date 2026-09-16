@@ -1,0 +1,194 @@
+@import 'tailwindcss';
+
+@source '../../node_modules/@thom/ui/**/*.{tsx,ts,js,jsx}';
+
+/* v4 binds dark: to prefers-color-scheme by default, which ignores the toggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Ported from midday, which declares these as HSL triples in a v3 JS config. */
+@theme {
+	--color-background: hsl(0 0% 100%);
+	--color-foreground: hsl(0 0% 7%);
+
+	--color-card: hsl(45 18% 96%);
+	--color-card-foreground: hsl(240 10% 3.9%);
+
+	--color-popover: hsl(45 18% 96%);
+	--color-popover-foreground: hsl(240 10% 3.9%);
+
+	--color-primary: hsl(240 5.9% 10%);
+	--color-primary-foreground: hsl(0 0% 98%);
+
+	--color-secondary: hsl(40 11% 89%);
+	--color-secondary-foreground: hsl(240 5.9% 10%);
+
+	--color-muted: hsl(40 11% 89%);
+	--color-muted-foreground: hsl(0 0% 38%);
+
+	--color-accent: hsl(40 10% 94%);
+	--color-accent-foreground: hsl(240 5.9% 10%);
+
+	--color-destructive: hsl(0 84.2% 60.2%);
+	--color-destructive-foreground: hsl(0 0% 98%);
+
+	--color-border: hsl(45 5% 85%);
+	--color-input: hsl(240 5.9% 90%);
+	--color-ring: hsl(240 5.9% 10%);
+
+	/* Hardcoded as #878787 and #606060 throughout midday. */
+	--color-dim: #878787;
+	--color-dimmer: #606060;
+
+	--font-sans: 'Hedvig Letters Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-serif: 'Hedvig Letters Serif', ui-serif, Georgia, serif;
+
+	--radius: 0.5rem;
+}
+
+@layer theme {
+	.dark {
+		--color-background: hsl(0 0% 5%);
+		--color-foreground: hsl(0 0% 98%);
+
+		--color-card: hsl(0 0% 7%);
+		--color-card-foreground: hsl(0 0% 98%);
+
+		--color-popover: hsl(0 0% 7%);
+		--color-popover-foreground: hsl(0 0% 98%);
+
+		--color-primary: hsl(0 0% 98%);
+		--color-primary-foreground: hsl(240 5.9% 10%);
+
+		--color-secondary: hsl(0 0% 7%);
+		--color-secondary-foreground: hsl(0 0% 98%);
+
+		--color-muted: hsl(0 0% 11%);
+		--color-muted-foreground: hsl(0 0% 38%);
+
+		--color-accent: hsl(0 0% 11%);
+		--color-accent-foreground: hsl(0 0% 98%);
+
+		--color-destructive: hsl(359 100% 61%);
+		--color-destructive-foreground: hsl(0 0% 100%);
+
+		--color-border: hsl(0 0% 11%);
+		--color-input: hsl(0 0% 11%);
+		--color-ring: hsl(240 4.9% 83.9%);
+	}
+}
+
+@layer base {
+	* {
+		border-color: var(--color-border);
+	}
+
+	html,
+	body {
+		height: 100%;
+	}
+
+	body {
+		background-color: var(--color-background);
+		color: var(--color-foreground);
+		font-family: var(--font-sans);
+		text-wrap-style: pretty;
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	*:focus {
+		outline: none;
+	}
+}
+
+@utility scrollbar-hide {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+@keyframes dialog-overlay-show {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes dialog-overlay-hide {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes dialog-content-show {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.97);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+}
+
+@keyframes dialog-content-hide {
+	from {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.97);
+	}
+}
+
+/* Indeterminate progress bar under the search input while a query is in flight. */
+@keyframes slide-effect {
+	0% {
+		left: 0%;
+	}
+	50% {
+		left: calc(100% - 80px);
+	}
+	100% {
+		left: 0%;
+	}
+}
+
+@theme {
+	--animate-slide-effect: slide-effect 1.3s ease-in-out infinite;
+}
+
+.global-search-list {
+	height: min(450px, var(--search-list-height));
+	overscroll-behavior: contain;
+	transition: 100ms ease;
+	transition-property: height;
+}
+
+/* Shiki emits both themes as custom properties on every token. The dark
+   variant is bound to the same .dark class the rest of the theme uses, so a
+   code block follows the toggle rather than the OS setting. */
+.shiki-host .shiki,
+.shiki-host .shiki span {
+	color: var(--shiki-light);
+	background-color: transparent;
+}
+
+.dark .shiki-host .shiki,
+.dark .shiki-host .shiki span {
+	color: var(--shiki-dark);
+}
+
+.shiki-host pre.shiki {
+	margin: 0;
+	padding: calc(var(--spacing) * 4);
+}

@@ -1,0 +1,18 @@
+{
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"name": "@thom/cli",
+	"targets": {
+		"build": {
+			"outputs": ["{projectRoot}/bin"],
+			"cache": true
+		},
+		"dev": {
+			"dependsOn": [],
+			"cache": false,
+			"continuous": true
+		},
+		"install:cli": {
+			"cache": false
+		}
+	}
+}

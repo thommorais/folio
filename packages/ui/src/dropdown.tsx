@@ -28,23 +28,13 @@ export function DropdownMenu({
 			transition
 			anchor={anchor}
 			className={cn(
+				'[--anchor-gap:--spacing(2)] [--anchor-padding:--spacing(1)]',
+				'isolate w-max overflow-y-auto p-1',
+				'border border-border bg-popover text-popover-foreground',
+				'shadow-md',
+				'focus:outline-hidden',
+				'transition data-closed:data-leave:opacity-0 data-leave:duration-100 data-leave:ease-in',
 				className,
-				// Anchor positioning
-				'[--anchor-gap:--spacing(2)] [--anchor-padding:--spacing(1)] data-[anchor~=end]:[--anchor-offset:6px] data-[anchor~=start]:[--anchor-offset:-6px] sm:data-[anchor~=end]:[--anchor-offset:4px] sm:data-[anchor~=start]:[--anchor-offset:-4px]',
-				// Base styles
-				'isolate w-max rounded-xl p-1',
-				// Invisible border that is only visible in `forced-colors` mode for accessibility purposes
-				'outline outline-transparent focus:outline-hidden',
-				// Handle scrolling when menu won't fit in viewport
-				'overflow-y-auto',
-				// Popover background
-				'bg-white/95 backdrop-blur-xl',
-				// Shadows
-				'shadow-popover ring-primary-200/50 ring-1',
-				// Define grid at the menu level if subgrid is supported
-				'supports-[grid-template-columns:subgrid]:grid supports-[grid-template-columns:subgrid]:grid-cols-[auto_1fr_1.5rem_0.5rem_auto]',
-				// Transitions
-				'transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0',
 			)}
 		/>
 	)
@@ -58,24 +48,12 @@ export function DropdownItem({
 	| ({ href: string } & Omit<Headless.MenuItemProps<typeof Link>, 'as' | 'className'>)
 )) {
 	const classes = cn(
-		className,
-		// Base styles
-		'group cursor-default rounded-lg px-3.5 py-2.5 focus:outline-hidden sm:px-3 sm:py-1.5',
-		// Text styles
-		'text-primary-900 text-left text-base/6 sm:text-sm/6 forced-colors:text-[CanvasText]',
-		// Focus
-		'data-focus:bg-primary-500 data-focus:text-white',
-		// Disabled state
+		'group flex w-full cursor-default items-center gap-2 px-3 py-1.5',
+		'text-left text-sm text-popover-foreground',
+		'focus:outline-hidden data-focus:bg-accent',
 		'data-disabled:opacity-50',
-		// Forced colors mode
-		'forced-color-adjust-none forced-colors:data-focus:bg-[Highlight] forced-colors:data-focus:text-[HighlightText] forced-colors:data-focus:*:data-[slot=icon]:text-[HighlightText]',
-		// Use subgrid when available but fallback to an explicit grid layout if not
-		'col-span-full grid grid-cols-[auto_1fr_1.5rem_0.5rem_auto] items-center supports-[grid-template-columns:subgrid]:grid-cols-subgrid',
-		// Icons
-		'*:data-[slot=icon]:col-start-1 *:data-[slot=icon]:row-start-1 *:data-[slot=icon]:mr-2.5 *:data-[slot=icon]:-ml-0.5 *:data-[slot=icon]:size-5 sm:*:data-[slot=icon]:mr-2 sm:*:data-[slot=icon]:size-4',
-		'*:data-[slot=icon]:stroke-primary-600 data-focus:*:data-[slot=icon]:stroke-white',
-		// Avatar
-		'*:data-[slot=avatar]:mr-2.5 *:data-[slot=avatar]:-ml-1 *:data-[slot=avatar]:size-6 sm:*:data-[slot=avatar]:mr-2 sm:*:data-[slot=avatar]:size-5',
+		'*:data-[slot=icon]:size-4 *:data-[slot=icon]:shrink-0 *:data-[slot=icon]:text-dim',
+		className,
 	)
 
 	return typeof props.href === 'string' ? (
@@ -86,73 +64,39 @@ export function DropdownItem({
 }
 
 export function DropdownHeader({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
-	return <div {...props} className={cn(className, 'col-span-5 px-3.5 pt-2.5 pb-1 sm:px-3')} />
+	return <div {...props} className={cn('px-3 pt-2 pb-1', className)} />
 }
 
 export function DropdownSection({
 	className,
 	...props
 }: { className?: string } & Omit<Headless.MenuSectionProps, 'as' | 'className'>) {
-	return (
-		<Headless.MenuSection
-			{...props}
-			className={cn(
-				className,
-				// Define grid at the section level instead of the item level if subgrid is supported
-				'col-span-full supports-[grid-template-columns:subgrid]:grid supports-[grid-template-columns:subgrid]:grid-cols-[auto_1fr_1.5rem_0.5rem_auto]',
-			)}
-		/>
-	)
+	return <Headless.MenuSection {...props} className={className} />
 }
 
 export function DropdownHeading({
 	className,
 	...props
 }: { className?: string } & Omit<Headless.MenuHeadingProps, 'as' | 'className'>) {
-	return (
-		<Headless.MenuHeading
-			{...props}
-			className={cn(
-				className,
-				'text-primary-700 col-span-full grid grid-cols-[1fr_auto] gap-x-12 px-3.5 pt-2 pb-1 text-sm/5 font-medium sm:px-3 sm:text-xs/5',
-			)}
-		/>
-	)
+	return <Headless.MenuHeading {...props} className={cn('px-3 pt-2 pb-1 text-xs font-medium text-dim', className)} />
 }
 
 export function DropdownDivider({
 	className,
 	...props
 }: { className?: string } & Omit<Headless.MenuSeparatorProps, 'as' | 'className'>) {
-	return (
-		<Headless.MenuSeparator
-			{...props}
-			className={cn(
-				className,
-				'bg-primary-200/50 col-span-full mx-3.5 my-1 h-px border-0 sm:mx-3 forced-colors:bg-[CanvasText]',
-			)}
-		/>
-	)
+	return <Headless.MenuSeparator {...props} className={cn('my-1 h-px border-0 bg-border', className)} />
 }
 
 export function DropdownLabel({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
-	return <div {...props} data-slot='label' className={cn(className, 'col-start-2 row-start-1')} {...props} />
+	return <div {...props} data-slot='label' className={cn('truncate', className)} />
 }
 
 export function DropdownDescription({
 	className,
 	...props
 }: { className?: string } & Omit<Headless.DescriptionProps, 'as' | 'className'>) {
-	return (
-		<Headless.Description
-			data-slot='description'
-			{...props}
-			className={cn(
-				className,
-				'text-primary-700 col-span-2 col-start-2 row-start-2 text-sm/5 group-data-focus:text-white sm:text-xs/5 forced-colors:group-data-focus:text-[HighlightText]',
-			)}
-		/>
-	)
+	return <Headless.Description data-slot='description' {...props} className={cn('text-xs text-dimmer', className)} />
 }
 
 export function DropdownShortcut({
@@ -161,20 +105,9 @@ export function DropdownShortcut({
 	...props
 }: { keys: string | string[]; className?: string } & Omit<Headless.DescriptionProps<'kbd'>, 'as' | 'className'>) {
 	return (
-		<Headless.Description
-			as='kbd'
-			{...props}
-			className={cn(className, 'col-start-5 row-start-1 flex justify-self-end')}
-		>
-			{(Array.isArray(keys) ? keys : keys.split('')).map((char, index) => (
-				<kbd
-					key={char}
-					className={cn([
-						'text-primary-600 min-w-[2ch] text-center font-sans capitalize group-data-focus:text-white forced-colors:group-data-focus:text-[HighlightText]',
-						// Make sure key names that are longer than one character (like "Tab") have extra space
-						index > 0 && char.length > 1 && 'pl-1',
-					])}
-				>
+		<Headless.Description as='kbd' {...props} className={cn('ml-auto flex text-xs text-dim', className)}>
+			{(Array.isArray(keys) ? keys : keys.split('')).map(char => (
+				<kbd key={char} className='min-w-[2ch] text-center font-sans capitalize'>
 					{char}
 				</kbd>
 			))}

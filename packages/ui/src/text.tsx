@@ -2,38 +2,22 @@ import { cn } from '@thom/libs/cn'
 import { Link } from './link'
 
 export function Text({ className, ...props }: React.ComponentPropsWithoutRef<'p'>) {
-	return (
-		<p
-			data-slot='text'
-			{...props}
-			className={cn(className, 'text-base/6 text-zinc-500 sm:text-sm/6')}
-			data-id='thom-ui'
-		/>
-	)
+	return <p data-slot='text' {...props} className={cn('text-sm text-dim', className)} data-id='thom-ui' />
 }
 
 export function TextLink({ className, ...props }: React.ComponentPropsWithoutRef<typeof Link>) {
-	return (
-		<Link
-			{...props}
-			className={cn(className, 'text-black underline decoration-black/50 data-hover:decoration-black')}
-			data-id='thom-ui'
-		/>
-	)
+	return <Link {...props} className={cn('text-foreground underline underline-offset-4', className)} data-id='thom-ui' />
 }
 
 export function Strong({ className, ...props }: React.ComponentPropsWithoutRef<'strong'>) {
-	return <strong {...props} className={cn(className, 'font-medium text-black')} data-id='thom-ui' />
+	return <strong {...props} className={cn('font-medium text-foreground', className)} data-id='thom-ui' />
 }
 
 export function Code({ className, ...props }: React.ComponentPropsWithoutRef<'code'>) {
 	return (
 		<code
 			{...props}
-			className={cn(
-				className,
-				'rounded-sm border border-black/10 bg-black/2.5 px-0.5 text-sm font-medium text-black sm:text-[0.8125rem]',
-			)}
+			className={cn('border border-border bg-accent px-1 py-0.5 text-xs font-medium text-foreground', className)}
 			data-id='thom-ui'
 		/>
 	)

@@ -1,0 +1,121 @@
+import { Link, useMatches, useParams } from '@tanstack/react-router'
+import { House } from 'lucide-react'
+import { useDoc } from '_/app/use-doc'
+import { useJournalEntry } from '_/app/use-journal-entry'
+import { useTicket } from '_/app/use-ticket'
+
+const sectionLabels: Record<string, string> = {
+	tickets: 'Tickets',
+	plans: 'Plans',
+	todos: 'Todos',
+	journal: 'Journal',
+	docs: 'Docs',
+}
+
+type Crumb = {
+	readonly key: string
+	readonly label: React.ReactNode
+	readonly title: string
+	readonly to?: string
+	readonly params?: Record<string, string>
+}
+
+const Separator = () => (
+	<span aria-hidden className='select-none'>
+		/
+	</span>
+)
+
+// A record's title only exists after its fetch resolves, so a leaf crumb falls
+// back to the slug already in the URL rather than collapsing the trail.
+const useLeafLabel = (project: string | undefined, params: LeafParams) => {
+	const ticket = useTicket(project ?? '', params.ticket ?? '')
+	const doc = useDoc(project ?? '', params.doc ?? '')
+	const entry = useJournalEntry(project ?? '', params.entry ?? '')
+
+	if (project === undefined) return undefined
+
+	if (params.ticket !== undefined) {
+		return ticket.status === 'ready' ? ticket.ticket.title : params.ticket
+	}
+	if (params.doc !== undefined) {
+		return doc.status === 'ready' ? doc.doc.title : params.doc
+	}
+	if (params.entry !== undefined) {
+		return entry.status === 'ready' ? entry.entry.title : params.entry
+	}
+
+	return undefined
+}
+
+type LeafParams = {
+	readonly ticket: string | undefined
+	readonly doc: string | undefined
+	readonly entry: string | undefined
+}
+
+export const Breadcrumbs = () => {
+	const matches = useMatches()
+	const params = useParams({ strict: false })
+	const slug = typeof params.slug === 'string' ? params.slug : undefined
+	const leaf: LeafParams = {
+		ticket: typeof params.ticket === 'string' ? params.ticket : undefined,
+		doc: typeof params.doc === 'string' ? params.doc : undefined,
+		entry: typeof params.entry === 'string' ? params.entry : undefined,
+	}
+	const leafLabel = useLeafLabel(slug, leaf)
+
+	const routeId = matches.at(-1)?.routeId ?? ''
+	const section = Object.keys(sectionLabels).find(name => routeId.includes(`/$slug/${name}`))
+
+	const crumbs: Crumb[] = [
+		{ key: 'root', label: <House size={14} aria-label='Projects' />, title: 'Projects', to: '/' },
+	]
+
+	if (slug !== undefined) {
+		crumbs.push({ key: 'project', label: slug, title: slug, to: '/$slug', params: { slug } })
+	}
+
+	if (section !== undefined && slug !== undefined) {
+		crumbs.push({
+			key: 'section',
+			label: sectionLabels[section] as string,
+			title: sectionLabels[section] as string,
+			to: `/$slug/${section}`,
+			params: { slug },
+		})
+	}
+
+	if (leafLabel !== undefined) {
+		crumbs.push({ key: 'leaf', label: leafLabel, title: leafLabel })
+	}
+
+	return (
+		<nav aria-label='Breadcrumb' className='text-dim flex min-w-0 items-center gap-2 text-xs tracking-widest uppercase'>
+			{crumbs.map((crumb, index) => {
+				const isLast = index === crumbs.length - 1
+
+				return (
+					<span key={crumb.key} className='flex min-w-0 items-center gap-2'>
+						{index > 0 && <Separator />}
+
+						{isLast || crumb.to === undefined ? (
+							<span className='text-foreground truncate' aria-current='page'>
+								{crumb.label}
+							</span>
+						) : (
+							<Link
+								to={crumb.to}
+								params={crumb.params}
+								title={crumb.title}
+								className='hover:text-foreground flex shrink-0 items-center transition-colors'
+							>
+								{crumb.label}
+							</Link>
+						)}
+					</span>
+				)
+			})}
+		</nav>
+	)
+}

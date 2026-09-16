@@ -1,0 +1,10 @@
+{
+	"name": "@thom/folio-core",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"test": "go test ./...",
+		"typecheck": "go build ./...",
+		"lint": "go vet ./..."
+	}
+}

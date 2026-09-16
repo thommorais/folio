@@ -6,25 +6,16 @@ import { useDisabled, useProvidedId, useProvidedLabel } from './fieldset.context
 const dateTypes = ['date', 'datetime-local', 'month', 'time', 'week']
 type DateType = (typeof dateTypes)[number]
 
-export const inputControlClasses = tv({
-	base: [
-		'relative block w-full',
-		'border-info-700/20 data-hover:border-info-700/30 rounded-sm border',
-		'has-data-disabled:opacity-50',
-		'has-data-invalid:before:shadow-red-500/10',
-		'*:data-[slot=icon]:text-zinc-500',
-		'border-info-700/20 data-hover:border-info-700/30 rounded-sm border',
-		'before:absolute before:inset-px before:rounded-[calc(var(--radius-sm)-1px)] before:bg-white before:shadow-sm',
-	],
-})
-
 const inputClasses = tv({
 	base: [
-		'relative block w-full appearance-none rounded-sm px-[calc(calc(var(--spacing)*3.5)-1px)] py-[calc(calc(var(--spacing)*2.5)-1px)]',
-		'text-info-700 placeholder:text-info-500 text-base/6 sm:text-base',
-		'focus:outline-hidden',
-		'data-invalid:border-red-500 data-invalid:data-hover:border-red-500',
-		'data-disabled:border-black/20',
+		'border-border flex h-9 w-full border bg-transparent px-3 py-1',
+		'text-foreground placeholder:text-muted-foreground text-sm',
+		'transition-colors',
+		'focus-visible:border-ring focus-visible:outline-none',
+		'disabled:cursor-not-allowed disabled:opacity-50',
+		'aria-invalid:border-destructive',
+		'file:border-0 file:bg-transparent file:text-sm file:font-medium',
+		'[&:-webkit-autofill]:!bg-transparent [&:-webkit-autofill]:!bg-none [&:-webkit-autofill]:!shadow-none',
 	],
 	variants: {
 		isDate: {
@@ -33,14 +24,6 @@ const inputClasses = tv({
 				'[&::-webkit-date-and-time-value]:min-h-[1.5em]',
 				'[&::-webkit-datetime-edit]:inline-flex',
 				'[&::-webkit-datetime-edit]:p-0',
-				'[&::-webkit-datetime-edit-year-field]:p-0',
-				'[&::-webkit-datetime-edit-month-field]:p-0',
-				'[&::-webkit-datetime-edit-day-field]:p-0',
-				'[&::-webkit-datetime-edit-hour-field]:p-0',
-				'[&::-webkit-datetime-edit-minute-field]:p-0',
-				'[&::-webkit-datetime-edit-second-field]:p-0',
-				'[&::-webkit-datetime-edit-millisecond-field]:p-0',
-				'[&::-webkit-datetime-edit-meridiem-field]:p-0',
 			],
 		},
 	},
@@ -59,25 +42,16 @@ export const Input = ({ className, ...props }: InputProps) => {
 	const id = providedId ?? props.id ?? internalId
 	const name = providedLabel ?? props.name ?? id
 
-	const inputProps = {
-		...props,
-		name,
-		id,
-		'aria-labelledby': providedLabel,
-		disabled,
-		autoFocus: props.autoFocus || undefined,
-		'data-disabled': disabled || undefined,
-		'data-invalid': props['aria-invalid'],
-	}
-
 	return (
-		<span data-slot='control' className={inputControlClasses({ class: className })}>
-			<input
-				{...inputProps}
-				className={inputClasses({
-					isDate: dateTypes.includes(props.type),
-				})}
-			/>
-		</span>
+		<input
+			{...props}
+			name={name}
+			id={id}
+			disabled={disabled}
+			data-slot='control'
+			data-disabled={disabled || undefined}
+			data-invalid={props['aria-invalid']}
+			className={inputClasses({ isDate: dateTypes.includes(props.type), class: className })}
+		/>
 	)
 }

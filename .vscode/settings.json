@@ -9,34 +9,27 @@
 	"editor.formatOnSave": true,
 	"editor.formatOnPaste": true,
 	"editor.codeActionsOnSave": {
+		"source.fixAll.oxc": "explicit",
 		"source.organizeImports.oxc": "always",
 		"source.addMissingImports.oxc": "explicit",
-		"source.fixAll.oxc": "explicit",
-		"source.organizeImports": "never"
+		"source.organizeImports": "always"
 	},
+	"editor.defaultFormatter": "oxc.oxc-vscode",
+	"oxc.fmt.configPath": ".oxfmtrc.json",
 	"editor.bracketPairColorization.enabled": true,
 	"editor.guides.bracketPairs": "active",
-	"editor.inlayHints.enabled": "onUnlessPressed",
+	"editor.inlayHints.enabled": "on",
 	// ========================================
-	// TYPESCRIPT CONFIGURATION
+	// TYPESCRIPT/JAVASCRIPT CONFIGURATION
 	// ========================================
-	"js/ts.tsdk.promptToUseWorkspaceVersion": true,
-	"js/ts.preferences.importModuleSpecifier": "non-relative",
 	"js/ts.suggest.autoImports": true,
 	"js/ts.suggest.includeAutomaticOptionalChainCompletions": true,
 	"js/ts.updateImportsOnFileMove.enabled": "always",
 	"js/ts.preferences.includePackageJsonAutoImports": "off",
-	"js/ts.preferences.preferTypeOnlyAutoImports": true,
-	"js/ts.preferences.importModuleSpecifierEnding": "minimal",
-	"js/ts.suggest.completeFunctionCalls": true,
-	"js/ts.inlayHints.parameterNames.enabled": "literals",
-	"js/ts.inlayHints.functionLikeReturnTypes.enabled": true,
-	"js/ts.inlayHints.variableTypes.enabled": true,
-	"js/ts.inlayHints.propertyDeclarationTypes.enabled": true,
-	"js/ts.inlayHints.parameterTypes.enabled": true,
-	"js/ts.inlayHints.enumMemberValues.enabled": true,
-	"js/ts.preferences.quoteStyle": "single",
-	"js/ts.preferences.jsxAttributeCompletionStyle": "auto",
+	"js/ts.tsdk.promptToUseWorkspaceVersion": true,
+	"js/ts.preferences.importModuleSpecifier": "non-relative",
+	"js/ts.tsdk.path": "./node_modules/typescript/lib",
+	// ========================================
 	// LANGUAGE FORMATTERS
 	// ========================================
 	"[markdown]": {
@@ -60,14 +53,6 @@
 	"[jsonc]": {
 		"editor.defaultFormatter": "vscode.json-language-features"
 	},
-	"[css]": {
-		"editor.defaultFormatter": "vscode.css-language-features"
-	},
-	// ========================================
-	// OXC CONFIGURATION
-	// ========================================
-	"oxc.fmt.configPath": ".oxfmtrc.json",
-	"oxc.lint.configPath": ".oxlintrc.json",
 	// ========================================
 	// CSS
 	// ========================================
@@ -76,27 +61,7 @@
 	// SPELL CHECKER
 	// ========================================
 	"cSpell.words": [
-		"animejs",
-		"oxfmt",
-		"oxlint",
-		"Cocogitto",
-		"Dexie",
-		"gsap",
-		"Highcharts",
-		"HREFS",
-		"inlinesvg",
-		"Leitner",
-		"Nuqs",
-		"opsi",
-		"pocketbase",
-		"português",
-		"primary",
-		"seagrass",
-		"sono",
-		"tailwindcss",
-		"turbopack",
-		"verno",
-		"yeap"
+		"VITE"
 	],
 	// ========================================
 	// FILE EXPLORER
@@ -104,7 +69,7 @@
 	"explorer.sortOrder": "filesFirst",
 	"explorer.fileNesting.enabled": true,
 	"explorer.fileNesting.patterns": {
-		"package.json": "package-lock.json, pnpm-workspace.yaml, pnpm-lock.yaml, .nvmrc, .node-version, cog.toml, .oxlintrc.json, nx.json, .oxfmtrc.json, .npmrc",
+		"package.json": "pnpm-lock.yaml, .nvmrc, .node-version, .oxlintrc.json, .oxfmtrc.json, .npmrc, cog.toml, nx.json, pnpm-workspace.yaml, CLAUDE*.md, .gitignore, README.md",
 		"tsconfig.json": "tsconfig*.json",
 		"*.ts": "${capture}.test.ts, ${capture}.spec.ts, ${capture}.int.spec.ts",
 		"*.tsx": "${capture}.test.tsx, ${capture}.spec.tsx, ${capture}.module.css, ${capture}.stories.tsx",
@@ -136,7 +101,7 @@
 		"**/dist": true,
 		"**/.cache": true,
 		"pnpm-lock.yaml": true,
-		"package-lock.json": false,
+		"package-lock.json": true,
 		"**/*.tsbuildinfo": true,
 		"**/payload-types.ts": true
 	},
@@ -146,8 +111,7 @@
 	},
 	"files.exclude": {
 		"**/.DS_Store": true,
-		"**/.next": false,
-		"**/node_modules": true
+		"**/.next": false
 	},
 	"files.trimTrailingWhitespace": true,
 	"files.insertFinalNewline": true,
@@ -159,5 +123,16 @@
 	"git.untrackedChanges": "separate",
 	"git.enableSmartCommit": false,
 	"git.confirmSync": false,
-	"git.autofetch": true
+	"git.autofetch": true,
+	"tailwindCSS.classFunctions": [
+		"tw",
+		"clsx",
+		"tw\\.[a-z-]+",
+		"cn",
+		"tv",
+		"tv\\.[a-z-]+"
+	],
+	"editor.quickSuggestions": {
+		"strings": "on"
+	}
 }

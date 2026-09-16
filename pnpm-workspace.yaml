@@ -2,20 +2,25 @@ packages:
   - 'apps/*'
   - 'packages/*'
 catalog:
-  'react': '^19'
-  'react-dom': '^19'
+  '@types/node': '^26.4.1'
   '@types/react': '^19'
   '@types/react-dom': '^19'
   '@vitejs/plugin-react': '^6.0.1'
+  'react': '^19'
+  'react-dom': '^19'
   'tailwind-variants': '^3.2.2'
   'tailwindcss': '^4.2.1'
+  'typescript': '7.0.2'
   'vite': '^8.0.10'
+  'vitest': '^5.0.0'
   'zustand': '^5.0.11'
-overrides:
-  '@types/react': '19.2.6'
-  '@types/react-dom': '19.2.3'
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - 'core-js-pure'
-  - 'esbuild'
-  - 'sharp'
+allowBuilds:
+  '@parcel/watcher': true
+  core-js-pure: true
+  esbuild: true
+  nx: true
+  sharp: true
+minimumReleaseAgeExclude:
+  - '@vitest/mocker@5.0.0'
+  - '@vitest/spy@5.0.0'
+  - vitest@5.0.0

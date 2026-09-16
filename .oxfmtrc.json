@@ -11,9 +11,15 @@
 	"arrowParens": "avoid",
 	"bracketSameLine": false,
 	"bracketSpacing": true,
-	"ignorePatterns": ["**/pocketbase-types.ts"],
+	"ignorePatterns": [
+		"**/pocketbase-types.ts"
+	],
 	"sortTailwindcss": {
-		"functions": ["clsx", "cva", "tv"],
+		"functions": [
+			"clsx",
+			"cva",
+			"tv"
+		],
 		"preserveWhitespace": true
 	}
 }
