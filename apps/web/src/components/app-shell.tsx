@@ -1,3 +1,4 @@
+import { PreviewSheet } from './preview-sheet'
 import { OpenSearchButton } from './search/open-search-button'
 import { SearchModal } from './search/search-modal'
 import { UserMenu } from './user-menu'
@@ -18,5 +19,6 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => (
 		<main className='min-w-0 flex-1 px-4 py-8 md:px-6'>{children}</main>
 
 		<SearchModal />
+		<PreviewSheet />
 	</div>
 )

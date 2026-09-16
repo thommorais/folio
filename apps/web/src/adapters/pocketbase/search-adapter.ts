@@ -14,6 +14,7 @@ const SNIPPET_LENGTH = 200
 type SearchableRecord = {
 	id: string
 	project: string
+	slug?: string
 	title: string
 	body?: string
 	details?: string
@@ -53,6 +54,7 @@ const toHit = (kind: SearchKind, textField: keyof SearchColumns, record: Searcha
 	id: record.id,
 	projectId: toProjectId(record.project),
 	projectSlug: record.expand?.project?.slug ?? '',
+	slug: record.slug ?? '',
 	title: record.title,
 	snippet: snippet(String(record[textField as keyof SearchableRecord] ?? '')),
 	tags: record.tags ?? [],
