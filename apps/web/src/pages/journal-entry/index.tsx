@@ -1,4 +1,5 @@
-import { Link, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { useSlugSync } from '_/routing/use-slug-sync'
 import { RecordGone } from '_/components/record/record-gone'
 import { Badge } from '@thom/ui/badge'
 import { Heading } from '@thom/ui/heading'
@@ -58,6 +59,14 @@ const EntryBody = ({ project, entry }: { readonly project: string; readonly entr
 const JournalEntryDetail = () => {
 	const { slug, entry } = useParams({ from: '/_authenticated/$slug/journal/$entry' })
 	const state = useJournalEntry(slug, entry)
+
+	const navigate = useNavigate()
+
+	useSlugSync({
+		current: entry,
+		record: state.status === 'ready' ? state.entry : undefined,
+		rename: renamed => void navigate({ to: '/$slug/journal/$entry', params: { slug, entry: renamed }, replace: true }),
+	})
 
 	if (state.status === 'idle' || state.status === 'loading') {
 		return <div className='bg-accent/40 h-32 animate-pulse' />

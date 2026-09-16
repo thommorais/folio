@@ -1,4 +1,5 @@
-import { Link, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { useSlugSync } from '_/routing/use-slug-sync'
 import { RecordGone } from '_/components/record/record-gone'
 import { cn } from '@thom/libs/cn'
 import { Badge } from '@thom/ui/badge'
@@ -39,6 +40,15 @@ const Empty = ({ what }: { readonly what: string }) => <p className='text-dim te
 const TicketDetail = () => {
 	const { slug, ticket: ticketSlug } = useParams({ from: '/_authenticated/$slug/tickets/$ticket' })
 	const state = useTicket(slug, ticketSlug)
+
+	const navigate = useNavigate()
+
+	useSlugSync({
+		current: ticketSlug,
+		record: state.status === 'ready' ? state.ticket : undefined,
+		rename: renamed =>
+			void navigate({ to: '/$slug/tickets/$ticket', params: { slug, ticket: renamed }, replace: true }),
+	})
 
 	if (state.status === 'idle' || state.status === 'loading') {
 		return <div className='bg-accent/40 h-32 animate-pulse' />
