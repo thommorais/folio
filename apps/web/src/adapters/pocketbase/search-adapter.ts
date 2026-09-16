@@ -3,61 +3,41 @@ import type { SearchHit, SearchKind, SearchPort, SearchQuery } from '_/core/port
 import { SEARCH_KINDS } from '_/core/ports/search'
 import { err, ok, type Result } from '_/lib/result'
 import { tryCatch } from '_/lib/try-catch'
-import { Collections, type JournProjectsResponse } from '_/pocketbase-types'
+import { ENVS } from '_/envs'
 import { getPocketBaseClient } from './client'
-import { filterFor } from './filter-builder'
 
 const DEFAULT_LIMIT = 20
 
-const SNIPPET_LENGTH = 200
-
-type SearchableRecord = {
-	id: string
-	project: string
-	title: string
-	body?: string
-	details?: string
-	goal?: string
-	tags?: string[]
-	created: string
-	expand?: { project?: JournProjectsResponse }
+// The API's shape, which the client mirrors rather than reinterprets. Ranking
+// and the snippet are computed server-side against the FTS5 index, so a hit
+// arrives ready to render and must not be re-sorted here.
+type SearchHitResponse = {
+	readonly kind: string
+	readonly id: string
+	readonly project_id: string
+	readonly project_slug: string
+	readonly title: string
+	readonly snippet?: string
+	readonly tags: readonly string[] | null
+	readonly created_at: string
 }
 
-type SearchColumns = {
-	title: string
-	body: string
-	details: string
-	goal: string
+const isKind = (value: string): value is SearchKind => (SEARCH_KINDS as readonly string[]).includes(value)
+
+const toHit = (raw: SearchHitResponse): SearchHit | undefined => {
+	if (!isKind(raw.kind)) return undefined
+
+	return {
+		kind: raw.kind,
+		id: raw.id,
+		projectId: toProjectId(raw.project_id),
+		projectSlug: raw.project_slug,
+		title: raw.title,
+		snippet: raw.snippet ?? '',
+		tags: raw.tags ?? [],
+		createdAt: new Date(raw.created_at),
+	}
 }
-
-const sources: Record<SearchKind, { collection: string; text: keyof SearchColumns }> = {
-	log: { collection: Collections.JournJournal, text: 'body' },
-	doc: { collection: Collections.JournDocs, text: 'body' },
-	todo: { collection: Collections.JournTodos, text: 'details' },
-	plan: { collection: Collections.JournPlans, text: 'goal' },
-}
-
-// Mirrors rules.Snippet in the Go core: collapse whitespace, cut on a word
-// boundary when one is near the limit.
-const snippet = (text: string): string => {
-	const clean = text.replace(/\s+/gu, ' ').trim()
-	if (clean.length <= SNIPPET_LENGTH) return clean
-
-	const cut = clean.slice(0, SNIPPET_LENGTH)
-	const boundary = cut.lastIndexOf(' ')
-	return `${(boundary > SNIPPET_LENGTH / 2 ? cut.slice(0, boundary) : cut).replace(/[,.;:\s]+$/u, '')}…`
-}
-
-const toHit = (kind: SearchKind, textField: keyof SearchColumns, record: SearchableRecord): SearchHit => ({
-	kind,
-	id: record.id,
-	projectId: toProjectId(record.project),
-	projectSlug: record.expand?.project?.slug ?? '',
-	title: record.title,
-	snippet: snippet(String(record[textField as keyof SearchableRecord] ?? '')),
-	tags: record.tags ?? [],
-	createdAt: new Date(record.created),
-})
 
 export const createSearchAdapter = (): SearchPort => {
 	const client = getPocketBaseClient()
@@ -67,37 +47,30 @@ export const createSearchAdapter = (): SearchPort => {
 			const term = text.trim()
 			if (term === '') return ok([])
 
-			const wanted = kinds?.length ? kinds : SEARCH_KINDS
+			const params = new URLSearchParams({ q: term, limit: String(limit) })
+			if (kinds?.length) params.set('kind', kinds.join(','))
+
+			// Global rather than per-project: the palette has no project in
+			// scope, and the endpoint already limits results to the caller's
+			// memberships.
+			const url = `${ENVS.PUBLIC_API_URL}/api/folio/search?${params.toString()}`
 
 			const { data, error } = await tryCatch(
-				Promise.all(
-					wanted.map(async kind => {
-						const { collection, text: textField } = sources[kind]
-						const { expr, params } = filterFor<SearchColumns>()([
-							{ field: 'title', comparator: 'contains', value: term },
-							{ field: textField, comparator: 'contains', value: term },
-						])
-
-						// Both clauses target the same term, so OR them rather than AND.
-						const { items } = await client.collection(collection).getList<SearchableRecord>(1, limit, {
-							filter: client.filter(expr.replace(' && ', ' || '), params),
-							expand: 'project',
-							sort: '-created',
-						})
-
-						return items.map(record => toHit(kind, textField, record))
-					}),
-				),
+				fetch(url, { headers: { Authorization: client.authStore.token } }).then(async response => {
+					if (!response.ok) {
+						throw new Error(`${response.status} ${response.statusText}`)
+					}
+					return response.json() as Promise<{ hits?: readonly SearchHitResponse[] }>
+				}),
 			)
 
-			return error
-				? err(new Error(`Search failed: ${error.message}`, { cause: error }))
-				: ok(
-						data
-							.flat()
-							.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-							.slice(0, limit),
-					)
+			if (error) {
+				return err(new Error(`Search failed: ${error.message}`, { cause: error }))
+			}
+
+			// A kind the client does not know yet is skipped rather than
+			// rendered as a broken row, so the API can add one first.
+			return ok((data.hits ?? []).map(toHit).filter((hit): hit is SearchHit => hit !== undefined))
 		},
 	}
 }
