@@ -1,13 +1,12 @@
 import type { Unsubscribe } from '_/core/ports/subscription'
 import type { Result } from '_/lib/result'
 import { useEffect, useEffectEvent, useState } from 'react'
+import { useSubscription } from './realtime/use-subscription'
 import { useContainer } from './container'
 import { collectCounts, type CountsState } from './counts'
 
-const noop = () => {}
-
 export const useCounts = (project: string): CountsState => {
-	const { docs, journal, plans, tickets, todos } = useContainer()
+	const { docs, journal, plans, tickets, todos, connection } = useContainer()
 	const [state, setState] = useState<CountsState>({ status: 'loading' })
 
 	const load = useEffectEvent(async () => {
@@ -30,37 +29,32 @@ export const useCounts = (project: string): CountsState => {
 	// The tiles sit beside lists that update themselves, so a count that only
 	// loaded once would drift out of step with the rows right next to it. The
 	// event carries one record, not a total, so recount instead of adjusting.
-	useEffect(() => {
-		const closers: Unsubscribe[] = []
-		let cancelled = false
+	const recount = useEffectEvent(() => {
+		void load()
+	})
 
-		const recount = () => {
-			if (!cancelled) void load()
+	const open = useEffectEvent(async (): Promise<Result<Unsubscribe>> => {
+		const opened = await Promise.all([
+			tickets.subscribeToList(project, recount),
+			plans.subscribeToList(project, recount),
+			todos.subscribeToList(project, recount),
+			journal.subscribeToList(project, recount),
+			docs.subscribeToList(project, recount),
+		])
+
+		const closers = opened.filter(result => result.success).map(result => result.value)
+
+		return {
+			success: true,
+			value: async () => {
+				await Promise.all(closers.map(close => close()))
+			},
 		}
+	})
 
-		const subscribe = async (open: Promise<Result<Unsubscribe>>) => {
-			const result = await open
-			if (!result.success) return
-			if (cancelled) {
-				void result.value().catch(noop)
-				return
-			}
-			closers.push(result.value)
-		}
+	useSubscription(open, [project, tickets, plans, todos, journal, docs])
 
-		void subscribe(tickets.subscribeToList(project, recount))
-		void subscribe(plans.subscribeToList(project, recount))
-		void subscribe(todos.subscribeToList(project, recount))
-		void subscribe(journal.subscribeToList(project, recount))
-		void subscribe(docs.subscribeToList(project, recount))
-
-		return () => {
-			cancelled = true
-			for (const close of closers) {
-				void close().catch(noop)
-			}
-		}
-	}, [project, tickets, plans, todos, journal, docs])
+	useEffect(() => connection.onReconnect(() => void load()), [connection])
 
 	return state
 }
