@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo } from 'react'
 import { createThemeAdapter } from '_/adapters/browser/theme-adapter'
 import { createAuthAdapter } from '_/adapters/pocketbase/auth-adapter'
+import { createConnectionAdapter } from '_/adapters/pocketbase/connection-adapter'
 import { createCyclesAdapter } from '_/adapters/pocketbase/cycles-adapter'
 import { createDocsAdapter } from '_/adapters/pocketbase/docs-adapter'
 import { createJournalAdapter } from '_/adapters/pocketbase/journal-adapter'
@@ -11,6 +12,7 @@ import { createTicketsAdapter } from '_/adapters/pocketbase/tickets-adapter'
 import { createTodosAdapter } from '_/adapters/pocketbase/todos-adapter'
 import { createWorkLogsAdapter } from '_/adapters/pocketbase/worklogs-adapter'
 import type { AuthPort } from '_/core/ports/auth'
+import type { ConnectionPort } from '_/core/ports/connection'
 import type { CyclesPort } from '_/core/ports/cycles'
 import type { DocsPort } from '_/core/ports/docs'
 import type { JournalPort } from '_/core/ports/journal'
@@ -24,6 +26,7 @@ import type { WorkLogsPort } from '_/core/ports/worklogs'
 
 export type Container = {
 	readonly auth: AuthPort
+	readonly connection: ConnectionPort
 	readonly cycles: CyclesPort
 	readonly docs: DocsPort
 	readonly journal: JournalPort
@@ -38,6 +41,7 @@ export type Container = {
 
 export const createContainer = (): Container => ({
 	auth: createAuthAdapter(),
+	connection: createConnectionAdapter(),
 	cycles: createCyclesAdapter(),
 	docs: createDocsAdapter(),
 	journal: createJournalAdapter(),
