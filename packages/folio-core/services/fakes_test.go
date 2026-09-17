@@ -201,10 +201,10 @@ func (r *fakePlans) List(_ context.Context, project domain.ProjectID, statuses [
 	return out, nil
 }
 
-func (r *fakePlans) ListByTicket(_ context.Context, ticket domain.TicketID) ([]domain.Plan, error) {
+func (r *fakePlans) ListByIssue(_ context.Context, issue domain.IssueID) ([]domain.Plan, error) {
 	out := []domain.Plan{}
 	for _, p := range r.items {
-		if p.TicketID == ticket {
+		if p.IssueID == issue {
 			out = append(out, p)
 		}
 	}
@@ -244,101 +244,6 @@ func (r *fakePlans) Delete(_ context.Context, id domain.PlanID) error {
 	return nil
 }
 
-type fakeTodos struct {
-	items  map[domain.TodoID]domain.Todo
-	failOn string
-}
-
-func newFakeTodos() *fakeTodos { return &fakeTodos{items: map[domain.TodoID]domain.Todo{}} }
-
-func (r *fakeTodos) List(_ context.Context, project domain.ProjectID, f domain.TodoFilter) ([]domain.Todo, error) {
-	if r.failOn == "List" {
-		return nil, fmt.Errorf("storage exploded")
-	}
-	allow := map[domain.TodoStatus]bool{}
-	for _, s := range f.Status {
-		allow[s] = true
-	}
-	out := []domain.Todo{}
-	for _, t := range r.items {
-		if t.ProjectID != project {
-			continue
-		}
-		if f.PlanID != "" && t.PlanID != f.PlanID {
-			continue
-		}
-		if f.TicketID != "" && t.TicketID != f.TicketID {
-			continue
-		}
-		if len(allow) > 0 && !allow[t.Status] {
-			continue
-		}
-		if f.Priority != "" && t.Priority != f.Priority {
-			continue
-		}
-		if f.Search != "" && !strings.Contains(strings.ToLower(t.Title), strings.ToLower(f.Search)) {
-			continue
-		}
-		out = append(out, t)
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
-	return out, nil
-}
-
-func (r *fakeTodos) ListByPlan(_ context.Context, plan domain.PlanID) ([]domain.Todo, error) {
-	out := []domain.Todo{}
-	for _, t := range r.items {
-		if t.PlanID == plan {
-			out = append(out, t)
-		}
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
-	return out, nil
-}
-
-func (r *fakeTodos) ListByTicket(_ context.Context, ticket domain.TicketID) ([]domain.Todo, error) {
-	out := []domain.Todo{}
-	for _, t := range r.items {
-		if t.TicketID == ticket {
-			out = append(out, t)
-		}
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
-	return out, nil
-}
-
-func (r *fakeTodos) GetByID(_ context.Context, id domain.TodoID) (domain.Todo, error) {
-	t, ok := r.items[id]
-	if !ok {
-		return domain.Todo{}, domain.ErrNotFound
-	}
-	return t, nil
-}
-
-func (r *fakeTodos) Create(_ context.Context, t domain.Todo) (domain.Todo, error) {
-	if r.failOn == "Create" {
-		return domain.Todo{}, fmt.Errorf("storage exploded")
-	}
-	r.items[t.ID] = t
-	return t, nil
-}
-
-func (r *fakeTodos) Update(_ context.Context, t domain.Todo) (domain.Todo, error) {
-	if _, ok := r.items[t.ID]; !ok {
-		return domain.Todo{}, domain.ErrNotFound
-	}
-	r.items[t.ID] = t
-	return t, nil
-}
-
-func (r *fakeTodos) Delete(_ context.Context, id domain.TodoID) error {
-	if _, ok := r.items[id]; !ok {
-		return domain.ErrNotFound
-	}
-	delete(r.items, id)
-	return nil
-}
-
 type fakeJournal struct {
 	items  []domain.JournalEntry
 	failOn string
@@ -362,7 +267,7 @@ func (r *fakeJournal) List(_ context.Context, project domain.ProjectID, f domain
 		if f.PlanID != "" && e.PlanID != f.PlanID {
 			continue
 		}
-		if f.TodoID != "" && e.TodoID != f.TodoID {
+		if f.IssueID != "" && e.IssueID != f.IssueID {
 			continue
 		}
 		if f.Branch != "" && e.Branch != f.Branch {
@@ -371,7 +276,7 @@ func (r *fakeJournal) List(_ context.Context, project domain.ProjectID, f domain
 		if f.ExternalRef != "" && e.ExternalRef != f.ExternalRef {
 			continue
 		}
-		if f.TicketID != "" && e.TicketID != f.TicketID {
+		if f.IssueID != "" && e.IssueID != f.IssueID {
 			continue
 		}
 		if f.Search != "" {
@@ -440,7 +345,7 @@ func newFakeDocs() *fakeDocs { return &fakeDocs{items: map[domain.DocID]domain.D
 func (r *fakeDocs) List(_ context.Context, project domain.ProjectID, f domain.DocFilter) ([]domain.Doc, error) {
 	out := []domain.Doc{}
 	for _, d := range r.items {
-		if f.TicketID != "" && d.TicketID != f.TicketID {
+		if f.IssueID != "" && d.IssueID != f.IssueID {
 			continue
 		}
 		if d.ProjectID != project {
@@ -507,96 +412,6 @@ func (r *fakeSearch) Search(_ context.Context, project domain.ProjectID, q domai
 	return out, nil
 }
 
-type fakeTickets struct {
-	items map[domain.TicketID]domain.Ticket
-}
-
-func newFakeTickets() *fakeTickets {
-	return &fakeTickets{items: map[domain.TicketID]domain.Ticket{}}
-}
-
-func (r *fakeTickets) List(_ context.Context, project domain.ProjectID, f domain.TicketFilter) ([]domain.Ticket, error) {
-	out := []domain.Ticket{}
-	for _, t := range r.items {
-		if t.ProjectID != project {
-			continue
-		}
-		if len(f.Status) > 0 {
-			match := false
-			for _, want := range f.Status {
-				if t.Status == want {
-					match = true
-					break
-				}
-			}
-			if !match {
-				continue
-			}
-		}
-		if f.Priority != "" && t.Priority != f.Priority {
-			continue
-		}
-		if f.Assignee != "" && t.Assignee != f.Assignee {
-			continue
-		}
-		if f.Search != "" && !strings.Contains(strings.ToLower(t.Title+" "+t.Body), strings.ToLower(f.Search)) {
-			continue
-		}
-		out = append(out, t)
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
-	return out, nil
-}
-
-func (r *fakeTickets) ListByParent(_ context.Context, parent domain.TicketID) ([]domain.Ticket, error) {
-	out := []domain.Ticket{}
-	for _, t := range r.items {
-		if t.ParentID == parent {
-			out = append(out, t)
-		}
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
-	return out, nil
-}
-
-func (r *fakeTickets) GetByID(_ context.Context, id domain.TicketID) (domain.Ticket, error) {
-	t, ok := r.items[id]
-	if !ok {
-		return domain.Ticket{}, domain.ErrNotFound
-	}
-	return t, nil
-}
-
-func (r *fakeTickets) GetBySlug(_ context.Context, project domain.ProjectID, slug string) (domain.Ticket, error) {
-	for _, t := range r.items {
-		if t.ProjectID == project && t.Slug == slug {
-			return t, nil
-		}
-	}
-	return domain.Ticket{}, domain.ErrNotFound
-}
-
-func (r *fakeTickets) Create(_ context.Context, t domain.Ticket) (domain.Ticket, error) {
-	r.items[t.ID] = t
-	return t, nil
-}
-
-func (r *fakeTickets) Update(_ context.Context, t domain.Ticket) (domain.Ticket, error) {
-	if _, ok := r.items[t.ID]; !ok {
-		return domain.Ticket{}, domain.ErrNotFound
-	}
-	r.items[t.ID] = t
-	return t, nil
-}
-
-func (r *fakeTickets) Delete(_ context.Context, id domain.TicketID) error {
-	if _, ok := r.items[id]; !ok {
-		return domain.ErrNotFound
-	}
-	delete(r.items, id)
-	return nil
-}
-
 type fakeCycles struct {
 	items map[domain.CycleID]domain.Cycle
 }
@@ -605,10 +420,10 @@ func newFakeCycles() *fakeCycles {
 	return &fakeCycles{items: map[domain.CycleID]domain.Cycle{}}
 }
 
-func (r *fakeCycles) ListByTicket(_ context.Context, ticket domain.TicketID) ([]domain.Cycle, error) {
+func (r *fakeCycles) ListByIssue(_ context.Context, issue domain.IssueID) ([]domain.Cycle, error) {
 	out := []domain.Cycle{}
 	for _, c := range r.items {
-		if c.TicketID == ticket {
+		if c.IssueID == issue {
 			out = append(out, c)
 		}
 	}
@@ -659,7 +474,7 @@ func (r *fakeTicketLogs) List(_ context.Context, project domain.ProjectID, f dom
 		if l.ProjectID != project {
 			continue
 		}
-		if f.TicketID != "" && l.TicketID != f.TicketID {
+		if f.IssueID != "" && l.IssueID != f.IssueID {
 			continue
 		}
 		if f.CycleID != "" && l.CycleID != f.CycleID {
@@ -766,7 +581,7 @@ func (r *fakeTodoLogs) List(_ context.Context, project domain.ProjectID, f domai
 		if l.ProjectID != project {
 			continue
 		}
-		if f.TodoID != "" && l.TodoID != f.TodoID {
+		if f.IssueID != "" && l.IssueID != f.IssueID {
 			continue
 		}
 		out = append(out, l)
@@ -808,10 +623,9 @@ func (r *fakeTodoLogs) Delete(_ context.Context, id domain.TodoLogID) error {
 var (
 	_ ports.ProjectRepository   = (*fakeProjects)(nil)
 	_ ports.PlanRepository      = (*fakePlans)(nil)
-	_ ports.TodoRepository      = (*fakeTodos)(nil)
 	_ ports.JournalRepository   = (*fakeJournal)(nil)
 	_ ports.DocRepository       = (*fakeDocs)(nil)
-	_ ports.TicketRepository    = (*fakeTickets)(nil)
+	_ ports.IssueRepository     = (*fakeIssues)(nil)
 	_ ports.CycleRepository     = (*fakeCycles)(nil)
 	_ ports.TicketLogRepository = (*fakeTicketLogs)(nil)
 	_ ports.PlanLogRepository   = (*fakePlanLogs)(nil)

@@ -9,12 +9,12 @@ import (
 type seedSpec struct {
 	project ports.CreateProjectInput
 	plans   []ports.CreatePlanInput
-	tickets []ports.CreateTicketInput
+	tickets []ports.CreateIssueInput
 	journal []ports.WriteJournalInput
 	docs    []ports.CreateDocInput
 	// done advances the first todos of plan i to the given statuses, so the
 	// demo shows plans in progress rather than every one at 0%.
-	done [][]domain.TodoStatus
+	done [][]domain.IssueStatus
 }
 
 // seedProjects is the demo dataset: two projects mid-flight, written the way
@@ -28,11 +28,11 @@ func seedProjects() []seedSpec {
 				Name:  "folio",
 				Descr: "Shared workspace an agent writes to: plans, todos, work logs and docs.",
 			},
-			tickets: []ports.CreateTicketInput{
+			tickets: []ports.CreateIssueInput{
 				{
 					Slug:        "search-ranking-ignores-recency",
 					Title:       "Search ranking ignores recency",
-					Status:      domain.TicketInProgress,
+					Status:      domain.IssueInProgress,
 					Priority:    domain.PriorityHigh,
 					Tags:        []string{"search", "bug"},
 					ExternalRef: "FOLIO-31",
@@ -47,7 +47,7 @@ matches three times. Needs a score that combines match count with age.`,
 					Goal:   "One query across logs, docs, todos and plans, scoped to a project.",
 					Status: domain.PlanActive,
 					Tags:   []string{"search"},
-					Todos: []ports.CreateTodoInput{
+					Todos: []ports.CreateIssueInput{
 						{Title: "Decide on the index strategy", Priority: domain.PriorityHigh, Tags: []string{"search"}},
 						{Title: "Write the search repository", Priority: domain.PriorityHigh, Tags: []string{"search"}},
 						{Title: "Expose the search endpoint", Priority: domain.PriorityMedium},
@@ -60,15 +60,15 @@ matches three times. Needs a score that combines match count with age.`,
 					Goal:   "Expose the same use cases as MCP tools so Claude can read and write the workspace directly.",
 					Status: domain.PlanDraft,
 					Tags:   []string{"mcp", "adapters"},
-					Todos: []ports.CreateTodoInput{
+					Todos: []ports.CreateIssueInput{
 						{Title: "Map use cases to MCP tool definitions", Priority: domain.PriorityHigh, Tags: []string{"mcp"}},
 						{Title: "Decide auth: static token or OAuth", Priority: domain.PriorityHigh, Tags: []string{"mcp", "auth"}},
 						{Title: "Write the streamable HTTP transport", Priority: domain.PriorityMedium},
 					},
 				},
 			},
-			done: [][]domain.TodoStatus{
-				{domain.TodoDone, domain.TodoDone, domain.TodoInProgress},
+			done: [][]domain.IssueStatus{
+				{domain.IssueDone, domain.IssueDone, domain.IssueInProgress},
 			},
 			journal: []ports.WriteJournalInput{
 				{
@@ -217,11 +217,11 @@ collection rules enforce the same tenancy for anything hitting
 				Name:  "Welligence Web",
 				Descr: "Upstream asset valuation platform. Rails shell plus a TanStack Router SPA.",
 			},
-			tickets: []ports.CreateTicketInput{
+			tickets: []ports.CreateIssueInput{
 				{
 					Slug:        "consent-banner-blocks-first-pageview",
 					Title:       "Consent banner blocks the first pageview",
-					Status:      domain.TicketOpen,
+					Status:      domain.IssueOpen,
 					Priority:    domain.PriorityMedium,
 					Tags:        []string{"analytics"},
 					ExternalRef: "XWWP-4501",
@@ -237,7 +237,7 @@ starts.`,
 					Goal:   "Both views usable at tablet width without horizontal scroll.",
 					Status: domain.PlanActive,
 					Tags:   []string{"ux", "responsive"},
-					Todos: []ports.CreateTodoInput{
+					Todos: []ports.CreateIssueInput{
 						{Title: "Audit both views at 820x1180", Priority: domain.PriorityHigh, Tags: []string{"ux"}},
 						{Title: "Fix filter bar overflow with no scroll affordance", Priority: domain.PriorityHigh, Tags: []string{"ux"}},
 						{Title: "Stop KPI cards truncating values on tablet", Priority: domain.PriorityMedium},
@@ -246,8 +246,8 @@ starts.`,
 					},
 				},
 			},
-			done: [][]domain.TodoStatus{
-				{domain.TodoDone, domain.TodoInProgress},
+			done: [][]domain.IssueStatus{
+				{domain.IssueDone, domain.IssueInProgress},
 			},
 			journal: []ports.WriteJournalInput{
 				{

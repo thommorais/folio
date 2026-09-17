@@ -89,37 +89,8 @@ func ValidatePlan(p domain.Plan) error {
 	return nil
 }
 
-var todoStatuses = map[domain.TodoStatus]bool{
-	domain.TodoPending: true, domain.TodoInProgress: true, domain.TodoDone: true,
-	domain.TodoBlocked: true, domain.TodoCancelled: true,
-}
-
 var priorities = map[domain.Priority]bool{
 	domain.PriorityLow: true, domain.PriorityMedium: true, domain.PriorityHigh: true,
-}
-
-func ValidateTodo(t domain.Todo) error {
-	if t.ProjectID == "" {
-		return domain.Invalid("project", "is required")
-	}
-	if err := required("title", t.Title, TitleMaxLen); err != nil {
-		return err
-	}
-	if err := optional("details", t.Details, DescrMaxLen); err != nil {
-		return err
-	}
-	if !todoStatuses[t.Status] {
-		return domain.Invalid("status", "must be one of pending, in_progress, done, blocked, cancelled")
-	}
-	if !priorities[t.Priority] {
-		return domain.Invalid("priority", "must be one of low, medium, high")
-	}
-	for _, dep := range t.DependsOn {
-		if dep == t.ID && dep != "" {
-			return domain.Invalid("depends_on", "a todo cannot depend on itself")
-		}
-	}
-	return nil
 }
 
 // ValidateJournalEntry checks a work log. The body is optional: an entry may be
@@ -149,56 +120,6 @@ func ValidateJournalEntry(e domain.JournalEntry) error {
 var wayfinderTypes = map[domain.WayfinderType]bool{
 	domain.WayfinderMap: true, domain.WayfinderResearch: true, domain.WayfinderPrototype: true,
 	domain.WayfinderGrilling: true, domain.WayfinderTask: true,
-}
-
-var ticketStatuses = map[domain.TicketStatus]bool{
-	domain.TicketOpen: true, domain.TicketInProgress: true, domain.TicketBlocked: true,
-	domain.TicketClosed: true, domain.TicketCancelled: true,
-}
-
-// ValidateTicket checks a ticket. The body is optional: a ticket may be filed
-// as a title and filled in once someone looks at it.
-func ValidateTicket(t domain.Ticket) error {
-	if t.ProjectID == "" {
-		return domain.Invalid("project", "is required")
-	}
-	if err := ValidateSlug("slug", t.Slug); err != nil {
-		return err
-	}
-	if err := required("title", t.Title, TitleMaxLen); err != nil {
-		return err
-	}
-	if err := optional("body", t.Body, BodyMaxLen); err != nil {
-		return err
-	}
-	if !ticketStatuses[t.Status] {
-		return domain.Invalid("status", "must be one of open, in_progress, blocked, closed, cancelled")
-	}
-	if !priorities[t.Priority] {
-		return domain.Invalid("priority", "must be one of low, medium, high")
-	}
-	if t.ParentID == t.ID && t.ParentID != "" {
-		return domain.Invalid("parent", "a ticket cannot be its own parent")
-	}
-	for _, dep := range t.DependsOn {
-		if dep == t.ID && dep != "" {
-			return domain.Invalid("depends_on", "a ticket cannot depend on itself")
-		}
-	}
-	if t.Wayfinder != "" && !wayfinderTypes[t.Wayfinder] {
-		return domain.Invalid("wayfinder", "must be one of map, research, prototype, grilling, task")
-	}
-	return optional("external_ref", t.ExternalRef, RefMaxLen)
-}
-
-// TicketBelongsTo rejects attaching a child to a ticket in another project.
-// Without it a caller could smuggle a todo across a tenancy boundary by
-// naming a ticket the guard never checked.
-func TicketBelongsTo(t domain.Ticket, project domain.ProjectID) error {
-	if t.ProjectID != project {
-		return domain.Invalid("ticket", "belongs to a different project")
-	}
-	return nil
 }
 
 func ValidateDoc(d domain.Doc) error {

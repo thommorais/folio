@@ -24,7 +24,7 @@ func toCycle(rec *core.Record) domain.Cycle {
 	return domain.Cycle{
 		ID:         domain.CycleID(rec.Id),
 		ProjectID:  domain.ProjectID(rec.GetString("project")),
-		TicketID:   domain.TicketID(rec.GetString("ticket")),
+		IssueID:   domain.IssueID(rec.GetString("issue")),
 		Ordinal:    rec.GetInt("ordinal"),
 		Phase:      domain.Phase(rec.GetString("phase")),
 		Resolution: rec.GetString("resolution"),
@@ -37,7 +37,7 @@ func toCycle(rec *core.Record) domain.Cycle {
 
 func applyCycle(rec *core.Record, c domain.Cycle) {
 	rec.Set("project", string(c.ProjectID))
-	rec.Set("ticket", string(c.TicketID))
+	rec.Set("issue", string(c.IssueID))
 	rec.Set("ordinal", c.Ordinal)
 	rec.Set("phase", string(c.Phase))
 	rec.Set("resolution", c.Resolution)
@@ -47,8 +47,8 @@ func applyCycle(rec *core.Record, c domain.Cycle) {
 	}
 }
 
-func (r *CycleRepository) ListByTicket(ctx context.Context, ticket domain.TicketID) ([]domain.Cycle, error) {
-	records, err := r.app.FindAllRecords(ColCycles, dbx.HashExp{"ticket": string(ticket)})
+func (r *CycleRepository) ListByIssue(ctx context.Context, issue domain.IssueID) ([]domain.Cycle, error) {
+	records, err := r.app.FindAllRecords(ColCycles, dbx.HashExp{"issue": string(issue)})
 	if err != nil {
 		return nil, mapErr(err)
 	}

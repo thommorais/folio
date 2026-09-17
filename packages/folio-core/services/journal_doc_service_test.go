@@ -16,7 +16,7 @@ type knowledgeFixture struct {
 	clock      *fakeClock
 	logs       *fakeJournal
 	docs       *fakeDocs
-	tickets    *fakeTickets
+	issues     *fakeIssues
 	journalSvc *services.JournalService
 	docSvc     *services.DocService
 	searchSvc  *services.SearchService
@@ -38,13 +38,13 @@ func newKnowledgeFixture(t *testing.T) *knowledgeFixture {
 
 	logs := newFakeJournal()
 	docs := newFakeDocs()
-	tickets := newFakeTickets()
+	issues := newFakeIssues()
 	search := &fakeSearch{}
 
 	return &knowledgeFixture{
-		clock: clock, logs: logs, docs: docs, tickets: tickets, project: "p001",
-		journalSvc: services.NewJournalService(logs, tickets, guard, clock, &seqIDs{prefix: "l"}, nopLogger{}),
-		docSvc:     services.NewDocService(docs, tickets, guard, clock, &seqIDs{prefix: "d"}, nopLogger{}),
+		clock: clock, logs: logs, docs: docs, issues: issues, project: "p001",
+		journalSvc: services.NewJournalService(logs, issues, guard, clock, &seqIDs{prefix: "l"}, nopLogger{}),
+		docSvc:     services.NewDocService(docs, issues, guard, clock, &seqIDs{prefix: "d"}, nopLogger{}),
 		searchSvc:  services.NewSearchService(search, guard),
 		owner:      ports.Actor{UserID: "u-owner"},
 		viewer:     ports.Actor{UserID: "u-viewer"},

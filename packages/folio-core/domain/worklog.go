@@ -5,7 +5,7 @@ import "time"
 type TicketLog struct {
 	ID        TicketLogID
 	ProjectID ProjectID
-	TicketID  TicketID
+	IssueID   IssueID
 	CycleID   CycleID
 	Body      string
 	CreatedBy UserID
@@ -14,7 +14,7 @@ type TicketLog struct {
 }
 
 type TicketLogFilter struct {
-	TicketID TicketID
+	IssueID IssueID
 	CycleID  CycleID
 	Search   string
 	Limit    int
@@ -41,7 +41,7 @@ type PlanLogFilter struct {
 type TodoLog struct {
 	ID        TodoLogID
 	ProjectID ProjectID
-	TodoID    TodoID
+	IssueID   IssueID
 	Body      string
 	CreatedBy UserID
 	CreatedAt time.Time
@@ -49,7 +49,7 @@ type TodoLog struct {
 }
 
 type TodoLogFilter struct {
-	TodoID TodoID
+	IssueID IssueID
 	Search string
 	Limit  int
 	Offset int

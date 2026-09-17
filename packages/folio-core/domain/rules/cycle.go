@@ -20,8 +20,8 @@ func ValidateCycle(c domain.Cycle) error {
 	if c.ProjectID == "" {
 		return domain.Invalid("project", "is required")
 	}
-	if c.TicketID == "" {
-		return domain.Invalid("ticket", "is required")
+	if c.IssueID == "" {
+		return domain.Invalid("issue", "is required")
 	}
 	if c.Ordinal < 1 {
 		return domain.Invalid("ordinal", "must be 1 or greater")
@@ -69,20 +69,6 @@ func NextOrdinal(cycles []domain.Cycle) int {
 		}
 	}
 	return max + 1
-}
-
-func CheckClosable(status domain.TicketStatus, cycles []domain.Cycle) error {
-	if !status.IsTerminal() {
-		return nil
-	}
-	current, ok := CurrentCycle(cycles)
-	if !ok {
-		return nil
-	}
-	if strings.TrimSpace(current.Resolution) == "" {
-		return domain.Invalid("resolution", "is required to close a ticket: record what happened on cycle "+strconv.Itoa(current.Ordinal))
-	}
-	return nil
 }
 
 func CheckClosableIssue(status domain.IssueStatus, cycles []domain.Cycle) error {

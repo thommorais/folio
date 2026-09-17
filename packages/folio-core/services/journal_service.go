@@ -33,15 +33,15 @@ func clampLimit(limit int) int {
 // was built, how, and where it stands.
 type JournalService struct {
 	repo    ports.JournalRepository
-	tickets ports.TicketRepository
+	issues ports.IssueRepository
 	guard   ports.Guard
 	clock   ports.Clock
 	ids     ports.IDGenerator
 	log     ports.Logger
 }
 
-func NewJournalService(repo ports.JournalRepository, tickets ports.TicketRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *JournalService {
-	return &JournalService{repo: repo, tickets: tickets, guard: guard, clock: clock, ids: ids, log: log}
+func NewJournalService(repo ports.JournalRepository, issues ports.IssueRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *JournalService {
+	return &JournalService{repo: repo, issues: issues, guard: guard, clock: clock, ids: ids, log: log}
 }
 
 var _ ports.JournalUseCase = (*JournalService)(nil)
@@ -84,7 +84,7 @@ func (s *JournalService) WriteJournalEntry(ctx context.Context, actor ports.Acto
 		return domain.JournalEntry{}, err
 	}
 
-	if err := ticketScope(ctx, s.tickets, in.TicketID, in.ProjectID); err != nil {
+	if err := issueScope(ctx, s.issues, in.IssueID, in.ProjectID); err != nil {
 		return domain.JournalEntry{}, err
 	}
 
@@ -98,9 +98,8 @@ func (s *JournalService) WriteJournalEntry(ctx context.Context, actor ports.Acto
 		ID:          domain.JournalID(s.ids.NewID()),
 		ProjectID:   in.ProjectID,
 		Slug:        slug,
-		TicketID:    in.TicketID,
+		IssueID:     in.IssueID,
 		PlanID:      in.PlanID,
-		TodoID:      in.TodoID,
 		Title:       strings.TrimSpace(in.Title),
 		Body:        in.Body,
 		Branch:      strings.TrimSpace(in.Branch),
@@ -172,17 +171,17 @@ func (s *JournalService) UpdateJournalEntry(ctx context.Context, actor ports.Act
 		return domain.JournalEntry{}, err
 	}
 
-	if in.TicketID != nil {
-		if err := ticketScope(ctx, s.tickets, *in.TicketID, entry.ProjectID); err != nil {
+	if in.IssueID != nil {
+		if err := issueScope(ctx, s.issues, *in.IssueID, entry.ProjectID); err != nil {
 			return domain.JournalEntry{}, err
 		}
-		entry.TicketID = *in.TicketID
+		entry.IssueID = *in.IssueID
 	}
 	if in.PlanID != nil {
 		entry.PlanID = *in.PlanID
 	}
-	if in.TodoID != nil {
-		entry.TodoID = *in.TodoID
+	if in.IssueID != nil {
+		entry.IssueID = *in.IssueID
 	}
 	if in.Title != nil {
 		entry.Title = strings.TrimSpace(*in.Title)

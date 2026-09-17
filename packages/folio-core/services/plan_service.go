@@ -11,19 +11,19 @@ import (
 
 type PlanService struct {
 	repo    ports.PlanRepository
-	todos   ports.TodoRepository
-	tickets ports.TicketRepository
+	issueRepo   ports.IssueRepository
+	issues ports.IssueRepository
 	// todoUC creates the todos nested in a CreatePlan call, so their defaults
 	// and validation stay in one place.
-	todoUC ports.TodoUseCase
+	issueUC ports.IssueUseCase
 	guard  ports.Guard
 	clock  ports.Clock
 	ids    ports.IDGenerator
 	log    ports.Logger
 }
 
-func NewPlanService(repo ports.PlanRepository, todos ports.TodoRepository, tickets ports.TicketRepository, todoUC ports.TodoUseCase, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *PlanService {
-	return &PlanService{repo: repo, todos: todos, tickets: tickets, todoUC: todoUC, guard: guard, clock: clock, ids: ids, log: log}
+func NewPlanService(repo ports.PlanRepository, issues ports.IssueRepository, issueUC ports.IssueUseCase, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *PlanService {
+	return &PlanService{repo: repo, issues: issues, issueUC: issueUC, guard: guard, clock: clock, ids: ids, log: log}
 }
 
 var _ ports.PlanUseCase = (*PlanService)(nil)
@@ -59,11 +59,11 @@ func (s *PlanService) GetPlan(ctx context.Context, actor ports.Actor, id domain.
 }
 
 func (s *PlanService) progress(ctx context.Context, id domain.PlanID) (domain.Progress, error) {
-	todos, err := s.todos.ListByPlan(ctx, id)
+	todos, err := s.issues.ListByPlan(ctx, id)
 	if err != nil {
 		return domain.Progress{}, err
 	}
-	return rules.ProgressOf(todos), nil
+	return rules.ProgressOfIssues(todos), nil
 }
 
 // CreatePlan writes the plan and any todos supplied with it. The plan is
@@ -75,7 +75,7 @@ func (s *PlanService) CreatePlan(ctx context.Context, actor ports.Actor, in port
 		return domain.Plan{}, err
 	}
 
-	if err := ticketScope(ctx, s.tickets, in.TicketID, in.ProjectID); err != nil {
+	if err := issueScope(ctx, s.issues, in.IssueID, in.ProjectID); err != nil {
 		return domain.Plan{}, err
 	}
 
@@ -83,7 +83,7 @@ func (s *PlanService) CreatePlan(ctx context.Context, actor ports.Actor, in port
 	plan := domain.Plan{
 		ID:        domain.PlanID(s.ids.NewID()),
 		ProjectID: in.ProjectID,
-		TicketID:  in.TicketID,
+		IssueID:  in.IssueID,
 		Title:     strings.TrimSpace(in.Title),
 		Goal:      in.Goal,
 		Status:    defaultPlanStatus(in.Status),
@@ -101,16 +101,19 @@ func (s *PlanService) CreatePlan(ctx context.Context, actor ports.Actor, in port
 	}
 
 	if len(in.Todos) > 0 {
-		nested := make([]ports.CreateTodoInput, len(in.Todos))
+		nested := make([]ports.CreateIssueInput, len(in.Todos))
 		for i, t := range in.Todos {
 			t.ProjectID = created.ProjectID
 			t.PlanID = created.ID
-			// A plan's todos inherit its ticket, so a ticket's progress
+			if t.Kind == "" {
+				t.Kind = domain.IssueTodo
+			}
+			// A plan's issues inherit its parent, so that issue's progress
 			// counts work planned under it.
-			t.TicketID = created.TicketID
+			t.ParentID = created.IssueID
 			nested[i] = t
 		}
-		batch, err := s.todoUC.CreateTodos(ctx, actor, created.ProjectID, nested)
+		batch, err := s.issueUC.CreateIssues(ctx, actor, created.ProjectID, nested)
 		if err != nil {
 			return domain.Plan{}, err
 		}
@@ -134,11 +137,11 @@ func (s *PlanService) UpdatePlan(ctx context.Context, actor ports.Actor, id doma
 		return domain.Plan{}, err
 	}
 
-	if in.TicketID != nil {
-		if err := ticketScope(ctx, s.tickets, *in.TicketID, plan.ProjectID); err != nil {
+	if in.IssueID != nil {
+		if err := issueScope(ctx, s.issues, *in.IssueID, plan.ProjectID); err != nil {
 			return domain.Plan{}, err
 		}
-		plan.TicketID = *in.TicketID
+		plan.IssueID = *in.IssueID
 	}
 	if in.Title != nil {
 		plan.Title = strings.TrimSpace(*in.Title)
@@ -178,7 +181,7 @@ func (s *PlanService) DeletePlan(ctx context.Context, actor ports.Actor, id doma
 		return err
 	}
 
-	todos, err := s.todos.ListByPlan(ctx, id)
+	todos, err := s.issues.ListByPlan(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -186,7 +189,7 @@ func (s *PlanService) DeletePlan(ctx context.Context, actor ports.Actor, id doma
 	for _, t := range todos {
 		t.PlanID = ""
 		t.UpdatedAt = now
-		if _, err := s.todos.Update(ctx, t); err != nil {
+		if _, err := s.issues.Update(ctx, t); err != nil {
 			return err
 		}
 	}

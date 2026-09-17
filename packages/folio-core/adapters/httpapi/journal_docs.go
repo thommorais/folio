@@ -17,8 +17,7 @@ func (h *Handler) listJournal(e *core.RequestEvent) error {
 	}
 	filter := domain.JournalFilter{
 		PlanID:      domain.PlanID(e.Request.URL.Query().Get("plan_id")),
-		TodoID:      domain.TodoID(e.Request.URL.Query().Get("todo_id")),
-		TicketID:    domain.TicketID(e.Request.URL.Query().Get("ticket_id")),
+		IssueID:     domain.IssueID(e.Request.URL.Query().Get("issue_id")),
 		Branch:      e.Request.URL.Query().Get("branch"),
 		ExternalRef: e.Request.URL.Query().Get("external_ref"),
 		Tags:        csv(e, "tags"),
@@ -80,9 +79,8 @@ func (h *Handler) getJournalEntry(e *core.RequestEvent) error {
 }
 
 type logBody struct {
-	TicketID    *string         `json:"ticket_id"`
+	IssueID     *string         `json:"issue_id"`
 	PlanID      *string         `json:"plan_id"`
-	TodoID      *string         `json:"todo_id"`
 	Slug        *string         `json:"slug"`
 	Title       *string         `json:"title"`
 	Body        *string         `json:"body"`
@@ -104,14 +102,14 @@ func (h *Handler) writeJournalEntry(e *core.RequestEvent) error {
 	}
 
 	in := ports.WriteJournalInput{ProjectID: project}
-	if body.TicketID != nil {
-		in.TicketID = domain.TicketID(*body.TicketID)
+	if body.IssueID != nil {
+		in.IssueID = domain.IssueID(*body.IssueID)
 	}
 	if body.PlanID != nil {
 		in.PlanID = domain.PlanID(*body.PlanID)
 	}
-	if body.TodoID != nil {
-		in.TodoID = domain.TodoID(*body.TodoID)
+	if body.IssueID != nil {
+		in.IssueID = domain.IssueID(*body.IssueID)
 	}
 	if body.Slug != nil {
 		in.Slug = *body.Slug
@@ -154,17 +152,17 @@ func (h *Handler) updateJournalEntry(e *core.RequestEvent) error {
 		Title: body.Title, Body: body.Body, Branch: body.Branch,
 		PR: body.PR, ExternalRef: body.ExternalRef, Tags: body.Tags, Meta: body.Meta,
 	}
-	if body.TicketID != nil {
-		id := domain.TicketID(*body.TicketID)
-		in.TicketID = &id
+	if body.IssueID != nil {
+		id := domain.IssueID(*body.IssueID)
+		in.IssueID = &id
 	}
 	if body.PlanID != nil {
 		id := domain.PlanID(*body.PlanID)
 		in.PlanID = &id
 	}
-	if body.TodoID != nil {
-		id := domain.TodoID(*body.TodoID)
-		in.TodoID = &id
+	if body.IssueID != nil {
+		id := domain.IssueID(*body.IssueID)
+		in.IssueID = &id
 	}
 
 	entry, err := h.journal.UpdateJournalEntry(e.Request.Context(), actorOf(e), domain.JournalID(e.Request.PathValue("entry")), in)
@@ -205,7 +203,7 @@ func (h *Handler) listDocs(e *core.RequestEvent) error {
 		return fail(e, err)
 	}
 	docs, err := h.docs.ListDocs(e.Request.Context(), actorOf(e), project, domain.DocFilter{
-		TicketID: domain.TicketID(e.Request.URL.Query().Get("ticket_id")),
+		IssueID: domain.IssueID(e.Request.URL.Query().Get("ticket_id")),
 		Tags:     csv(e, "tags"),
 		Search:   e.Request.URL.Query().Get("q"),
 		Limit:    queryInt(e, "limit"),
@@ -242,7 +240,7 @@ func (h *Handler) getDocBySlug(e *core.RequestEvent) error {
 }
 
 type docBody struct {
-	TicketID *string   `json:"ticket_id"`
+	IssueID  *string   `json:"issue_id"`
 	Slug     *string   `json:"slug"`
 	Title    *string   `json:"title"`
 	Body     *string   `json:"body"`
@@ -260,8 +258,8 @@ func (h *Handler) createDoc(e *core.RequestEvent) error {
 	}
 
 	in := ports.CreateDocInput{ProjectID: project}
-	if body.TicketID != nil {
-		in.TicketID = domain.TicketID(*body.TicketID)
+	if body.IssueID != nil {
+		in.IssueID = domain.IssueID(*body.IssueID)
 	}
 	if body.Slug != nil {
 		in.Slug = *body.Slug
@@ -289,9 +287,9 @@ func (h *Handler) updateDoc(e *core.RequestEvent) error {
 		return e.BadRequestError("invalid request body", err)
 	}
 	in := ports.UpdateDocInput{Slug: body.Slug, Title: body.Title, Body: body.Body, Tags: body.Tags}
-	if body.TicketID != nil {
-		id := domain.TicketID(*body.TicketID)
-		in.TicketID = &id
+	if body.IssueID != nil {
+		id := domain.IssueID(*body.IssueID)
+		in.IssueID = &id
 	}
 
 	doc, err := h.docs.UpdateDoc(e.Request.Context(), actorOf(e), domain.DocID(e.Request.PathValue("doc")), in)

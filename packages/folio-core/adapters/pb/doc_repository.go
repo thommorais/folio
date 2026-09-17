@@ -26,7 +26,7 @@ func toDoc(rec *core.Record) domain.Doc {
 	return domain.Doc{
 		ID:        domain.DocID(rec.Id),
 		ProjectID: domain.ProjectID(rec.GetString("project")),
-		TicketID:  domain.TicketID(rec.GetString("ticket")),
+		IssueID:  domain.IssueID(rec.GetString("ticket")),
 		Slug:      rec.GetString("slug"),
 		Title:     rec.GetString("title"),
 		Body:      rec.GetString("body"),
@@ -41,9 +41,9 @@ func (r *DocRepository) List(ctx context.Context, project domain.ProjectID, f do
 	filter := []string{"project = {:project}"}
 	params := dbx.Params{"project": string(project)}
 
-	if f.TicketID != "" {
+	if f.IssueID != "" {
 		filter = append(filter, "ticket = {:ticket}")
-		params["ticket"] = string(f.TicketID)
+		params["ticket"] = string(f.IssueID)
 	}
 	if q := strings.TrimSpace(f.Search); q != "" {
 		filter = append(filter, "(title ~ {:search} || body ~ {:search})")
@@ -114,7 +114,7 @@ func (r *DocRepository) Update(ctx context.Context, d domain.Doc) (domain.Doc, e
 
 func applyDoc(rec *core.Record, d domain.Doc) {
 	rec.Set("project", string(d.ProjectID))
-	rec.Set("ticket", string(d.TicketID))
+	rec.Set("ticket", string(d.IssueID))
 	rec.Set("slug", d.Slug)
 	rec.Set("title", d.Title)
 	rec.Set("body", d.Body)

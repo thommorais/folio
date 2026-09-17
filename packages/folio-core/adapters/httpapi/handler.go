@@ -18,8 +18,6 @@ type Handler struct {
 	projects ports.ProjectUseCase
 	plans    ports.PlanUseCase
 	issues   ports.IssueUseCase
-	tickets  ports.TicketUseCase
-	todos    ports.TodoUseCase
 	journal  ports.JournalUseCase
 	cycles   ports.CycleUseCase
 	workLogs ports.WorkLogUseCase
@@ -31,8 +29,6 @@ type Deps struct {
 	Projects ports.ProjectUseCase
 	Plans    ports.PlanUseCase
 	Issues   ports.IssueUseCase
-	Tickets  ports.TicketUseCase
-	Todos    ports.TodoUseCase
 	Journal  ports.JournalUseCase
 	Cycles   ports.CycleUseCase
 	WorkLogs ports.WorkLogUseCase
@@ -42,7 +38,7 @@ type Deps struct {
 
 func New(d Deps) *Handler {
 	return &Handler{
-		projects: d.Projects, plans: d.Plans, issues: d.Issues, tickets: d.Tickets, todos: d.Todos,
+		projects: d.Projects, plans: d.Plans, issues: d.Issues,
 		journal: d.Journal, cycles: d.Cycles, workLogs: d.WorkLogs, docs: d.Docs, search: d.Search,
 	}
 }
@@ -74,29 +70,17 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.PATCH("/plans/{plan}", h.updatePlan)
 	g.DELETE("/plans/{plan}", h.deletePlan)
 
-	g.GET("/projects/{project}/tickets", h.listTickets)
-	g.POST("/projects/{project}/tickets", h.createTicket)
 	// The slug route is registered before the ID route so a project-scoped
 	// slug lookup is not shadowed by it.
-	g.GET("/projects/{project}/tickets/{slug}", h.getTicketBySlug)
-	g.GET("/projects/{project}/tickets/{slug}/brief", h.getTicketBriefBySlug)
-	g.GET("/tickets/{ticket}", h.getTicket)
-	g.GET("/tickets/{ticket}/brief", h.getTicketBrief)
-	g.GET("/tickets/{ticket}/frontier", h.ticketFrontier)
-	g.GET("/tickets/{ticket}/cycles", h.listCycles)
-	g.POST("/tickets/{ticket}/cycles", h.openCycle)
+	g.GET("/issues/{issue}/cycles", h.listCycles)
+	g.POST("/issues/{issue}/cycles", h.openCycle)
 	g.PATCH("/cycles/{cycle}", h.updateCycle)
-	g.GET("/tickets/{ticket}/logs", h.listTicketLogs)
-	g.POST("/tickets/{ticket}/logs", h.writeTicketLog)
-	g.DELETE("/ticket-logs/{log}", h.deleteTicketLog)
+	g.GET("/issues/{issue}/logs", h.listTicketLogs)
+	g.POST("/issues/{issue}/logs", h.writeTicketLog)
+	g.DELETE("/issue-logs/{log}", h.deleteTicketLog)
 	g.GET("/plans/{plan}/logs", h.listPlanLogs)
 	g.POST("/plans/{plan}/logs", h.writePlanLog)
 	g.DELETE("/plan-logs/{log}", h.deletePlanLog)
-	g.GET("/todos/{todo}/logs", h.listTodoLogs)
-	g.POST("/todos/{todo}/logs", h.writeTodoLog)
-	g.DELETE("/todo-logs/{log}", h.deleteTodoLog)
-	g.PATCH("/tickets/{ticket}", h.updateTicket)
-	g.DELETE("/tickets/{ticket}", h.deleteTicket)
 
 	g.GET("/projects/{project}/issues", h.listIssues)
 	g.POST("/projects/{project}/issues", h.createIssues)
@@ -110,11 +94,6 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.POST("/issues/{issue}/links", h.linkIssue)
 	g.DELETE("/issues/{issue}/links/{to}", h.unlinkIssue)
 
-	g.GET("/projects/{project}/todos", h.listTodos)
-	g.POST("/projects/{project}/todos", h.createTodos)
-	g.GET("/todos/{todo}", h.getTodo)
-	g.PATCH("/todos/{todo}", h.updateTodo)
-	g.DELETE("/todos/{todo}", h.deleteTodo)
 
 	g.GET("/projects/{project}/journal", h.listJournal)
 	g.POST("/projects/{project}/journal", h.writeJournalEntry)

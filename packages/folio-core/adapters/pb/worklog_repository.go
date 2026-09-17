@@ -29,7 +29,7 @@ func toTicketLog(rec *core.Record) domain.TicketLog {
 	return domain.TicketLog{
 		ID:        domain.TicketLogID(rec.Id),
 		ProjectID: domain.ProjectID(rec.GetString("project")),
-		TicketID:  domain.TicketID(rec.GetString("ticket")),
+		IssueID:  domain.IssueID(rec.GetString("ticket")),
 		CycleID:   domain.CycleID(rec.GetString("cycle")),
 		Body:      rec.GetString("body"),
 		CreatedBy: domain.UserID(rec.GetString("created_by")),
@@ -40,7 +40,7 @@ func toTicketLog(rec *core.Record) domain.TicketLog {
 
 func applyTicketLog(rec *core.Record, l domain.TicketLog) {
 	rec.Set("project", string(l.ProjectID))
-	rec.Set("ticket", string(l.TicketID))
+	rec.Set("ticket", string(l.IssueID))
 	rec.Set("cycle", string(l.CycleID))
 	rec.Set("body", l.Body)
 	if l.CreatedBy != "" {
@@ -50,8 +50,8 @@ func applyTicketLog(rec *core.Record, l domain.TicketLog) {
 
 func (r *TicketLogRepository) List(ctx context.Context, project domain.ProjectID, f domain.TicketLogFilter) ([]domain.TicketLog, error) {
 	exprs := []dbx.Expression{dbx.HashExp{"project": string(project)}}
-	if f.TicketID != "" {
-		exprs = append(exprs, dbx.HashExp{"ticket": string(f.TicketID)})
+	if f.IssueID != "" {
+		exprs = append(exprs, dbx.HashExp{"ticket": string(f.IssueID)})
 	}
 	if f.CycleID != "" {
 		exprs = append(exprs, dbx.HashExp{"cycle": string(f.CycleID)})
@@ -198,7 +198,7 @@ func toTodoLog(rec *core.Record) domain.TodoLog {
 	return domain.TodoLog{
 		ID:        domain.TodoLogID(rec.Id),
 		ProjectID: domain.ProjectID(rec.GetString("project")),
-		TodoID:    domain.TodoID(rec.GetString("todo")),
+		IssueID:    domain.IssueID(rec.GetString("todo")),
 		Body:      rec.GetString("body"),
 		CreatedBy: domain.UserID(rec.GetString("created_by")),
 		CreatedAt: rec.GetDateTime("created").Time(),
@@ -208,7 +208,7 @@ func toTodoLog(rec *core.Record) domain.TodoLog {
 
 func applyTodoLog(rec *core.Record, l domain.TodoLog) {
 	rec.Set("project", string(l.ProjectID))
-	rec.Set("todo", string(l.TodoID))
+	rec.Set("todo", string(l.IssueID))
 	rec.Set("body", l.Body)
 	if l.CreatedBy != "" {
 		rec.Set("created_by", string(l.CreatedBy))
@@ -217,8 +217,8 @@ func applyTodoLog(rec *core.Record, l domain.TodoLog) {
 
 func (r *TodoLogRepository) List(ctx context.Context, project domain.ProjectID, f domain.TodoLogFilter) ([]domain.TodoLog, error) {
 	exprs := []dbx.Expression{dbx.HashExp{"project": string(project)}}
-	if f.TodoID != "" {
-		exprs = append(exprs, dbx.HashExp{"todo": string(f.TodoID)})
+	if f.IssueID != "" {
+		exprs = append(exprs, dbx.HashExp{"todo": string(f.IssueID)})
 	}
 	if q := strings.TrimSpace(f.Search); q != "" {
 		exprs = append(exprs, dbx.Like("body", q))

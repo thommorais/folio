@@ -9,6 +9,24 @@ const (
 	IssueTodo   IssueKind = "todo"
 )
 
+type Priority string
+
+const (
+	PriorityLow    Priority = "low"
+	PriorityMedium Priority = "medium"
+	PriorityHigh   Priority = "high"
+)
+
+type WayfinderType string
+
+const (
+	WayfinderMap       WayfinderType = "map"
+	WayfinderResearch  WayfinderType = "research"
+	WayfinderPrototype WayfinderType = "prototype"
+	WayfinderGrilling  WayfinderType = "grilling"
+	WayfinderTask      WayfinderType = "task"
+)
+
 type IssueStatus string
 
 const (

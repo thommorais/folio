@@ -19,7 +19,7 @@ func (h *Handler) listTicketLogs(e *core.RequestEvent) error {
 		Limit:   queryInt(e, "limit"),
 		Offset:  queryInt(e, "offset"),
 	}
-	entries, err := h.workLogs.ListTicketLogs(e.Request.Context(), actorOf(e), domain.TicketID(e.Request.PathValue("ticket")), f)
+	entries, err := h.workLogs.ListTicketLogs(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("ticket")), f)
 	if err != nil {
 		return fail(e, err)
 	}
@@ -35,7 +35,7 @@ func (h *Handler) writeTicketLog(e *core.RequestEvent) error {
 	if err := e.BindBody(&body); err != nil {
 		return e.BadRequestError("invalid request body", err)
 	}
-	entry, err := h.workLogs.WriteTicketLog(e.Request.Context(), actorOf(e), domain.TicketID(e.Request.PathValue("ticket")), body.Body)
+	entry, err := h.workLogs.WriteTicketLog(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("ticket")), body.Body)
 	if err != nil {
 		return fail(e, err)
 	}
@@ -91,7 +91,7 @@ func (h *Handler) listTodoLogs(e *core.RequestEvent) error {
 		Limit:  queryInt(e, "limit"),
 		Offset: queryInt(e, "offset"),
 	}
-	entries, err := h.workLogs.ListTodoLogs(e.Request.Context(), actorOf(e), domain.TodoID(e.Request.PathValue("todo")), f)
+	entries, err := h.workLogs.ListTodoLogs(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("todo")), f)
 	if err != nil {
 		return fail(e, err)
 	}
@@ -107,7 +107,7 @@ func (h *Handler) writeTodoLog(e *core.RequestEvent) error {
 	if err := e.BindBody(&body); err != nil {
 		return e.BadRequestError("invalid request body", err)
 	}
-	entry, err := h.workLogs.WriteTodoLog(e.Request.Context(), actorOf(e), domain.TodoID(e.Request.PathValue("todo")), body.Body)
+	entry, err := h.workLogs.WriteTodoLog(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("todo")), body.Body)
 	if err != nil {
 		return fail(e, err)
 	}

@@ -21,8 +21,6 @@ type App struct {
 	Projects ports.ProjectUseCase
 	Plans    ports.PlanUseCase
 	Issues   ports.IssueUseCase
-	Tickets  ports.TicketUseCase
-	Todos    ports.TodoUseCase
 	Journal  ports.JournalUseCase
 	Cycles   ports.CycleUseCase
 	WorkLogs ports.WorkLogUseCase
@@ -39,8 +37,6 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 	projectRepo := pb.NewProjectRepository(app)
 	planRepo := pb.NewPlanRepository(app)
 	issueRepo := pb.NewIssueRepository(app)
-	ticketRepo := pb.NewTicketRepository(app)
-	todoRepo := pb.NewTodoRepository(app)
 	journalRepo := pb.NewJournalRepository(app)
 	docRepo := pb.NewDocRepository(app)
 	cycleRepo := pb.NewCycleRepository(app)
@@ -50,18 +46,16 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 	searchRepo := pb.NewSearchRepository(app)
 
 	guard := services.NewProjectGuard(projectRepo)
-	todos := services.NewTodoService(todoRepo, planRepo, ticketRepo, guard, clock, ids, log)
+	issues := services.NewIssueService(issueRepo, planRepo, journalRepo, docRepo, cycleRepo, guard, clock, ids, log)
 
 	return &App{
 		Projects: services.NewProjectService(projectRepo, guard, clock, ids, log),
-		Plans:    services.NewPlanService(planRepo, todoRepo, ticketRepo, todos, guard, clock, ids, log),
-		Issues:   services.NewIssueService(issueRepo, planRepo, journalRepo, docRepo, cycleRepo, guard, clock, ids, log),
-		Tickets:  services.NewTicketService(ticketRepo, todoRepo, planRepo, journalRepo, docRepo, cycleRepo, guard, clock, ids, log),
-		Todos:    todos,
-		Journal:  services.NewJournalService(journalRepo, ticketRepo, guard, clock, ids, log),
-		Cycles:   services.NewCycleService(cycleRepo, ticketRepo, guard, clock, ids, log),
-		WorkLogs: services.NewWorkLogService(ticketLogRepo, planLogRepo, todoLogRepo, ticketRepo, planRepo, todoRepo, cycleRepo, guard, clock, ids, log),
-		Docs:     services.NewDocService(docRepo, ticketRepo, guard, clock, ids, log),
+		Plans:    services.NewPlanService(planRepo, issueRepo, issues, guard, clock, ids, log),
+		Issues:   issues,
+		Journal:  services.NewJournalService(journalRepo, issueRepo, guard, clock, ids, log),
+		Cycles:   services.NewCycleService(cycleRepo, issueRepo, guard, clock, ids, log),
+		WorkLogs: services.NewWorkLogService(ticketLogRepo, planLogRepo, todoLogRepo, issueRepo, planRepo, cycleRepo, guard, clock, ids, log),
+		Docs:     services.NewDocService(docRepo, issueRepo, guard, clock, ids, log),
 		Search:   services.NewSearchService(searchRepo, guard),
 	}
 }
@@ -71,8 +65,6 @@ func (a *App) Deps() httpapi.Deps {
 		Projects: a.Projects,
 		Plans:    a.Plans,
 		Issues:   a.Issues,
-		Tickets:  a.Tickets,
-		Todos:    a.Todos,
 		Journal:  a.Journal,
 		Cycles:   a.Cycles,
 		WorkLogs: a.WorkLogs,

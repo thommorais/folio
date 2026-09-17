@@ -9,7 +9,7 @@ import (
 )
 
 func validCycle() domain.Cycle {
-	return domain.Cycle{ProjectID: "p1", TicketID: "tk1", Ordinal: 1, Phase: domain.PhasePlan}
+	return domain.Cycle{ProjectID: "p1", IssueID: "tk1", Ordinal: 1, Phase: domain.PhasePlan}
 }
 
 func TestValidateCycle(t *testing.T) {
@@ -21,7 +21,7 @@ func TestValidateCycle(t *testing.T) {
 
 	t.Run("requires a ticket", func(t *testing.T) {
 		bad := validCycle()
-		bad.TicketID = ""
+		bad.IssueID = ""
 		if !errors.Is(rules.ValidateCycle(bad), domain.ErrValidation) {
 			t.Fatal("want validation error")
 		}
@@ -122,21 +122,21 @@ func TestNextOrdinal(t *testing.T) {
 func TestCheckClosable(t *testing.T) {
 	t.Run("allows closing when the current cycle carries a resolution", func(t *testing.T) {
 		cycles := []domain.Cycle{{Ordinal: 1, Phase: domain.PhaseAct, Resolution: "Shipped behind a flag"}}
-		if err := rules.CheckClosable(domain.TicketClosed, cycles); err != nil {
+		if err := rules.CheckClosableIssue(domain.IssueDone, cycles); err != nil {
 			t.Fatalf("want nil, got %v", err)
 		}
 	})
 
 	t.Run("refuses to close without a resolution", func(t *testing.T) {
 		cycles := []domain.Cycle{{Ordinal: 1, Phase: domain.PhaseAct}}
-		if !errors.Is(rules.CheckClosable(domain.TicketClosed, cycles), domain.ErrValidation) {
+		if !errors.Is(rules.CheckClosableIssue(domain.IssueDone, cycles), domain.ErrValidation) {
 			t.Fatal("want validation error")
 		}
 	})
 
 	t.Run("refuses to close on a blank resolution", func(t *testing.T) {
 		cycles := []domain.Cycle{{Ordinal: 1, Phase: domain.PhaseAct, Resolution: "   "}}
-		if !errors.Is(rules.CheckClosable(domain.TicketClosed, cycles), domain.ErrValidation) {
+		if !errors.Is(rules.CheckClosableIssue(domain.IssueDone, cycles), domain.ErrValidation) {
 			t.Fatal("want validation error")
 		}
 	})
@@ -146,27 +146,27 @@ func TestCheckClosable(t *testing.T) {
 			{Ordinal: 1, Phase: domain.PhaseAct, Resolution: "Shipped"},
 			{Ordinal: 2, Phase: domain.PhaseDo},
 		}
-		if !errors.Is(rules.CheckClosable(domain.TicketClosed, cycles), domain.ErrValidation) {
+		if !errors.Is(rules.CheckClosableIssue(domain.IssueDone, cycles), domain.ErrValidation) {
 			t.Fatal("a stale resolution from cycle 1 must not close cycle 2")
 		}
 	})
 
 	t.Run("requires a resolution to cancel too", func(t *testing.T) {
 		cycles := []domain.Cycle{{Ordinal: 1, Phase: domain.PhaseDo}}
-		if !errors.Is(rules.CheckClosable(domain.TicketCancelled, cycles), domain.ErrValidation) {
+		if !errors.Is(rules.CheckClosableIssue(domain.IssueCancelled, cycles), domain.ErrValidation) {
 			t.Fatal("want validation error")
 		}
 	})
 
 	t.Run("ignores a ticket with no cycles at all", func(t *testing.T) {
-		if err := rules.CheckClosable(domain.TicketClosed, nil); err != nil {
+		if err := rules.CheckClosableIssue(domain.IssueDone, nil); err != nil {
 			t.Fatalf("a ticket that never opened a cycle must still close, got %v", err)
 		}
 	})
 
 	t.Run("leaves a non-terminal status alone", func(t *testing.T) {
 		cycles := []domain.Cycle{{Ordinal: 1, Phase: domain.PhaseDo}}
-		if err := rules.CheckClosable(domain.TicketInProgress, cycles); err != nil {
+		if err := rules.CheckClosableIssue(domain.IssueInProgress, cycles); err != nil {
 			t.Fatalf("want nil, got %v", err)
 		}
 	})

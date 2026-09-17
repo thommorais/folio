@@ -33,7 +33,7 @@ type PlanRepository interface {
 	List(ctx context.Context, project domain.ProjectID, statuses []domain.PlanStatus) ([]domain.Plan, error)
 	// ListByTicket returns every plan under a ticket, so deleting the ticket
 	// can detach them.
-	ListByTicket(ctx context.Context, ticket domain.TicketID) ([]domain.Plan, error)
+	ListByIssue(ctx context.Context, issue domain.IssueID) ([]domain.Plan, error)
 	GetByID(ctx context.Context, id domain.PlanID) (domain.Plan, error)
 	Create(ctx context.Context, p domain.Plan) (domain.Plan, error)
 	Update(ctx context.Context, p domain.Plan) (domain.Plan, error)
@@ -57,32 +57,6 @@ type IssueRepository interface {
 	SetLinks(ctx context.Context, from domain.IssueID, kind domain.LinkKind, to []domain.IssueID) error
 }
 
-type TodoRepository interface {
-	List(ctx context.Context, project domain.ProjectID, f domain.TodoFilter) ([]domain.Todo, error)
-	// ListByPlan returns every todo under a plan, unfiltered, for progress
-	// and dependency computation.
-	ListByPlan(ctx context.Context, plan domain.PlanID) ([]domain.Todo, error)
-	// ListByTicket returns every todo under a ticket, unfiltered, for the
-	// same reason.
-	ListByTicket(ctx context.Context, ticket domain.TicketID) ([]domain.Todo, error)
-	GetByID(ctx context.Context, id domain.TodoID) (domain.Todo, error)
-	Create(ctx context.Context, t domain.Todo) (domain.Todo, error)
-	Update(ctx context.Context, t domain.Todo) (domain.Todo, error)
-	Delete(ctx context.Context, id domain.TodoID) error
-}
-
-// TicketRepository stores tickets. A ticket is a unit of work under a project
-// that carries its own plans, todos, logs and docs.
-type TicketRepository interface {
-	List(ctx context.Context, project domain.ProjectID, f domain.TicketFilter) ([]domain.Ticket, error)
-	ListByParent(ctx context.Context, parent domain.TicketID) ([]domain.Ticket, error)
-	GetByID(ctx context.Context, id domain.TicketID) (domain.Ticket, error)
-	GetBySlug(ctx context.Context, project domain.ProjectID, slug string) (domain.Ticket, error)
-	Create(ctx context.Context, t domain.Ticket) (domain.Ticket, error)
-	Update(ctx context.Context, t domain.Ticket) (domain.Ticket, error)
-	Delete(ctx context.Context, id domain.TicketID) error
-}
-
 // JournalRepository stores the work log. Entries are editable: a log documents
 // the state of a piece of work, and that state changes as the work proceeds.
 type JournalRepository interface {
@@ -95,7 +69,7 @@ type JournalRepository interface {
 }
 
 type CycleRepository interface {
-	ListByTicket(ctx context.Context, ticket domain.TicketID) ([]domain.Cycle, error)
+	ListByIssue(ctx context.Context, issue domain.IssueID) ([]domain.Cycle, error)
 	GetByID(ctx context.Context, id domain.CycleID) (domain.Cycle, error)
 	Create(ctx context.Context, c domain.Cycle) (domain.Cycle, error)
 	Update(ctx context.Context, c domain.Cycle) (domain.Cycle, error)

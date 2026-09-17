@@ -86,6 +86,9 @@ func Register(app core.App) error {
 	if err := backfillIssues(app); err != nil {
 		return fmt.Errorf("backfill issues: %w", err)
 	}
+	if err := repointToIssues(app); err != nil {
+		return fmt.Errorf("repoint to issues: %w", err)
+	}
 	if err := applyRules(app); err != nil {
 		return fmt.Errorf("rules: %w", err)
 	}
@@ -513,6 +516,98 @@ func backfillIssues(app core.App) error {
 		rec.Set("kind", q.kind)
 		if err := app.Save(rec); err != nil {
 			return fmt.Errorf("link %s->%s: %w", q.from, q.to, err)
+		}
+	}
+
+	return nil
+}
+
+// repointToIssues gives each child collection an issue relation pointing at
+// journ_issues. PocketBase refuses to retarget an existing relation, so the
+// new field is added alongside, filled from the old one, and the old field is
+// left in place for the rollback window. The stored ids are already valid:
+// backfillIssues copied every ticket and todo under its own id.
+func repointToIssues(app core.App) error {
+	issues, err := app.FindCollectionByNameOrId(ColIssues)
+	if err != nil {
+		return err
+	}
+
+	type source struct {
+		collection string
+		from       string
+		cascade    bool
+	}
+	for _, src := range []source{
+		{ColPlans, "ticket", false},
+		{ColJournal, "ticket", false},
+		{ColDocs, "ticket", false},
+		{ColCycles, "ticket", true},
+		{ColTicketLogs, "ticket", true},
+		{ColTodoLogs, "todo", true},
+	} {
+		c, err := app.FindCollectionByNameOrId(src.collection)
+		if err != nil {
+			return err
+		}
+		if c.Fields.GetByName("issue") == nil {
+			c.Fields.Add(&core.RelationField{
+				Name: "issue", CollectionId: issues.Id,
+				CascadeDelete: src.cascade, MaxSelect: 1,
+			})
+			c.AddIndex("idx_"+src.collection+"_issue", false, "issue", "")
+			if err := app.Save(c); err != nil {
+				return fmt.Errorf("add issue field to %s: %w", src.collection, err)
+			}
+		}
+
+		rows, err := app.FindAllRecords(src.collection)
+		if err != nil {
+			return fmt.Errorf("load %s: %w", src.collection, err)
+		}
+		for _, row := range rows {
+			if row.GetString("issue") != "" {
+				continue
+			}
+			ref := row.GetString(src.from)
+			if ref == "" {
+				continue
+			}
+			if _, err := app.FindRecordById(ColIssues, ref); err != nil {
+				continue
+			}
+			row.Set("issue", ref)
+			if err := app.Save(row); err != nil {
+				return fmt.Errorf("fill issue on %s %s: %w", src.collection, row.Id, err)
+			}
+		}
+	}
+
+	j, err := app.FindCollectionByNameOrId(ColJournal)
+	if err != nil {
+		return err
+	}
+	if j.Fields.GetByName("issue_todo") == nil && j.Fields.GetByName("todo") != nil {
+		j.Fields.Add(&core.RelationField{Name: "issue_todo", CollectionId: issues.Id, MaxSelect: 1})
+		if err := app.Save(j); err != nil {
+			return fmt.Errorf("add issue_todo to journal: %w", err)
+		}
+		rows, err := app.FindAllRecords(ColJournal)
+		if err != nil {
+			return fmt.Errorf("load journal: %w", err)
+		}
+		for _, row := range rows {
+			ref := row.GetString("todo")
+			if ref == "" || row.GetString("issue_todo") != "" {
+				continue
+			}
+			if _, err := app.FindRecordById(ColIssues, ref); err != nil {
+				continue
+			}
+			row.Set("issue_todo", ref)
+			if err := app.Save(row); err != nil {
+				return fmt.Errorf("fill issue_todo on %s: %w", row.Id, err)
+			}
 		}
 	}
 

@@ -29,12 +29,11 @@ func toJournalEntry(rec *core.Record) domain.JournalEntry {
 		ProjectID:   domain.ProjectID(rec.GetString("project")),
 		Slug:        rec.GetString("slug"),
 		PlanID:      domain.PlanID(rec.GetString("plan")),
-		TodoID:      domain.TodoID(rec.GetString("todo")),
 		Title:       rec.GetString("title"),
 		Body:        rec.GetString("body"),
 		Branch:      rec.GetString("branch"),
 		PR:          rec.GetString("pr"),
-		TicketID:    domain.TicketID(rec.GetString("ticket")),
+		IssueID:     domain.IssueID(rec.GetString("issue")),
 		ExternalRef: rec.GetString("external_ref"),
 		Meta:        jsonMap(rec, "meta"),
 		Tags:        strSlice(rec, "tags"),
@@ -54,17 +53,13 @@ func (r *JournalRepository) List(ctx context.Context, project domain.ProjectID, 
 		filter = append(filter, "plan = {:plan}")
 		params["plan"] = string(f.PlanID)
 	}
-	if f.TodoID != "" {
-		filter = append(filter, "todo = {:todo}")
-		params["todo"] = string(f.TodoID)
-	}
 	if f.Branch != "" {
 		filter = append(filter, "branch = {:branch}")
 		params["branch"] = f.Branch
 	}
-	if f.TicketID != "" {
-		filter = append(filter, "ticket = {:ticket}")
-		params["ticket"] = string(f.TicketID)
+	if f.IssueID != "" {
+		filter = append(filter, "issue = {:issue}")
+		params["issue"] = string(f.IssueID)
 	}
 	if f.ExternalRef != "" {
 		filter = append(filter, "external_ref = {:external_ref}")
@@ -156,12 +151,11 @@ func applyJournalEntry(rec *core.Record, e domain.JournalEntry) {
 	rec.Set("project", string(e.ProjectID))
 	rec.Set("slug", e.Slug)
 	rec.Set("plan", string(e.PlanID))
-	rec.Set("todo", string(e.TodoID))
 	rec.Set("title", e.Title)
 	rec.Set("body", e.Body)
 	rec.Set("branch", e.Branch)
 	rec.Set("pr", e.PR)
-	rec.Set("ticket", string(e.TicketID))
+	rec.Set("issue", string(e.IssueID))
 	rec.Set("external_ref", e.ExternalRef)
 	setJSON(rec, "meta", e.Meta)
 	setJSON(rec, "tags", e.Tags)

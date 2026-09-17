@@ -11,28 +11,28 @@ import (
 
 type CycleService struct {
 	repo    ports.CycleRepository
-	tickets ports.TicketRepository
+	issues ports.IssueRepository
 	guard   ports.Guard
 	clock   ports.Clock
 	ids     ports.IDGenerator
 	log     ports.Logger
 }
 
-func NewCycleService(repo ports.CycleRepository, tickets ports.TicketRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *CycleService {
-	return &CycleService{repo: repo, tickets: tickets, guard: guard, clock: clock, ids: ids, log: log}
+func NewCycleService(repo ports.CycleRepository, issues ports.IssueRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *CycleService {
+	return &CycleService{repo: repo, issues: issues, guard: guard, clock: clock, ids: ids, log: log}
 }
 
 var _ ports.CycleUseCase = (*CycleService)(nil)
 
-func (s *CycleService) ListCycles(ctx context.Context, actor ports.Actor, ticket domain.TicketID) ([]domain.Cycle, error) {
-	owner, err := s.tickets.GetByID(ctx, ticket)
+func (s *CycleService) ListCycles(ctx context.Context, actor ports.Actor, ticket domain.IssueID) ([]domain.Cycle, error) {
+	owner, err := s.issues.GetByID(ctx, ticket)
 	if err != nil {
 		return nil, err
 	}
 	if _, err := s.guard.EnsureRead(ctx, actor, owner.ProjectID); err != nil {
 		return nil, err
 	}
-	cycles, err := s.repo.ListByTicket(ctx, ticket)
+	cycles, err := s.repo.ListByIssue(ctx, ticket)
 	if err != nil {
 		return nil, err
 	}
@@ -42,15 +42,15 @@ func (s *CycleService) ListCycles(ctx context.Context, actor ports.Actor, ticket
 	return cycles, nil
 }
 
-func (s *CycleService) OpenCycle(ctx context.Context, actor ports.Actor, ticket domain.TicketID) (domain.Cycle, error) {
-	owner, err := s.tickets.GetByID(ctx, ticket)
+func (s *CycleService) OpenCycle(ctx context.Context, actor ports.Actor, ticket domain.IssueID) (domain.Cycle, error) {
+	owner, err := s.issues.GetByID(ctx, ticket)
 	if err != nil {
 		return domain.Cycle{}, err
 	}
 	if _, err := s.guard.EnsureWrite(ctx, actor, owner.ProjectID); err != nil {
 		return domain.Cycle{}, err
 	}
-	existing, err := s.repo.ListByTicket(ctx, ticket)
+	existing, err := s.repo.ListByIssue(ctx, ticket)
 	if err != nil {
 		return domain.Cycle{}, err
 	}
@@ -62,7 +62,7 @@ func (s *CycleService) OpenCycle(ctx context.Context, actor ports.Actor, ticket 
 	cycle := domain.Cycle{
 		ID:        domain.CycleID(s.ids.NewID()),
 		ProjectID: owner.ProjectID,
-		TicketID:  ticket,
+		IssueID:  ticket,
 		Ordinal:   rules.NextOrdinal(existing),
 		Phase:     domain.PhasePlan,
 		CreatedBy: actor.UserID,

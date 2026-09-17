@@ -55,7 +55,7 @@ type progressView struct {
 type planView struct {
 	ID        string       `json:"id"`
 	ProjectID string       `json:"project_id"`
-	TicketID  string       `json:"ticket_id,omitempty"`
+	IssueID  string       `json:"issue_id,omitempty"`
 	Title     string       `json:"title"`
 	Goal      string       `json:"goal,omitempty"`
 	Status    string       `json:"status"`
@@ -68,7 +68,7 @@ type planView struct {
 
 func toPlanView(p domain.Plan) planView {
 	return planView{
-		ID: string(p.ID), ProjectID: string(p.ProjectID), TicketID: string(p.TicketID), Title: p.Title, Goal: p.Goal,
+		ID: string(p.ID), ProjectID: string(p.ProjectID), IssueID: string(p.IssueID), Title: p.Title, Goal: p.Goal,
 		Status: string(p.Status), Tags: orEmpty(p.Tags),
 		Progress:  progressView{Total: p.Progress.Total, Done: p.Progress.Done, Percent: p.Progress.Percent()},
 		CreatedBy: string(p.CreatedBy),
@@ -76,47 +76,10 @@ func toPlanView(p domain.Plan) planView {
 	}
 }
 
-type ticketView struct {
-	ID          string       `json:"id"`
-	ProjectID   string       `json:"project_id"`
-	ParentID    string       `json:"parent_id,omitempty"`
-	Slug        string       `json:"slug"`
-	Title       string       `json:"title"`
-	Body        string       `json:"body"`
-	Status      string       `json:"status"`
-	Priority    string       `json:"priority"`
-	Assignee    string       `json:"assignee,omitempty"`
-	Tags        []string     `json:"tags"`
-	ExternalRef string       `json:"external_ref,omitempty"`
-	DependsOn   []string     `json:"depends_on"`
-	Wayfinder   string       `json:"wayfinder,omitempty"`
-	Blocked     bool         `json:"blocked"`
-	Cycle       int          `json:"cycle,omitempty"`
-	Phase       string       `json:"phase,omitempty"`
-	Progress    progressView `json:"progress"`
-	CreatedBy   string       `json:"created_by,omitempty"`
-	CreatedAt   string       `json:"created_at"`
-	UpdatedAt   string       `json:"updated_at"`
-}
-
-func toTicketView(t domain.Ticket) ticketView {
-	return ticketView{
-		ID: string(t.ID), ProjectID: string(t.ProjectID), ParentID: string(t.ParentID), Slug: t.Slug,
-		Title: t.Title, Body: t.Body, Status: string(t.Status),
-		Priority: string(t.Priority), Assignee: string(t.Assignee),
-		Tags: orEmpty(t.Tags), ExternalRef: t.ExternalRef,
-		DependsOn: fromTicketIDs(t.DependsOn), Wayfinder: string(t.Wayfinder), Blocked: t.Blocked,
-		Cycle: t.Cycle, Phase: string(t.Phase),
-		Progress:  progressView{Total: t.Progress.Total, Done: t.Progress.Done, Percent: t.Progress.Percent()},
-		CreatedBy: string(t.CreatedBy),
-		CreatedAt: rfc3339(t.CreatedAt), UpdatedAt: rfc3339(t.UpdatedAt),
-	}
-}
-
 type cycleView struct {
 	ID         string `json:"id"`
 	ProjectID  string `json:"project_id"`
-	TicketID   string `json:"ticket_id"`
+	IssueID   string `json:"issue_id,omitempty"`
 	Ordinal    int    `json:"ordinal"`
 	Phase      string `json:"phase"`
 	Resolution string `json:"resolution,omitempty"`
@@ -128,7 +91,7 @@ type cycleView struct {
 
 func toCycleView(c domain.Cycle) cycleView {
 	out := cycleView{
-		ID: string(c.ID), ProjectID: string(c.ProjectID), TicketID: string(c.TicketID),
+		ID: string(c.ID), ProjectID: string(c.ProjectID), IssueID: string(c.IssueID),
 		Ordinal: c.Ordinal, Phase: string(c.Phase), Resolution: c.Resolution,
 		CreatedBy: string(c.CreatedBy),
 		CreatedAt: rfc3339(c.CreatedAt), UpdatedAt: rfc3339(c.UpdatedAt),
@@ -142,7 +105,7 @@ func toCycleView(c domain.Cycle) cycleView {
 type ticketLogView struct {
 	ID        string `json:"id"`
 	ProjectID string `json:"project_id"`
-	TicketID  string `json:"ticket_id"`
+	IssueID  string `json:"issue_id,omitempty"`
 	CycleID   string `json:"cycle_id,omitempty"`
 	Body      string `json:"body"`
 	CreatedBy string `json:"created_by,omitempty"`
@@ -152,7 +115,7 @@ type ticketLogView struct {
 
 func toTicketLogView(l domain.TicketLog) ticketLogView {
 	return ticketLogView{
-		ID: string(l.ID), ProjectID: string(l.ProjectID), TicketID: string(l.TicketID),
+		ID: string(l.ID), ProjectID: string(l.ProjectID), IssueID: string(l.IssueID),
 		CycleID: string(l.CycleID), Body: l.Body, CreatedBy: string(l.CreatedBy),
 		CreatedAt: rfc3339(l.CreatedAt), UpdatedAt: rfc3339(l.UpdatedAt),
 	}
@@ -179,7 +142,7 @@ func toPlanLogView(l domain.PlanLog) planLogView {
 type todoLogView struct {
 	ID        string `json:"id"`
 	ProjectID string `json:"project_id"`
-	TodoID    string `json:"todo_id"`
+	IssueID    string `json:"issue_id,omitempty"`
 	Body      string `json:"body"`
 	CreatedBy string `json:"created_by,omitempty"`
 	CreatedAt string `json:"created_at"`
@@ -188,56 +151,17 @@ type todoLogView struct {
 
 func toTodoLogView(l domain.TodoLog) todoLogView {
 	return todoLogView{
-		ID: string(l.ID), ProjectID: string(l.ProjectID), TodoID: string(l.TodoID),
+		ID: string(l.ID), ProjectID: string(l.ProjectID), IssueID: string(l.IssueID),
 		Body: l.Body, CreatedBy: string(l.CreatedBy),
 		CreatedAt: rfc3339(l.CreatedAt), UpdatedAt: rfc3339(l.UpdatedAt),
 	}
 }
 
-type todoView struct {
-	ID        string   `json:"id"`
-	ProjectID string   `json:"project_id"`
-	TicketID  string   `json:"ticket_id,omitempty"`
-	PlanID    string   `json:"plan_id,omitempty"`
-	Title     string   `json:"title"`
-	Details   string   `json:"details,omitempty"`
-	Status    string   `json:"status"`
-	Priority  string   `json:"priority"`
-	Tags      []string `json:"tags"`
-	Position  int      `json:"position"`
-	DependsOn []string `json:"depends_on"`
-	DueDate   string   `json:"due_date,omitempty"`
-	// Blocked is derived from the dependencies' statuses, not stored.
-	Blocked   bool   `json:"blocked"`
-	CreatedBy string `json:"created_by,omitempty"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
-
-func toTodoView(t domain.Todo) todoView {
-	deps := make([]string, 0, len(t.DependsOn))
-	for _, d := range t.DependsOn {
-		deps = append(deps, string(d))
-	}
-	v := todoView{
-		ID: string(t.ID), ProjectID: string(t.ProjectID), TicketID: string(t.TicketID), PlanID: string(t.PlanID),
-		Title: t.Title, Details: t.Details, Status: string(t.Status), Priority: string(t.Priority),
-		Tags: orEmpty(t.Tags), Position: t.Position, DependsOn: deps, Blocked: t.Blocked,
-		CreatedBy: string(t.CreatedBy),
-		CreatedAt: rfc3339(t.CreatedAt), UpdatedAt: rfc3339(t.UpdatedAt),
-	}
-	if t.DueDate != nil {
-		v.DueDate = rfc3339(*t.DueDate)
-	}
-	return v
-}
-
 type journalView struct {
 	ID          string         `json:"id"`
 	ProjectID   string         `json:"project_id"`
-	TicketID    string         `json:"ticket_id,omitempty"`
+	IssueID     string         `json:"issue_id,omitempty"`
 	PlanID      string         `json:"plan_id,omitempty"`
-	TodoID      string         `json:"todo_id,omitempty"`
 	Slug        string         `json:"slug"`
 	Title       string         `json:"title"`
 	Body        string         `json:"body"`
@@ -253,8 +177,8 @@ type journalView struct {
 
 func toJournalView(e domain.JournalEntry) journalView {
 	return journalView{
-		ID: string(e.ID), ProjectID: string(e.ProjectID), TicketID: string(e.TicketID),
-		PlanID: string(e.PlanID), TodoID: string(e.TodoID), Slug: e.Slug, Title: e.Title, Body: e.Body,
+		ID: string(e.ID), ProjectID: string(e.ProjectID), IssueID: string(e.IssueID),
+		PlanID: string(e.PlanID), Slug: e.Slug, Title: e.Title, Body: e.Body,
 		Branch: e.Branch, PR: e.PR, ExternalRef: e.ExternalRef,
 		Meta: e.Meta, Tags: orEmpty(e.Tags), CreatedBy: string(e.CreatedBy),
 		CreatedAt: rfc3339(e.CreatedAt), UpdatedAt: rfc3339(e.UpdatedAt),
@@ -264,7 +188,7 @@ func toJournalView(e domain.JournalEntry) journalView {
 type docView struct {
 	ID        string   `json:"id"`
 	ProjectID string   `json:"project_id"`
-	TicketID  string   `json:"ticket_id,omitempty"`
+	IssueID  string   `json:"issue_id,omitempty"`
 	Slug      string   `json:"slug"`
 	Title     string   `json:"title"`
 	Body      string   `json:"body"`
@@ -276,7 +200,7 @@ type docView struct {
 
 func toDocView(d domain.Doc) docView {
 	return docView{
-		ID: string(d.ID), ProjectID: string(d.ProjectID), TicketID: string(d.TicketID), Slug: d.Slug, Title: d.Title,
+		ID: string(d.ID), ProjectID: string(d.ProjectID), IssueID: string(d.IssueID), Slug: d.Slug, Title: d.Title,
 		Body: d.Body, Tags: orEmpty(d.Tags), CreatedBy: string(d.CreatedBy),
 		CreatedAt: rfc3339(d.CreatedAt), UpdatedAt: rfc3339(d.UpdatedAt),
 	}
@@ -321,42 +245,6 @@ func orEmpty(s []string) []string {
 		return []string{}
 	}
 	return s
-}
-
-type ticketBriefView struct {
-	Ticket  ticketView    `json:"ticket"`
-	Plans   []planView    `json:"plans"`
-	Todos   []todoView    `json:"todos"`
-	Journal []journalView `json:"journal"`
-	Docs    []docView     `json:"docs"`
-	Cycles  []cycleView   `json:"cycles"`
-}
-
-func toTicketBriefView(b domain.TicketBrief) ticketBriefView {
-	out := ticketBriefView{
-		Ticket:  toTicketView(b.Ticket),
-		Plans:   make([]planView, 0, len(b.Plans)),
-		Todos:   make([]todoView, 0, len(b.Todos)),
-		Journal: make([]journalView, 0, len(b.Journal)),
-		Docs:    make([]docView, 0, len(b.Docs)),
-		Cycles:  make([]cycleView, 0, len(b.Cycles)),
-	}
-	for _, p := range b.Plans {
-		out.Plans = append(out.Plans, toPlanView(p))
-	}
-	for _, t := range b.Todos {
-		out.Todos = append(out.Todos, toTodoView(t))
-	}
-	for _, e := range b.Journal {
-		out.Journal = append(out.Journal, toJournalView(e))
-	}
-	for _, d := range b.Docs {
-		out.Docs = append(out.Docs, toDocView(d))
-	}
-	for _, c := range b.Cycles {
-		out.Cycles = append(out.Cycles, toCycleView(c))
-	}
-	return out
 }
 
 type issueView struct {

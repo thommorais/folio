@@ -13,9 +13,9 @@ type WorkLogService struct {
 	ticketLogs ports.TicketLogRepository
 	planLogs   ports.PlanLogRepository
 	todoLogs   ports.TodoLogRepository
-	tickets    ports.TicketRepository
+	issues    ports.IssueRepository
 	plans      ports.PlanRepository
-	todos      ports.TodoRepository
+	issueRepo      ports.IssueRepository
 	cycles     ports.CycleRepository
 	guard      ports.Guard
 	clock      ports.Clock
@@ -23,25 +23,25 @@ type WorkLogService struct {
 	log        ports.Logger
 }
 
-func NewWorkLogService(ticketLogs ports.TicketLogRepository, planLogs ports.PlanLogRepository, todoLogs ports.TodoLogRepository, tickets ports.TicketRepository, plans ports.PlanRepository, todos ports.TodoRepository, cycles ports.CycleRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *WorkLogService {
+func NewWorkLogService(ticketLogs ports.TicketLogRepository, planLogs ports.PlanLogRepository, todoLogs ports.TodoLogRepository, issues ports.IssueRepository, plans ports.PlanRepository, cycles ports.CycleRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *WorkLogService {
 	return &WorkLogService{
 		ticketLogs: ticketLogs, planLogs: planLogs, todoLogs: todoLogs,
-		tickets: tickets, plans: plans, todos: todos, cycles: cycles,
+		issues: issues, plans: plans, cycles: cycles,
 		guard: guard, clock: clock, ids: ids, log: log,
 	}
 }
 
 var _ ports.WorkLogUseCase = (*WorkLogService)(nil)
 
-func (s *WorkLogService) ListTicketLogs(ctx context.Context, actor ports.Actor, ticket domain.TicketID, f domain.TicketLogFilter) ([]domain.TicketLog, error) {
-	owner, err := s.tickets.GetByID(ctx, ticket)
+func (s *WorkLogService) ListTicketLogs(ctx context.Context, actor ports.Actor, ticket domain.IssueID, f domain.TicketLogFilter) ([]domain.TicketLog, error) {
+	owner, err := s.issues.GetByID(ctx, ticket)
 	if err != nil {
 		return nil, err
 	}
 	if _, err := s.guard.EnsureRead(ctx, actor, owner.ProjectID); err != nil {
 		return nil, err
 	}
-	f.TicketID = ticket
+	f.IssueID = ticket
 	f.Limit = clampLimit(f.Limit)
 	entries, err := s.ticketLogs.List(ctx, owner.ProjectID, f)
 	if err != nil {
@@ -53,8 +53,8 @@ func (s *WorkLogService) ListTicketLogs(ctx context.Context, actor ports.Actor, 
 	return entries, nil
 }
 
-func (s *WorkLogService) WriteTicketLog(ctx context.Context, actor ports.Actor, ticket domain.TicketID, body string) (domain.TicketLog, error) {
-	owner, err := s.tickets.GetByID(ctx, ticket)
+func (s *WorkLogService) WriteTicketLog(ctx context.Context, actor ports.Actor, ticket domain.IssueID, body string) (domain.TicketLog, error) {
+	owner, err := s.issues.GetByID(ctx, ticket)
 	if err != nil {
 		return domain.TicketLog{}, err
 	}
@@ -62,7 +62,7 @@ func (s *WorkLogService) WriteTicketLog(ctx context.Context, actor ports.Actor, 
 		return domain.TicketLog{}, err
 	}
 
-	cycles, err := s.cycles.ListByTicket(ctx, ticket)
+	cycles, err := s.cycles.ListByIssue(ctx, ticket)
 	if err != nil {
 		return domain.TicketLog{}, err
 	}
@@ -75,7 +75,7 @@ func (s *WorkLogService) WriteTicketLog(ctx context.Context, actor ports.Actor, 
 	entry := domain.TicketLog{
 		ID:        domain.TicketLogID(s.ids.NewID()),
 		ProjectID: owner.ProjectID,
-		TicketID:  ticket,
+		IssueID:  ticket,
 		CycleID:   cycleID,
 		Body:      strings.TrimSpace(body),
 		CreatedBy: actor.UserID,
@@ -155,15 +155,15 @@ func (s *WorkLogService) DeletePlanLog(ctx context.Context, actor ports.Actor, i
 	return s.planLogs.Delete(ctx, id)
 }
 
-func (s *WorkLogService) ListTodoLogs(ctx context.Context, actor ports.Actor, todo domain.TodoID, f domain.TodoLogFilter) ([]domain.TodoLog, error) {
-	owner, err := s.todos.GetByID(ctx, todo)
+func (s *WorkLogService) ListTodoLogs(ctx context.Context, actor ports.Actor, todo domain.IssueID, f domain.TodoLogFilter) ([]domain.TodoLog, error) {
+	owner, err := s.issues.GetByID(ctx, todo)
 	if err != nil {
 		return nil, err
 	}
 	if _, err := s.guard.EnsureRead(ctx, actor, owner.ProjectID); err != nil {
 		return nil, err
 	}
-	f.TodoID = todo
+	f.IssueID = todo
 	f.Limit = clampLimit(f.Limit)
 	entries, err := s.todoLogs.List(ctx, owner.ProjectID, f)
 	if err != nil {
@@ -175,8 +175,8 @@ func (s *WorkLogService) ListTodoLogs(ctx context.Context, actor ports.Actor, to
 	return entries, nil
 }
 
-func (s *WorkLogService) WriteTodoLog(ctx context.Context, actor ports.Actor, todo domain.TodoID, body string) (domain.TodoLog, error) {
-	owner, err := s.todos.GetByID(ctx, todo)
+func (s *WorkLogService) WriteTodoLog(ctx context.Context, actor ports.Actor, todo domain.IssueID, body string) (domain.TodoLog, error) {
+	owner, err := s.issues.GetByID(ctx, todo)
 	if err != nil {
 		return domain.TodoLog{}, err
 	}
@@ -188,7 +188,7 @@ func (s *WorkLogService) WriteTodoLog(ctx context.Context, actor ports.Actor, to
 	entry := domain.TodoLog{
 		ID:        domain.TodoLogID(s.ids.NewID()),
 		ProjectID: owner.ProjectID,
-		TodoID:    todo,
+		IssueID:    todo,
 		Body:      strings.TrimSpace(body),
 		CreatedBy: actor.UserID,
 		CreatedAt: now,

@@ -10,7 +10,7 @@ import (
 )
 
 func TestValidateTicketLog(t *testing.T) {
-	valid := domain.TicketLog{ProjectID: "p1", TicketID: "tk1", Body: "Mapbox rejects feature-state in a filter."}
+	valid := domain.TicketLog{ProjectID: "p1", IssueID: "tk1", Body: "Mapbox rejects feature-state in a filter."}
 
 	t.Run("accepts a valid entry", func(t *testing.T) {
 		if err := rules.ValidateTicketLog(valid); err != nil {
@@ -20,7 +20,7 @@ func TestValidateTicketLog(t *testing.T) {
 
 	t.Run("requires a ticket", func(t *testing.T) {
 		bad := valid
-		bad.TicketID = ""
+		bad.IssueID = ""
 		if !errors.Is(rules.ValidateTicketLog(bad), domain.ErrValidation) {
 			t.Fatal("want validation error")
 		}
@@ -78,7 +78,7 @@ func TestValidatePlanLog(t *testing.T) {
 }
 
 func TestValidateTodoLog(t *testing.T) {
-	valid := domain.TodoLog{ProjectID: "p1", TodoID: "t1", Body: "Blocked on the upstream fix."}
+	valid := domain.TodoLog{ProjectID: "p1", IssueID: "t1", Body: "Blocked on the upstream fix."}
 
 	t.Run("accepts a valid entry", func(t *testing.T) {
 		if err := rules.ValidateTodoLog(valid); err != nil {
@@ -88,7 +88,7 @@ func TestValidateTodoLog(t *testing.T) {
 
 	t.Run("requires a todo", func(t *testing.T) {
 		bad := valid
-		bad.TodoID = ""
+		bad.IssueID = ""
 		if !errors.Is(rules.ValidateTodoLog(bad), domain.ErrValidation) {
 			t.Fatal("want validation error")
 		}

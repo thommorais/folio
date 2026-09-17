@@ -100,13 +100,13 @@ func TestPlanAndTodoLogs(t *testing.T) {
 	ticket := f.ticket(t, f.project, "Mobile nav")
 
 	plan, err := f.planSvc.CreatePlan(ctx, f.owner, ports.CreatePlanInput{
-		ProjectID: f.project, TicketID: ticket.ID, Title: "Ship the nav",
+		ProjectID: f.project, IssueID: ticket.ID, Title: "Ship the nav",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	todo, err := f.todoSvc.CreateTodo(ctx, f.owner, ports.CreateTodoInput{
-		ProjectID: f.project, TicketID: ticket.ID, Title: "Add the hamburger",
+	todo, err := f.issueSvc.CreateIssue(ctx, f.owner, ports.CreateIssueInput{
+		ProjectID: f.project, ParentID: ticket.ID, Title: "Add the hamburger",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -127,8 +127,8 @@ func TestPlanAndTodoLogs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.TodoID != todo.ID {
-			t.Errorf("todo = %q, want %q", got.TodoID, todo.ID)
+		if got.IssueID != todo.ID {
+			t.Errorf("todo = %q, want %q", got.IssueID, todo.ID)
 		}
 	})
 

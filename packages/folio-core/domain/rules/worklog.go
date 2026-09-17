@@ -6,8 +6,8 @@ func ValidateTicketLog(l domain.TicketLog) error {
 	if l.ProjectID == "" {
 		return domain.Invalid("project", "is required")
 	}
-	if l.TicketID == "" {
-		return domain.Invalid("ticket", "is required")
+	if l.IssueID == "" {
+		return domain.Invalid("issue", "is required")
 	}
 	return required("body", l.Body, BodyMaxLen)
 }
@@ -26,8 +26,8 @@ func ValidateTodoLog(l domain.TodoLog) error {
 	if l.ProjectID == "" {
 		return domain.Invalid("project", "is required")
 	}
-	if l.TodoID == "" {
-		return domain.Invalid("todo", "is required")
+	if l.IssueID == "" {
+		return domain.Invalid("issue", "is required")
 	}
 	return required("body", l.Body, BodyMaxLen)
 }

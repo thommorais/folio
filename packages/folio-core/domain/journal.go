@@ -14,13 +14,11 @@ type JournalEntry struct {
 	ProjectID ProjectID
 	// Slug addresses the entry within its project and survives a title edit.
 	Slug string
-	// PlanID and TodoID are optional back-references to the work the entry
-	// documents.
+	// PlanID is an optional back-reference to the work the entry documents.
 	PlanID PlanID
-	TodoID TodoID
-	// TicketID is optional: an empty value means the entry sits directly
-	// under the project rather than under one of its tickets.
-	TicketID TicketID
+	// IssueID is optional: an empty value means the entry sits directly
+	// under the project rather than under one of its issues.
+	IssueID IssueID
 	Title    string
 	// Body is markdown: the problem, the approach, the decisions, whatever
 	// the next person needs. Length is deliberately generous.
@@ -28,8 +26,8 @@ type JournalEntry struct {
 	// Branch, PR and ExternalRef anchor the entry to the work as it happened.
 	// An agent knows its branch from git, so these cost nothing to fill and
 	// make the entry findable from a code reference later. ExternalRef names
-	// the work in another tracker and is distinct from TicketID, which points
-	// at a folio ticket.
+	// the work in another tracker and is distinct from IssueID, which points
+	// at a folio issue.
 	Branch      string
 	PR          string
 	ExternalRef string
@@ -47,8 +45,7 @@ type JournalEntry struct {
 // JournalFilter narrows a log query. Zero values mean "no restriction".
 type JournalFilter struct {
 	PlanID      PlanID
-	TodoID      TodoID
-	TicketID    TicketID
+	IssueID     IssueID
 	Branch      string
 	ExternalRef string
 	Tags        []string

@@ -16,8 +16,7 @@ import (
 type SeedUseCases struct {
 	Projects ports.ProjectUseCase
 	Plans    ports.PlanUseCase
-	Tickets  ports.TicketUseCase
-	Todos    ports.TodoUseCase
+	Issues   ports.IssueUseCase
 	Journal  ports.JournalUseCase
 	Docs     ports.DocUseCase
 }
@@ -56,15 +55,15 @@ func Seed(ctx context.Context, uc SeedUseCases, actor ports.Actor) (SeedReport, 
 		// Tickets come first: the plans below hang off the first one, so the
 		// demo shows work organised under a ticket rather than only loose
 		// under the project.
-		ticketIDs := make([]domain.TicketID, 0, len(spec.tickets))
+		issueIDs := make([]domain.IssueID, 0, len(spec.tickets))
 		for _, ticket := range spec.tickets {
 			ticket.ProjectID = project.ID
-			created, err := uc.Tickets.CreateTicket(ctx, actor, ticket)
+			created, err := uc.Issues.CreateIssue(ctx, actor, ticket)
 			if err != nil {
 				return report, fmt.Errorf("ticket %q: %w", ticket.Title, err)
 			}
 			report.Tickets++
-			ticketIDs = append(ticketIDs, created.ID)
+			issueIDs = append(issueIDs, created.ID)
 		}
 
 		// Plans are created with their todos in one call, the same way an
@@ -74,8 +73,8 @@ func Seed(ctx context.Context, uc SeedUseCases, actor ports.Actor) (SeedReport, 
 			plan.ProjectID = project.ID
 			// Only the first plan is filed under the ticket, so the dataset
 			// covers both a ticket with work under it and work that has none.
-			if i == 0 && len(ticketIDs) > 0 {
-				plan.TicketID = ticketIDs[0]
+			if i == 0 && len(issueIDs) > 0 {
+				plan.IssueID = issueIDs[0]
 			}
 			created, err := uc.Plans.CreatePlan(ctx, actor, plan)
 			if err != nil {
@@ -91,7 +90,7 @@ func Seed(ctx context.Context, uc SeedUseCases, actor ports.Actor) (SeedReport, 
 			if i >= len(spec.done) {
 				break
 			}
-			todos, err := uc.Todos.ListTodos(ctx, actor, project.ID, domain.TodoFilter{PlanID: planID})
+			todos, err := uc.Issues.ListIssues(ctx, actor, project.ID, domain.IssueFilter{PlanID: planID})
 			if err != nil {
 				return report, err
 			}
@@ -99,7 +98,7 @@ func Seed(ctx context.Context, uc SeedUseCases, actor ports.Actor) (SeedReport, 
 				if j >= len(todos) {
 					break
 				}
-				if _, err := uc.Todos.SetTodoStatus(ctx, actor, todos[j].ID, status); err != nil {
+				if _, err := uc.Issues.SetIssueStatus(ctx, actor, todos[j].ID, status); err != nil {
 					return report, fmt.Errorf("todo %q: %w", todos[j].Title, err)
 				}
 			}

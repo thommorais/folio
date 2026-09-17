@@ -14,7 +14,7 @@ const (
 type Cycle struct {
 	ID         CycleID
 	ProjectID  ProjectID
-	TicketID   TicketID
+	IssueID    IssueID
 	Ordinal    int
 	Phase      Phase
 	Resolution string
@@ -27,7 +27,7 @@ type Cycle struct {
 func (c Cycle) IsClosed() bool { return c.ClosedAt != nil }
 
 type CycleFilter struct {
-	TicketID TicketID
+	IssueID IssueID
 	Limit    int
 	Offset   int
 }

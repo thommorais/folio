@@ -7,9 +7,9 @@ import "time"
 type Doc struct {
 	ID        DocID
 	ProjectID ProjectID
-	// TicketID is optional: an empty value means the doc sits directly under
-	// the project rather than under one of its tickets.
-	TicketID  TicketID
+	// IssueID is optional: an empty value means the doc sits directly under
+	// the project rather than under one of its issues.
+	IssueID   IssueID
 	Slug      string
 	Title     string
 	Body      string
@@ -21,7 +21,7 @@ type Doc struct {
 
 // DocFilter narrows a doc listing. Zero values mean "no restriction".
 type DocFilter struct {
-	TicketID TicketID
+	IssueID IssueID
 	Tags     []string
 	Search   string
 	Limit    int

@@ -24,7 +24,7 @@ func toPlan(rec *core.Record) domain.Plan {
 	return domain.Plan{
 		ID:        domain.PlanID(rec.Id),
 		ProjectID: domain.ProjectID(rec.GetString("project")),
-		TicketID:  domain.TicketID(rec.GetString("ticket")),
+		IssueID:  domain.IssueID(rec.GetString("issue")),
 		Title:     rec.GetString("title"),
 		Goal:      rec.GetString("goal"),
 		Status:    domain.PlanStatus(rec.GetString("status")),
@@ -57,8 +57,8 @@ func (r *PlanRepository) List(ctx context.Context, project domain.ProjectID, sta
 
 // ListByTicket returns every plan filed under a ticket, so deleting the
 // ticket can detach them.
-func (r *PlanRepository) ListByTicket(ctx context.Context, ticket domain.TicketID) ([]domain.Plan, error) {
-	records, err := r.app.FindAllRecords(ColPlans, dbx.HashExp{"ticket": string(ticket)})
+func (r *PlanRepository) ListByIssue(ctx context.Context, issue domain.IssueID) ([]domain.Plan, error) {
+	records, err := r.app.FindAllRecords(ColPlans, dbx.HashExp{"issue": string(issue)})
 	if err != nil {
 		return nil, mapErr(err)
 	}
@@ -105,7 +105,7 @@ func (r *PlanRepository) Update(ctx context.Context, p domain.Plan) (domain.Plan
 
 func applyPlan(rec *core.Record, p domain.Plan) {
 	rec.Set("project", string(p.ProjectID))
-	rec.Set("ticket", string(p.TicketID))
+	rec.Set("issue", string(p.IssueID))
 	rec.Set("title", p.Title)
 	rec.Set("goal", p.Goal)
 	rec.Set("status", string(p.Status))

@@ -11,15 +11,15 @@ import (
 
 type DocService struct {
 	repo    ports.DocRepository
-	tickets ports.TicketRepository
+	issues ports.IssueRepository
 	guard   ports.Guard
 	clock   ports.Clock
 	ids     ports.IDGenerator
 	log     ports.Logger
 }
 
-func NewDocService(repo ports.DocRepository, tickets ports.TicketRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *DocService {
-	return &DocService{repo: repo, tickets: tickets, guard: guard, clock: clock, ids: ids, log: log}
+func NewDocService(repo ports.DocRepository, issues ports.IssueRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *DocService {
+	return &DocService{repo: repo, issues: issues, guard: guard, clock: clock, ids: ids, log: log}
 }
 
 var _ ports.DocUseCase = (*DocService)(nil)
@@ -62,7 +62,7 @@ func (s *DocService) CreateDoc(ctx context.Context, actor ports.Actor, in ports.
 		return domain.Doc{}, err
 	}
 
-	if err := ticketScope(ctx, s.tickets, in.TicketID, in.ProjectID); err != nil {
+	if err := issueScope(ctx, s.issues, in.IssueID, in.ProjectID); err != nil {
 		return domain.Doc{}, err
 	}
 
@@ -74,7 +74,7 @@ func (s *DocService) CreateDoc(ctx context.Context, actor ports.Actor, in ports.
 	doc := domain.Doc{
 		ID:        domain.DocID(s.ids.NewID()),
 		ProjectID: in.ProjectID,
-		TicketID:  in.TicketID,
+		IssueID:  in.IssueID,
 		Slug:      slug,
 		Title:     strings.TrimSpace(in.Title),
 		Body:      in.Body,
@@ -117,11 +117,11 @@ func (s *DocService) UpdateDoc(ctx context.Context, actor ports.Actor, id domain
 		return domain.Doc{}, err
 	}
 
-	if in.TicketID != nil {
-		if err := ticketScope(ctx, s.tickets, *in.TicketID, doc.ProjectID); err != nil {
+	if in.IssueID != nil {
+		if err := issueScope(ctx, s.issues, *in.IssueID, doc.ProjectID); err != nil {
 			return domain.Doc{}, err
 		}
-		doc.TicketID = *in.TicketID
+		doc.IssueID = *in.IssueID
 	}
 	if in.Slug != nil {
 		doc.Slug = strings.TrimSpace(*in.Slug)

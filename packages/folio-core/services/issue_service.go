@@ -123,7 +123,7 @@ func (s *IssueService) hydrate(ctx context.Context, issue domain.Issue) (domain.
 	issue = one[0]
 
 	if issue.Kind == domain.IssueTicket {
-		cycles, err := s.cycles.ListByTicket(ctx, domain.TicketID(issue.ID))
+		cycles, err := s.cycles.ListByIssue(ctx, issue.ID)
 		if err != nil {
 			return domain.Issue{}, err
 		}
@@ -318,7 +318,7 @@ func (s *IssueService) UpdateIssue(ctx context.Context, actor ports.Actor, id do
 			return domain.Issue{}, err
 		}
 		if in.Status.IsTerminal() && issue.Kind == domain.IssueTicket {
-			cycles, err := s.cycles.ListByTicket(ctx, domain.TicketID(issue.ID))
+			cycles, err := s.cycles.ListByIssue(ctx, issue.ID)
 			if err != nil {
 				return domain.Issue{}, err
 			}
@@ -513,36 +513,36 @@ func (s *IssueService) DeleteIssue(ctx context.Context, actor ports.Actor, id do
 func (s *IssueService) detachChildren(ctx context.Context, issue domain.Issue) error {
 	now := s.clock.Now()
 
-	plans, err := s.plans.ListByTicket(ctx, domain.TicketID(issue.ID))
+	plans, err := s.plans.ListByIssue(ctx, issue.ID)
 	if err != nil {
 		return err
 	}
 	for _, p := range plans {
-		p.TicketID = ""
+		p.IssueID = ""
 		p.UpdatedAt = now
 		if _, err := s.plans.Update(ctx, p); err != nil {
 			return err
 		}
 	}
 
-	entries, err := s.journal.List(ctx, issue.ProjectID, domain.JournalFilter{TicketID: domain.TicketID(issue.ID), Limit: MaxPageSize})
+	entries, err := s.journal.List(ctx, issue.ProjectID, domain.JournalFilter{IssueID: issue.ID, Limit: MaxPageSize})
 	if err != nil {
 		return err
 	}
 	for _, e := range entries {
-		e.TicketID = ""
+		e.IssueID = ""
 		e.UpdatedAt = now
 		if _, err := s.journal.Update(ctx, e); err != nil {
 			return err
 		}
 	}
 
-	docs, err := s.docs.List(ctx, issue.ProjectID, domain.DocFilter{TicketID: domain.TicketID(issue.ID), Limit: MaxPageSize})
+	docs, err := s.docs.List(ctx, issue.ProjectID, domain.DocFilter{IssueID: issue.ID, Limit: MaxPageSize})
 	if err != nil {
 		return err
 	}
 	for _, d := range docs {
-		d.TicketID = ""
+		d.IssueID = ""
 		d.UpdatedAt = now
 		if _, err := s.docs.Update(ctx, d); err != nil {
 			return err
@@ -609,22 +609,22 @@ func (s *IssueService) brief(ctx context.Context, issue domain.Issue, in ports.B
 	}
 	sortOpenFirstIssues(children)
 
-	plans, err := s.plans.ListByTicket(ctx, domain.TicketID(issue.ID))
+	plans, err := s.plans.ListByIssue(ctx, issue.ID)
 	if err != nil {
 		return domain.IssueBrief{}, err
 	}
 
-	journal, err := s.journal.List(ctx, issue.ProjectID, domain.JournalFilter{TicketID: domain.TicketID(issue.ID), Limit: recent})
+	journal, err := s.journal.List(ctx, issue.ProjectID, domain.JournalFilter{IssueID: issue.ID, Limit: recent})
 	if err != nil {
 		return domain.IssueBrief{}, err
 	}
 
-	docs, err := s.docs.List(ctx, issue.ProjectID, domain.DocFilter{TicketID: domain.TicketID(issue.ID), Limit: MaxPageSize})
+	docs, err := s.docs.List(ctx, issue.ProjectID, domain.DocFilter{IssueID: issue.ID, Limit: MaxPageSize})
 	if err != nil {
 		return domain.IssueBrief{}, err
 	}
 
-	cycles, err := s.cycles.ListByTicket(ctx, domain.TicketID(issue.ID))
+	cycles, err := s.cycles.ListByIssue(ctx, issue.ID)
 	if err != nil {
 		return domain.IssueBrief{}, err
 	}

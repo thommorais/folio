@@ -130,14 +130,14 @@ func TestClosingATicketRequiresAResolution(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := f.ticketSvc.SetTicketStatus(ctx, f.owner, ticket.ID, domain.TicketClosed); !errors.Is(err, domain.ErrValidation) {
+	if _, err := f.issueSvc.SetIssueStatus(ctx, f.owner, ticket.ID, domain.IssueDone); !errors.Is(err, domain.ErrValidation) {
 		t.Fatalf("want validation error, got %v", err)
 	}
 
 	if _, err := f.cycleSvc.ResolveCycle(ctx, f.owner, cycle.ID, "Shipped behind a flag"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.ticketSvc.SetTicketStatus(ctx, f.owner, ticket.ID, domain.TicketClosed); err != nil {
+	if _, err := f.issueSvc.SetIssueStatus(ctx, f.owner, ticket.ID, domain.IssueDone); err != nil {
 		t.Fatalf("a resolved cycle must let the ticket close, got %v", err)
 	}
 }
@@ -146,7 +146,7 @@ func TestATicketWithNoCyclesStillCloses(t *testing.T) {
 	f := newTicketFixture(t)
 	ticket := f.ticket(t, f.project, "Never used PDCA")
 
-	if _, err := f.ticketSvc.SetTicketStatus(context.Background(), f.owner, ticket.ID, domain.TicketClosed); err != nil {
+	if _, err := f.issueSvc.SetIssueStatus(context.Background(), f.owner, ticket.ID, domain.IssueDone); err != nil {
 		t.Fatalf("want nil, got %v", err)
 	}
 }
@@ -159,7 +159,7 @@ func TestTicketReportsItsCurrentCycle(t *testing.T) {
 	ticket := f.ticket(t, f.project, "Mobile nav")
 
 	t.Run("reports nothing before any cycle opens", func(t *testing.T) {
-		got, err := f.ticketSvc.GetTicket(ctx, f.owner, ticket.ID)
+		got, err := f.issueSvc.GetIssue(ctx, f.owner, ticket.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -177,7 +177,7 @@ func TestTicketReportsItsCurrentCycle(t *testing.T) {
 		if _, err := f.cycleSvc.AdvancePhase(ctx, f.owner, first.ID, domain.PhaseDo); err != nil {
 			t.Fatal(err)
 		}
-		got, err := f.ticketSvc.GetTicket(ctx, f.owner, ticket.ID)
+		got, err := f.issueSvc.GetIssue(ctx, f.owner, ticket.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -193,7 +193,7 @@ func TestTicketReportsItsCurrentCycle(t *testing.T) {
 		if _, err := f.cycleSvc.OpenCycle(ctx, f.owner, ticket.ID); err != nil {
 			t.Fatal(err)
 		}
-		got, err := f.ticketSvc.GetTicket(ctx, f.owner, ticket.ID)
+		got, err := f.issueSvc.GetIssue(ctx, f.owner, ticket.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -211,7 +211,7 @@ func TestUpdateTicketReturnsTheCurrentCycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := f.ticketSvc.UpdateTicket(ctx, f.owner, ticket.ID, ports.UpdateTicketInput{})
+	got, err := f.issueSvc.UpdateIssue(ctx, f.owner, ticket.ID, ports.UpdateIssueInput{})
 	if err != nil {
 		t.Fatal(err)
 	}
