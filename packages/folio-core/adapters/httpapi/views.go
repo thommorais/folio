@@ -22,6 +22,7 @@ type memberView struct {
 
 type projectView struct {
 	ID        string       `json:"id"`
+	DomainID  string       `json:"domain_id,omitempty"`
 	Slug      string       `json:"slug"`
 	Name      string       `json:"name"`
 	Descr     string       `json:"descr,omitempty"`
@@ -39,7 +40,7 @@ func toProjectView(p domain.Project) projectView {
 		})
 	}
 	return projectView{
-		ID: string(p.ID), Slug: p.Slug, Name: p.Name, Descr: p.Descr,
+		ID: string(p.ID), DomainID: string(p.DomainID), Slug: p.Slug, Name: p.Name, Descr: p.Descr,
 		Archived: p.Archived, Members: members,
 		CreatedAt: rfc3339(p.CreatedAt), UpdatedAt: rfc3339(p.UpdatedAt),
 	}
@@ -356,4 +357,107 @@ func toTicketBriefView(b domain.TicketBrief) ticketBriefView {
 		out.Cycles = append(out.Cycles, toCycleView(c))
 	}
 	return out
+}
+
+type issueView struct {
+	ID          string       `json:"id"`
+	Kind        string       `json:"kind"`
+	ProjectID   string       `json:"project_id"`
+	ParentID    string       `json:"parent_id,omitempty"`
+	PlanID      string       `json:"plan_id,omitempty"`
+	Slug        string       `json:"slug"`
+	Title       string       `json:"title"`
+	Body        string       `json:"body"`
+	Status      string       `json:"status"`
+	Priority    string       `json:"priority"`
+	Size        int          `json:"size,omitempty"`
+	Score       float64      `json:"score"`
+	Assignee    string       `json:"assignee,omitempty"`
+	Tags        []string     `json:"tags"`
+	Position    int          `json:"position,omitempty"`
+	DueDate     string       `json:"due_date,omitempty"`
+	ExternalRef string       `json:"external_ref,omitempty"`
+	DependsOn   []string     `json:"depends_on"`
+	RelatedTo   []string     `json:"related_to"`
+	Wayfinder   string       `json:"wayfinder,omitempty"`
+	Blocked     bool         `json:"blocked"`
+	Cycle       int          `json:"cycle,omitempty"`
+	Phase       string       `json:"phase,omitempty"`
+	Progress    progressView `json:"progress"`
+	CreatedBy   string       `json:"created_by,omitempty"`
+	CreatedAt   string       `json:"created_at"`
+	UpdatedAt   string       `json:"updated_at"`
+}
+
+func toIssueView(i domain.Issue) issueView {
+	due := ""
+	if i.DueDate != nil {
+		due = rfc3339(*i.DueDate)
+	}
+	return issueView{
+		ID: string(i.ID), Kind: string(i.Kind), ProjectID: string(i.ProjectID),
+		ParentID: string(i.ParentID), PlanID: string(i.PlanID), Slug: i.Slug,
+		Title: i.Title, Body: i.Body, Status: string(i.Status),
+		Priority: string(i.Priority), Size: int(i.Size), Score: i.Score(),
+		Assignee: string(i.Assignee), Tags: orEmpty(i.Tags),
+		Position: i.Position, DueDate: due, ExternalRef: i.ExternalRef,
+		DependsOn: fromIssueIDs(i.DependsOn), RelatedTo: fromIssueIDs(i.RelatedTo),
+		Wayfinder: string(i.Wayfinder), Blocked: i.Blocked,
+		Cycle: i.Cycle, Phase: string(i.Phase),
+		Progress:  progressView{Total: i.Progress.Total, Done: i.Progress.Done, Percent: i.Progress.Percent()},
+		CreatedBy: string(i.CreatedBy),
+		CreatedAt: rfc3339(i.CreatedAt), UpdatedAt: rfc3339(i.UpdatedAt),
+	}
+}
+
+func fromIssueIDs(ids []domain.IssueID) []string {
+	out := make([]string, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, string(id))
+	}
+	return out
+}
+
+func toIssueIDs(raw []string) []domain.IssueID {
+	out := make([]domain.IssueID, 0, len(raw))
+	for _, s := range raw {
+		out = append(out, domain.IssueID(s))
+	}
+	return out
+}
+
+type issueBriefView struct {
+	Issue    issueView      `json:"issue"`
+	Children []issueView    `json:"children"`
+	Plans    []planView     `json:"plans"`
+	Journal  []journalView  `json:"journal"`
+	Docs     []docView      `json:"docs"`
+	Cycles   []cycleView    `json:"cycles"`
+}
+
+func toIssueBriefView(b domain.IssueBrief) issueBriefView {
+	children := make([]issueView, 0, len(b.Children))
+	for _, c := range b.Children {
+		children = append(children, toIssueView(c))
+	}
+	plans := make([]planView, 0, len(b.Plans))
+	for _, p := range b.Plans {
+		plans = append(plans, toPlanView(p))
+	}
+	journal := make([]journalView, 0, len(b.Journal))
+	for _, j := range b.Journal {
+		journal = append(journal, toJournalView(j))
+	}
+	docs := make([]docView, 0, len(b.Docs))
+	for _, d := range b.Docs {
+		docs = append(docs, toDocView(d))
+	}
+	cycles := make([]cycleView, 0, len(b.Cycles))
+	for _, c := range b.Cycles {
+		cycles = append(cycles, toCycleView(c))
+	}
+	return issueBriefView{
+		Issue: toIssueView(b.Issue), Children: children, Plans: plans,
+		Journal: journal, Docs: docs, Cycles: cycles,
+	}
 }

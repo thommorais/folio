@@ -19,9 +19,10 @@ type ProjectUseCase interface {
 }
 
 type CreateProjectInput struct {
-	Slug  string
-	Name  string
-	Descr string
+	DomainID domain.DomainID
+	Slug     string
+	Name     string
+	Descr    string
 }
 
 type UpdateProjectInput struct {
@@ -54,6 +55,62 @@ type UpdatePlanInput struct {
 	Goal     *string
 	Status   *domain.PlanStatus
 	Tags     *[]string
+}
+
+type IssueUseCase interface {
+	ListIssues(ctx context.Context, actor Actor, project domain.ProjectID, f domain.IssueFilter) ([]domain.Issue, error)
+	GetIssue(ctx context.Context, actor Actor, id domain.IssueID) (domain.Issue, error)
+	GetIssueBySlug(ctx context.Context, actor Actor, project domain.ProjectID, slug string) (domain.Issue, error)
+	CreateIssue(ctx context.Context, actor Actor, in CreateIssueInput) (domain.Issue, error)
+	CreateIssues(ctx context.Context, actor Actor, project domain.ProjectID, in []CreateIssueInput) (BatchResult[domain.Issue], error)
+	UpdateIssue(ctx context.Context, actor Actor, id domain.IssueID, in UpdateIssueInput) (domain.Issue, error)
+	SetIssueStatus(ctx context.Context, actor Actor, id domain.IssueID, status domain.IssueStatus) (domain.Issue, error)
+	DeleteIssue(ctx context.Context, actor Actor, id domain.IssueID) error
+
+	LinkIssues(ctx context.Context, actor Actor, from, to domain.IssueID, kind domain.LinkKind) error
+	UnlinkIssues(ctx context.Context, actor Actor, from, to domain.IssueID, kind domain.LinkKind) error
+
+	Frontier(ctx context.Context, actor Actor, mapID domain.IssueID) ([]domain.Issue, error)
+	GetIssueBrief(ctx context.Context, actor Actor, id domain.IssueID, in BriefOptions) (domain.IssueBrief, error)
+	GetIssueBriefBySlug(ctx context.Context, actor Actor, project domain.ProjectID, slug string, in BriefOptions) (domain.IssueBrief, error)
+}
+
+type CreateIssueInput struct {
+	ProjectID   domain.ProjectID
+	Kind        domain.IssueKind
+	ParentID    domain.IssueID
+	PlanID      domain.PlanID
+	Slug        string
+	Title       string
+	Body        string
+	Status      domain.IssueStatus
+	Priority    domain.Priority
+	Size        domain.Size
+	Assignee    domain.UserID
+	Tags        []string
+	DueDate     *string
+	DependsOn   []domain.IssueID
+	Wayfinder   domain.WayfinderType
+	ExternalRef string
+}
+
+type UpdateIssueInput struct {
+	Kind        *domain.IssueKind
+	ParentID    *domain.IssueID
+	PlanID      *domain.PlanID
+	Slug        *string
+	Title       *string
+	Body        *string
+	Status      *domain.IssueStatus
+	Priority    *domain.Priority
+	Size        *domain.Size
+	Assignee    *domain.UserID
+	Tags        *[]string
+	Position    *int
+	DueDate     *string
+	DependsOn   *[]domain.IssueID
+	Wayfinder   *domain.WayfinderType
+	ExternalRef *string
 }
 
 type TicketUseCase interface {

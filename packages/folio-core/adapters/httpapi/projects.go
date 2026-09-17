@@ -31,9 +31,10 @@ func (h *Handler) getProject(e *core.RequestEvent) error {
 }
 
 type createProjectBody struct {
-	Slug  string `json:"slug"`
-	Name  string `json:"name"`
-	Descr string `json:"descr"`
+	DomainID string `json:"domain_id"`
+	Slug     string `json:"slug"`
+	Name     string `json:"name"`
+	Descr    string `json:"descr"`
 }
 
 func (h *Handler) createProject(e *core.RequestEvent) error {
@@ -48,7 +49,8 @@ func (h *Handler) createProject(e *core.RequestEvent) error {
 	}
 
 	project, err := h.projects.CreateProject(e.Request.Context(), actorOf(e), ports.CreateProjectInput{
-		Slug: body.Slug, Name: body.Name, Descr: body.Descr,
+		DomainID: domain.DomainID(body.DomainID),
+		Slug:     body.Slug, Name: body.Name, Descr: body.Descr,
 	})
 	if err != nil {
 		return fail(e, err)

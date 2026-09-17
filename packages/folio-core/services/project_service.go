@@ -52,10 +52,11 @@ func (s *ProjectService) resolve(ctx context.Context, ref string) (domain.Projec
 func (s *ProjectService) CreateProject(ctx context.Context, actor ports.Actor, in ports.CreateProjectInput) (domain.Project, error) {
 	now := s.clock.Now()
 	project := domain.Project{
-		ID:    domain.ProjectID(s.ids.NewID()),
-		Slug:  strings.TrimSpace(in.Slug),
-		Name:  strings.TrimSpace(in.Name),
-		Descr: in.Descr,
+		ID:       domain.ProjectID(s.ids.NewID()),
+		DomainID: in.DomainID,
+		Slug:     strings.TrimSpace(in.Slug),
+		Name:     strings.TrimSpace(in.Name),
+		Descr:    in.Descr,
 		// The creator becomes the first owner; without this a project would be
 		// born unadministrable.
 		Members:   []domain.Member{{UserID: actor.UserID, Role: domain.RoleOwner, Email: actor.Email}},

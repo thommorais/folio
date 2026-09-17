@@ -17,6 +17,7 @@ import (
 type Handler struct {
 	projects ports.ProjectUseCase
 	plans    ports.PlanUseCase
+	issues   ports.IssueUseCase
 	tickets  ports.TicketUseCase
 	todos    ports.TodoUseCase
 	journal  ports.JournalUseCase
@@ -29,6 +30,7 @@ type Handler struct {
 type Deps struct {
 	Projects ports.ProjectUseCase
 	Plans    ports.PlanUseCase
+	Issues   ports.IssueUseCase
 	Tickets  ports.TicketUseCase
 	Todos    ports.TodoUseCase
 	Journal  ports.JournalUseCase
@@ -40,7 +42,7 @@ type Deps struct {
 
 func New(d Deps) *Handler {
 	return &Handler{
-		projects: d.Projects, plans: d.Plans, tickets: d.Tickets, todos: d.Todos,
+		projects: d.Projects, plans: d.Plans, issues: d.Issues, tickets: d.Tickets, todos: d.Todos,
 		journal: d.Journal, cycles: d.Cycles, workLogs: d.WorkLogs, docs: d.Docs, search: d.Search,
 	}
 }
@@ -95,6 +97,18 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.DELETE("/todo-logs/{log}", h.deleteTodoLog)
 	g.PATCH("/tickets/{ticket}", h.updateTicket)
 	g.DELETE("/tickets/{ticket}", h.deleteTicket)
+
+	g.GET("/projects/{project}/issues", h.listIssues)
+	g.POST("/projects/{project}/issues", h.createIssues)
+	g.GET("/projects/{project}/issues/{slug}", h.getIssueBySlug)
+	g.GET("/projects/{project}/issues/{slug}/brief", h.getIssueBriefBySlug)
+	g.GET("/issues/{issue}", h.getIssue)
+	g.GET("/issues/{issue}/brief", h.getIssueBrief)
+	g.GET("/issues/{issue}/frontier", h.issueFrontier)
+	g.PATCH("/issues/{issue}", h.updateIssue)
+	g.DELETE("/issues/{issue}", h.deleteIssue)
+	g.POST("/issues/{issue}/links", h.linkIssue)
+	g.DELETE("/issues/{issue}/links/{to}", h.unlinkIssue)
 
 	g.GET("/projects/{project}/todos", h.listTodos)
 	g.POST("/projects/{project}/todos", h.createTodos)

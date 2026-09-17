@@ -84,3 +84,17 @@ func CheckClosable(status domain.TicketStatus, cycles []domain.Cycle) error {
 	}
 	return nil
 }
+
+func CheckClosableIssue(status domain.IssueStatus, cycles []domain.Cycle) error {
+	if !status.IsTerminal() {
+		return nil
+	}
+	current, ok := CurrentCycle(cycles)
+	if !ok {
+		return nil
+	}
+	if strings.TrimSpace(current.Resolution) == "" {
+		return domain.Invalid("resolution", "is required to close an issue: record what happened on cycle "+strconv.Itoa(current.Ordinal))
+	}
+	return nil
+}

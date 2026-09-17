@@ -40,6 +40,23 @@ type PlanRepository interface {
 	Delete(ctx context.Context, id domain.PlanID) error
 }
 
+type IssueRepository interface {
+	List(ctx context.Context, project domain.ProjectID, f domain.IssueFilter) ([]domain.Issue, error)
+	ListByParent(ctx context.Context, parent domain.IssueID) ([]domain.Issue, error)
+	ListByPlan(ctx context.Context, plan domain.PlanID) ([]domain.Issue, error)
+	GetByID(ctx context.Context, id domain.IssueID) (domain.Issue, error)
+	GetBySlug(ctx context.Context, project domain.ProjectID, slug string) (domain.Issue, error)
+	Create(ctx context.Context, i domain.Issue) (domain.Issue, error)
+	Update(ctx context.Context, i domain.Issue) (domain.Issue, error)
+	Delete(ctx context.Context, id domain.IssueID) error
+
+	Links(ctx context.Context, id domain.IssueID) ([]domain.IssueLink, error)
+	LinksOfProject(ctx context.Context, project domain.ProjectID) ([]domain.IssueLink, error)
+	Link(ctx context.Context, from, to domain.IssueID, kind domain.LinkKind) error
+	Unlink(ctx context.Context, from, to domain.IssueID, kind domain.LinkKind) error
+	SetLinks(ctx context.Context, from domain.IssueID, kind domain.LinkKind, to []domain.IssueID) error
+}
+
 type TodoRepository interface {
 	List(ctx context.Context, project domain.ProjectID, f domain.TodoFilter) ([]domain.Todo, error)
 	// ListByPlan returns every todo under a plan, unfiltered, for progress

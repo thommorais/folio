@@ -31,11 +31,38 @@ func (r Role) CanAdmin() bool {
 }
 
 type Project struct {
-	ID        ProjectID
+	ID ProjectID
+	// DomainID holds the project's roster: projects under one domain share
+	// their members.
+	DomainID  DomainID
 	Slug      string
 	Name      string
 	Descr     string
 	Archived  bool
+	Members   []Member
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Client is a company or a person.
+type Client struct {
+	ID        ClientID
+	Slug      string
+	Name      string
+	Site      string
+	Logo      string
+	Descr     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Domain is the root of permissions: its members reach every project under it.
+type Domain struct {
+	ID        DomainID
+	ClientID  ClientID
+	Slug      string
+	Name      string
+	Descr     string
 	Members   []Member
 	CreatedAt time.Time
 	UpdatedAt time.Time

@@ -7,7 +7,11 @@ package pb
 // repositories and the search adapter must all agree on them; a typo in a
 // string literal would surface as an empty result rather than a failure.
 const (
+	ColClients  = "journ_clients"
+	ColDomains  = "journ_domains"
 	ColProjects = "journ_projects"
+	ColIssues   = "journ_issues"
+	ColLinks    = "journ_issue_links"
 	ColMembers  = "journ_members"
 	ColPlans    = "journ_plans"
 	ColTickets  = "journ_tickets"

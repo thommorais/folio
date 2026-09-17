@@ -4,7 +4,10 @@ package domain
 // TodoID is expected is a compile error, which catches wiring mistakes that
 // string-typed IDs would let through silently.
 type (
+	ClientID  string
+	DomainID  string
 	ProjectID string
+	IssueID   string
 	PlanID    string
 	TicketID  string
 	TodoID    string

@@ -16,18 +16,12 @@ import (
 // made journ_members' own rule reference journ_members. Both read as empty
 // rather than as an error, so every direct collection listing returned [].
 const (
-	// memberOfProject matches when the requesting user holds any role on the
-	// record's project. ?= because a project has many membership rows and
-	// only one has to belong to the caller.
-	memberOfProject = "project.journ_members_via_project.user ?= @request.auth.id"
+	// ?= because a domain has many membership rows and only one has to belong
+	// to the caller.
+	memberOfDomain = "project.domain.journ_members_via_domain.user ?= @request.auth.id"
 	// An aliased @collection join is rejected on create, where the record has
-	// no id yet, so writes traverse the same back-relation as reads. The role
-	// clause is a second ?= over that traversal: with one membership row per
-	// user per project (enforced by idx_journ_members_unique) it can only
-	// match the caller's own row.
-	writerOfProject = "project.journ_members_via_project.user ?= @request.auth.id && project.journ_members_via_project.role ?!= 'viewer'"
-	// ownerOfProject restricts to the administrative role.
-	ownerOfProject = "project.journ_members_via_project.user ?= @request.auth.id && project.journ_members_via_project.role ?= 'owner'"
+	// no id yet, so writes traverse the same relations as reads.
+	writerOfDomain = "project.domain.journ_members_via_domain.user ?= @request.auth.id && project.domain.journ_members_via_domain.role ?!= 'viewer'"
 )
 
 func strPtr(s string) *string { return &s }
@@ -37,6 +31,47 @@ func autodates() []core.Field {
 		&core.AutodateField{Name: "created", OnCreate: true},
 		&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 	}
+}
+
+func ensureClients(app core.App) error {
+	if _, ok := find(app, ColClients); ok {
+		return nil
+	}
+	c := core.NewBaseCollection(ColClients)
+	c.Fields.Add(
+		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
+		&core.TextField{Name: "name", Required: true, Max: 120, Presentable: true},
+		&core.TextField{Name: "site", Max: 300},
+		&core.TextField{Name: "logo", Max: 300},
+		&core.TextField{Name: "descr", Max: 2000},
+	)
+	c.Fields.Add(autodates()...)
+	c.AddIndex("idx_journ_clients_slug", true, "slug", "")
+
+	return app.Save(c)
+}
+
+func ensureDomains(app core.App) error {
+	if _, ok := find(app, ColDomains); ok {
+		return nil
+	}
+	clients, err := app.FindCollectionByNameOrId(ColClients)
+	if err != nil {
+		return err
+	}
+
+	c := core.NewBaseCollection(ColDomains)
+	c.Fields.Add(
+		&core.RelationField{Name: "client", Required: true, CollectionId: clients.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
+		&core.TextField{Name: "name", Required: true, Max: 120, Presentable: true},
+		&core.TextField{Name: "descr", Max: 2000},
+	)
+	c.Fields.Add(autodates()...)
+	c.AddIndex("idx_journ_domains_slug", true, "client, slug", "")
+	c.AddIndex("idx_journ_domains_client", false, "client", "")
+
+	return app.Save(c)
 }
 
 func ensureProjects(app core.App) error {
@@ -164,6 +199,86 @@ var wayfinderValues = []string{"map", "research", "prototype", "grilling", "task
 // relation must not cascade.
 func ticketField(tickets *core.Collection) *core.RelationField {
 	return &core.RelationField{Name: "ticket", CollectionId: tickets.Id, CascadeDelete: false, MaxSelect: 1}
+}
+
+func ensureIssues(app core.App) error {
+	if _, ok := find(app, ColIssues); ok {
+		return nil
+	}
+	projects, err := app.FindCollectionByNameOrId(ColProjects)
+	if err != nil {
+		return err
+	}
+	domains, err := app.FindCollectionByNameOrId(ColDomains)
+	if err != nil {
+		return err
+	}
+	plans, err := app.FindCollectionByNameOrId(ColPlans)
+	if err != nil {
+		return err
+	}
+	users, err := app.FindCollectionByNameOrId(ColUsers)
+	if err != nil {
+		return err
+	}
+
+	c := core.NewBaseCollection(ColIssues)
+	c.Fields.Add(
+		&core.RelationField{Name: "domain", Required: true, CollectionId: domains.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.SelectField{Name: "kind", Required: true, MaxSelect: 1, Values: []string{"ticket", "todo"}},
+		&core.RelationField{Name: "plan", CollectionId: plans.Id, CascadeDelete: false, MaxSelect: 1},
+		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
+		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
+		&core.EditorField{Name: "body", MaxSize: 500000},
+		&core.SelectField{Name: "status", Required: true, MaxSelect: 1, Values: issueStatuses},
+		&core.SelectField{Name: "priority", Required: true, MaxSelect: 1, Values: []string{"low", "medium", "high"}},
+		&core.NumberField{Name: "size", OnlyInt: true},
+		&core.RelationField{Name: "assignee", CollectionId: users.Id, CascadeDelete: false, MaxSelect: 1},
+		&core.JSONField{Name: "tags", MaxSize: 4000},
+		&core.NumberField{Name: "position", OnlyInt: true},
+		&core.DateField{Name: "due_date"},
+		&core.SelectField{Name: "wayfinder", MaxSelect: 1, Values: wayfinderValues},
+		&core.TextField{Name: "external_ref", Max: 200},
+		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
+	)
+	c.Fields.Add(autodates()...)
+	c.AddIndex("idx_journ_issues_slug", true, "project, slug", "")
+	c.AddIndex("idx_journ_issues_status", false, "project, kind, status", "")
+	c.AddIndex("idx_journ_issues_plan", false, "plan", "")
+	c.AddIndex("idx_journ_issues_assignee", false, "assignee", "")
+	c.AddIndex("idx_journ_issues_domain", false, "domain", "")
+
+	return app.Save(c)
+}
+
+var issueStatuses = []string{"open", "in_progress", "blocked", "done", "cancelled"}
+
+func ensureIssueLinks(app core.App) error {
+	if _, ok := find(app, ColLinks); ok {
+		return nil
+	}
+	domains, err := app.FindCollectionByNameOrId(ColDomains)
+	if err != nil {
+		return err
+	}
+	issues, err := app.FindCollectionByNameOrId(ColIssues)
+	if err != nil {
+		return err
+	}
+
+	c := core.NewBaseCollection(ColLinks)
+	c.Fields.Add(
+		&core.RelationField{Name: "domain", Required: true, CollectionId: domains.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.RelationField{Name: "from", Required: true, CollectionId: issues.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.RelationField{Name: "to", Required: true, CollectionId: issues.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.SelectField{Name: "kind", Required: true, MaxSelect: 1, Values: []string{"blocks", "relates", "parent"}},
+	)
+	c.Fields.Add(autodates()...)
+	c.AddIndex("idx_journ_links_unique", true, "[[from]], [[to]], kind", "")
+	c.AddIndex("idx_journ_links_to", false, "[[to]], kind", "")
+
+	return app.Save(c)
 }
 
 func ensureTodos(app core.App) error {
@@ -434,17 +549,41 @@ func applyRules(app core.App) error {
 	if err != nil {
 		return err
 	}
-	// A project is visible to its members; only owners may change or remove
-	// it. Creating one is open to any authenticated user, who becomes its
+	// Creating a project is open to any authenticated user, who becomes its
 	// first owner through the membership row written alongside.
-	memberOfThis := "journ_members_via_project.user ?= @request.auth.id"
-	ownerOfThis := "journ_members_via_project.user ?= @request.auth.id && journ_members_via_project.role ?= 'owner'"
+	memberOfThis := "domain.journ_members_via_domain.user ?= @request.auth.id"
+	ownerOfThis := "domain.journ_members_via_domain.user ?= @request.auth.id && domain.journ_members_via_domain.role ?= 'owner'"
 	projects.ListRule = strPtr(memberOfThis)
 	projects.ViewRule = strPtr(memberOfThis)
 	projects.CreateRule = strPtr("@request.auth.id != ''")
 	projects.UpdateRule = strPtr(ownerOfThis)
 	projects.DeleteRule = strPtr(ownerOfThis)
 	if err := app.Save(projects); err != nil {
+		return err
+	}
+
+	// The domain holds the membership rows, so it checks them directly.
+	clients, err := app.FindCollectionByNameOrId(ColClients)
+	if err != nil {
+		return err
+	}
+	clientVisible := "journ_domains_via_client.journ_members_via_domain.user ?= @request.auth.id"
+	clients.ListRule = strPtr(clientVisible)
+	clients.ViewRule = strPtr(clientVisible)
+	clients.CreateRule = strPtr("@request.auth.id != ''")
+	if err := app.Save(clients); err != nil {
+		return err
+	}
+
+	domains, err := app.FindCollectionByNameOrId(ColDomains)
+	if err != nil {
+		return err
+	}
+	domainVisible := "journ_members_via_domain.user ?= @request.auth.id"
+	domains.ListRule = strPtr(domainVisible)
+	domains.ViewRule = strPtr(domainVisible)
+	domains.CreateRule = strPtr("@request.auth.id != ''")
+	if err := app.Save(domains); err != nil {
 		return err
 	}
 
@@ -456,11 +595,12 @@ func applyRules(app core.App) error {
 	// the rest of a project's roster goes through the folio API, which checks
 	// membership in the service layer.
 	ownRow := "user = @request.auth.id"
+	ownerOfOwnDomain := "domain.journ_members_via_domain.user ?= @request.auth.id && domain.journ_members_via_domain.role ?= 'owner'"
 	members.ListRule = strPtr(ownRow)
 	members.ViewRule = strPtr(ownRow)
-	members.CreateRule = strPtr(ownerOfProject)
-	members.UpdateRule = strPtr(ownerOfProject)
-	members.DeleteRule = strPtr(ownerOfProject)
+	members.CreateRule = strPtr(ownerOfOwnDomain)
+	members.UpdateRule = strPtr(ownerOfOwnDomain)
+	members.DeleteRule = strPtr(ownerOfOwnDomain)
 	if err := app.Save(members); err != nil {
 		return err
 	}
@@ -470,11 +610,11 @@ func applyRules(app core.App) error {
 		if err != nil {
 			return err
 		}
-		c.ListRule = strPtr(memberOfProject)
-		c.ViewRule = strPtr(memberOfProject)
-		c.CreateRule = strPtr(writerOfProject)
-		c.UpdateRule = strPtr(writerOfProject)
-		c.DeleteRule = strPtr(writerOfProject)
+		c.ListRule = strPtr(memberOfDomain)
+		c.ViewRule = strPtr(memberOfDomain)
+		c.CreateRule = strPtr(writerOfDomain)
+		c.UpdateRule = strPtr(writerOfDomain)
+		c.DeleteRule = strPtr(writerOfDomain)
 		if err := app.Save(c); err != nil {
 			return err
 		}

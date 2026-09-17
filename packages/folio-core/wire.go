@@ -20,6 +20,7 @@ import (
 type App struct {
 	Projects ports.ProjectUseCase
 	Plans    ports.PlanUseCase
+	Issues   ports.IssueUseCase
 	Tickets  ports.TicketUseCase
 	Todos    ports.TodoUseCase
 	Journal  ports.JournalUseCase
@@ -37,6 +38,7 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 
 	projectRepo := pb.NewProjectRepository(app)
 	planRepo := pb.NewPlanRepository(app)
+	issueRepo := pb.NewIssueRepository(app)
 	ticketRepo := pb.NewTicketRepository(app)
 	todoRepo := pb.NewTodoRepository(app)
 	journalRepo := pb.NewJournalRepository(app)
@@ -53,6 +55,7 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 	return &App{
 		Projects: services.NewProjectService(projectRepo, guard, clock, ids, log),
 		Plans:    services.NewPlanService(planRepo, todoRepo, ticketRepo, todos, guard, clock, ids, log),
+		Issues:   services.NewIssueService(issueRepo, planRepo, journalRepo, docRepo, cycleRepo, guard, clock, ids, log),
 		Tickets:  services.NewTicketService(ticketRepo, todoRepo, planRepo, journalRepo, docRepo, cycleRepo, guard, clock, ids, log),
 		Todos:    todos,
 		Journal:  services.NewJournalService(journalRepo, ticketRepo, guard, clock, ids, log),
@@ -67,6 +70,7 @@ func (a *App) Deps() httpapi.Deps {
 	return httpapi.Deps{
 		Projects: a.Projects,
 		Plans:    a.Plans,
+		Issues:   a.Issues,
 		Tickets:  a.Tickets,
 		Todos:    a.Todos,
 		Journal:  a.Journal,
