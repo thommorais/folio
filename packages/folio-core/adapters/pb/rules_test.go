@@ -247,3 +247,63 @@ func TestCreateProjectIntoExistingDomain(t *testing.T) {
 		t.Errorf("domain count is %d, want 2: creating a project made a new one", len(domains))
 	}
 }
+
+func TestEveryContentCollectionHasRules(t *testing.T) {
+	app := newApp(t)
+
+	for _, name := range []string{
+		pb.ColIssues, pb.ColEntries, pb.ColLinks, pb.ColTags,
+		pb.ColIssueTags, pb.ColEntryTags, pb.ColPlans, pb.ColCycles,
+	} {
+		c, err := app.FindCollectionByNameOrId(name)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		for label, rule := range map[string]*string{
+			"list": c.ListRule, "view": c.ViewRule, "create": c.CreateRule,
+			"update": c.UpdateRule, "delete": c.DeleteRule,
+		} {
+			if rule == nil {
+				t.Errorf("%s has no %s rule, so only superusers can reach it", name, label)
+			}
+		}
+	}
+}
+
+func TestMemberReadsIssuesAndEntriesOverRest(t *testing.T) {
+	s := setup(t)
+
+	issue := newRecord(t, s.app, pb.ColIssues, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "ticket",
+		"slug": "an-issue", "title": "An issue", "status": "open", "priority": "medium",
+	})
+	entry := newRecord(t, s.app, pb.ColEntries, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "doc",
+		"slug": "a-doc", "title": "A doc",
+	})
+	tag := newRecord(t, s.app, pb.ColTags, map[string]any{
+		"domain": s.domain.Id, "slug": "backend", "name": "backend",
+	})
+	link := newRecord(t, s.app, pb.ColIssueTags, map[string]any{
+		"issue": issue.Id, "tag": tag.Id,
+	})
+
+	for _, tc := range []struct {
+		name   string
+		record *core.Record
+	}{
+		{"issue", issue},
+		{"entry", entry},
+		{"tag", tag},
+		{"issue tag link", link},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if !canView(t, s.app, tc.record, s.editor) {
+				t.Errorf("a member cannot read the %s", tc.name)
+			}
+			if canView(t, s.app, tc.record, s.stranger) {
+				t.Errorf("a stranger can read the %s", tc.name)
+			}
+		})
+	}
+}

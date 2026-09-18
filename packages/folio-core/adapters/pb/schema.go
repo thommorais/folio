@@ -731,7 +731,45 @@ func applyRules(app core.App) error {
 		return err
 	}
 
-	for _, name := range []string{ColTickets, ColPlans, ColTodos, ColDocs, ColJournal, ColCycles, ColTicketLogs, ColPlanLogs, ColTodoLogs} {
+	// The join and link rows carry no project of their own, so they are
+	// reached through the row they attach to.
+	for _, join := range []struct{ collection, via string }{
+		{ColLinks, "from"},
+		{ColIssueTags, "issue"},
+		{ColEntryTags, "entry"},
+	} {
+		c, err := app.FindCollectionByNameOrId(join.collection)
+		if err != nil {
+			return err
+		}
+		read := join.via + ".project.domain.journ_members_via_domain.user ?= @request.auth.id"
+		write := read + " && " + join.via + ".project.domain.journ_members_via_domain.role ?!= 'viewer'"
+		c.ListRule = strPtr(read)
+		c.ViewRule = strPtr(read)
+		c.CreateRule = strPtr(write)
+		c.UpdateRule = strPtr(write)
+		c.DeleteRule = strPtr(write)
+		if err := app.Save(c); err != nil {
+			return err
+		}
+	}
+
+	tags, err := app.FindCollectionByNameOrId(ColTags)
+	if err != nil {
+		return err
+	}
+	tagVisible := "domain.journ_members_via_domain.user ?= @request.auth.id"
+	tagWritable := tagVisible + " && domain.journ_members_via_domain.role ?!= 'viewer'"
+	tags.ListRule = strPtr(tagVisible)
+	tags.ViewRule = strPtr(tagVisible)
+	tags.CreateRule = strPtr(tagWritable)
+	tags.UpdateRule = strPtr(tagWritable)
+	tags.DeleteRule = strPtr(tagWritable)
+	if err := app.Save(tags); err != nil {
+		return err
+	}
+
+	for _, name := range []string{ColTickets, ColPlans, ColTodos, ColDocs, ColJournal, ColIssues, ColEntries, ColCycles, ColTicketLogs, ColPlanLogs, ColTodoLogs} {
 		c, err := app.FindCollectionByNameOrId(name)
 		if err != nil {
 			return err
