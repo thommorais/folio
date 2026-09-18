@@ -42,7 +42,7 @@ export const tagsByTarget = async (
 
 		const grouped = new Map<string, TagLink[]>()
 		for (const row of rows) {
-			const key = (row as Record<string, string>)[target]
+			const key = target === 'issue' ? (row as { issue: string }).issue : (row as { entry: string }).entry
 			const bucket = grouped.get(key)
 			if (bucket) bucket.push(row)
 			else grouped.set(key, [row])
@@ -84,8 +84,8 @@ export const linksOf = async (ids: readonly string[]): Promise<Links> => {
 				continue
 			}
 			for (const [key, other] of [
-				[row.from, row.to],
-				[row.to, row.from],
+				[row.from, row.to] as const,
+				[row.to, row.from] as const,
 			]) {
 				const bucket = relatedTo.get(key) ?? []
 				bucket.push(other)

@@ -3,26 +3,23 @@ import { cn } from '@thom/libs/cn';
 import { Badge } from '@thom/ui/badge';
 import { Heading } from '@thom/ui/heading';
 import { useCycles } from '_/app/use-cycles';
-import { useDocs } from '_/app/use-docs';
-import { useJournal } from '_/app/use-journal';
+import { useEntries } from '_/app/use-entries';
 import { usePlans } from '_/app/use-plans';
-import { useTicket } from '_/app/use-ticket';
-import { useTicketLogs } from '_/app/use-ticket-logs';
-import { useTickets } from '_/app/use-tickets';
-import { useTodos } from '_/app/use-todos';
+import { useIssue } from '_/app/use-issue';
+import { useIssues } from '_/app/use-issues';
 import { Markdown } from '_/components/markdown';
 import { RecordGone } from '_/components/record/record-gone';
 import { isResolved } from '_/core/domain/cycle';
-import type { TicketStatus } from '_/core/domain/ticket';
-import { TODO_STATUS_LABELS } from '_/pages/todos/status-labels';
+import type { Issue, IssueStatus } from '_/core/domain/issue';
+import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels';
 import { useSlugSync } from '_/routing/use-slug-sync';
 import { MapFrontier } from './map-frontier';
 
-const statusLabels: Record<TicketStatus, string> = {
+const statusLabels: Record<IssueStatus, string> = {
 	open: 'Open',
 	in_progress: 'In progress',
 	blocked: 'Blocked',
-	closed: 'Closed',
+	done: 'Done',
 	cancelled: 'Cancelled',
 }
 
@@ -40,13 +37,13 @@ const Empty = ({ what }: { readonly what: string }) => <p className='text-dim te
 
 const TicketDetail = () => {
 	const { slug, ticket: ticketSlug } = useParams({ from: '/_authenticated/$slug/tickets/$ticket' })
-	const state = useTicket(slug, ticketSlug)
+	const state = useIssue(slug, ticketSlug)
 
 	const navigate = useNavigate()
 
 	useSlugSync({
 		current: ticketSlug,
-		record: state.status === 'ready' ? state.ticket : undefined,
+		record: state.status === 'ready' ? state.issue : undefined,
 		rename: renamed =>
 			void navigate({ to: '/$slug/tickets/$ticket', params: { slug, ticket: renamed }, replace: true }),
 	})
@@ -69,28 +66,28 @@ const TicketDetail = () => {
 		return <p className='text-destructive text-sm'>{state.message}</p>
 	}
 
-	return <TicketBody project={slug} ticket={state.ticket} />
+	return <TicketBody project={slug} ticket={state.issue} />
 }
 
 type BodyProps = {
 	readonly project: string
-	readonly ticket: import('_/core/domain/ticket').Ticket
+	readonly ticket: Issue
 }
 
 const TicketBody = ({ project, ticket }: BodyProps) => {
 	const ticketId = ticket.id
 	const plans = usePlans(project, { ticketId })
-	const todos = useTodos(project, { ticketId })
-	const journal = useJournal(project, { ticketId })
-	const docs = useDocs(project, { ticketId })
+	const todos = useIssues(project, { kind: 'todo', parentId: ticketId })
+	const journal = useEntries(project, { kind: 'journal', issueId: ticketId })
+	const docs = useEntries(project, { kind: 'doc', issueId: ticketId })
 	const cycles = useCycles(project, { ticketId })
-	const workLog = useTicketLogs(project, { ticketId })
+	const workLog = useEntries(project, { kind: 'log', issueId: ticketId })
 
 	const current = cycles.status === 'ready' ? cycles.cycles.at(-1) : undefined
-	const siblings = useTickets(project, {})
+	const siblings = useIssues(project, { kind: 'ticket' })
 	const parent =
 		ticket.parentId !== undefined && siblings.status === 'ready'
-			? siblings.tickets.find(candidate => candidate.id === ticket.parentId)
+			? siblings.issues.find(candidate => candidate.id === ticket.parentId)
 			: undefined
 
 	return (
@@ -155,10 +152,10 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 				</Section>
 			)}
 
-			{workLog.status === 'ready' && workLog.logs.length > 0 && (
+			{workLog.status === 'ready' && workLog.entries.length > 0 && (
 				<Section title='Work log'>
 					<ul className='border-border divide-border divide-y border'>
-						{workLog.logs.map(entry => (
+						{workLog.entries.map(entry => (
 							<li key={entry.id} className='space-y-1 px-4 py-3'>
 								<p className='text-sm whitespace-pre-line'>{entry.body}</p>
 								<p className='text-dimmer text-xs'>{entry.createdAt.toLocaleString()}</p>
@@ -183,10 +180,10 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 			</Section>
 
 			<Section title='Todos'>
-				{todos.status === 'ready' && todos.todos.length === 0 && <Empty what='todos' />}
-				{todos.status === 'ready' && todos.todos.length > 0 && (
+				{todos.status === 'ready' && todos.issues.length === 0 && <Empty what='todos' />}
+				{todos.status === 'ready' && todos.issues.length > 0 && (
 					<ul className='border-border divide-border divide-y border'>
-						{todos.todos.map(todo => (
+						{todos.issues.map(todo => (
 							<li key={todo.id}>
 								<Link
 									to='/$slug/todos'
@@ -216,7 +213,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 									</span>
 
 									<span className='text-dimmer hidden w-16 shrink-0 text-right text-xs sm:block'>{todo.priority}</span>
-									<span className='text-dim w-24 shrink-0 text-right text-xs'>{TODO_STATUS_LABELS[todo.status]}</span>
+									<span className='text-dim w-24 shrink-0 text-right text-xs'>{ISSUE_STATUS_LABELS[todo.status]}</span>
 								</Link>
 							</li>
 						))}
@@ -225,10 +222,10 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 			</Section>
 
 			<Section title='Journal'>
-				{journal.status === 'ready' && journal.journal.length === 0 && <Empty what='journal entries' />}
-				{journal.status === 'ready' && journal.journal.length > 0 && (
+				{journal.status === 'ready' && journal.entries.length === 0 && <Empty what='journal entries' />}
+				{journal.status === 'ready' && journal.entries.length > 0 && (
 					<ul className='border-border divide-border divide-y border'>
-						{journal.journal.map(entry => (
+						{journal.entries.map(entry => (
 							<li key={entry.id} className='px-4 py-3 text-sm'>
 								{entry.title}
 							</li>
@@ -238,10 +235,10 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 			</Section>
 
 			<Section title='Docs'>
-				{docs.status === 'ready' && docs.docs.length === 0 && <Empty what='docs' />}
-				{docs.status === 'ready' && docs.docs.length > 0 && (
+				{docs.status === 'ready' && docs.entries.length === 0 && <Empty what='docs' />}
+				{docs.status === 'ready' && docs.entries.length > 0 && (
 					<ul className='border-border divide-border divide-y border'>
-						{docs.docs.map(doc => (
+						{docs.entries.map(doc => (
 							<li key={doc.id} className='flex items-center justify-between gap-4 px-4 py-3 text-sm'>
 								<span>{doc.title}</span>
 								<span className='text-dimmer font-mono text-xs'>{doc.slug}</span>

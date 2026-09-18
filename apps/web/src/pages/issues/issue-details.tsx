@@ -1,9 +1,9 @@
 import { Badge } from '@thom/ui/badge'
 import { RecordGone } from '_/components/record/record-gone'
 import { cn } from '@thom/libs/cn'
-import { useTodo } from '_/app/use-todo'
-import type { Todo, TodoStatus } from '_/core/domain/todo'
-import { TODO_STATUS_LABELS } from './status-labels'
+import { useIssueById } from '_/app/use-issue'
+import type { Issue, IssueStatus } from '_/core/domain/issue'
+import { ISSUE_STATUS_LABELS } from './status-labels'
 
 const Field = ({ label, children }: { readonly label: string; readonly children: React.ReactNode }) => (
 	<div>
@@ -34,7 +34,7 @@ const Skeleton = () => (
 	</div>
 )
 
-const Body = ({ todo }: { readonly todo: Todo }) => (
+const Body = ({ todo }: { readonly todo: Issue }) => (
 	<div className='scrollbar-hide h-full overflow-auto pb-6'>
 		<header className='mb-8'>
 			<div className='text-dim flex items-center justify-between text-xs'>
@@ -45,7 +45,7 @@ const Body = ({ todo }: { readonly todo: Todo }) => (
 			<h2 className={cn('mt-6 mb-3 text-lg', todo.status === 'done' && 'text-dim line-through')}>{todo.title}</h2>
 
 			<div className='flex flex-wrap items-center gap-2'>
-				<Badge color={statusColor(todo.status)}>{TODO_STATUS_LABELS[todo.status]}</Badge>
+				<Badge color={statusColor(todo.status)}>{ISSUE_STATUS_LABELS[todo.status]}</Badge>
 				{todo.tags.map(tag => (
 					<Badge key={tag} color='muted'>
 						{tag}
@@ -54,10 +54,10 @@ const Body = ({ todo }: { readonly todo: Todo }) => (
 			</div>
 		</header>
 
-		{todo.details && <div className='mb-6 border px-4 py-3 text-sm whitespace-pre-line'>{todo.details}</div>}
+		{todo.body && <div className='mb-6 border px-4 py-3 text-sm whitespace-pre-line'>{todo.body}</div>}
 
 		<div className='grid grid-cols-2 gap-4'>
-			<Field label='Ticket'>{todo.ticketId ?? <Empty />}</Field>
+			<Field label='Ticket'>{todo.parentId ?? <Empty />}</Field>
 			<Field label='Plan'>{todo.planId ?? <Empty />}</Field>
 			<Field label='Due'>{todo.dueDate ? formatDate(todo.dueDate) : <Empty />}</Field>
 			<Field label='Position'>{todo.position}</Field>
@@ -69,7 +69,7 @@ const Body = ({ todo }: { readonly todo: Todo }) => (
 	</div>
 )
 
-const statusColor = (status: TodoStatus) => {
+const statusColor = (status: IssueStatus) => {
 	if (status === 'blocked') {
 		return 'destructive' as const
 	}
@@ -81,8 +81,8 @@ type Props = {
 	readonly todoId: string | undefined
 }
 
-const TodoDetails = ({ project, todoId }: Props) => {
-	const state = useTodo(project, todoId)
+const IssueDetails = ({ project, todoId }: Props) => {
+	const state = useIssueById(project, todoId ?? '')
 
 	if (state.status === 'gone') {
 		return <RecordGone title={state.title} />
@@ -96,7 +96,7 @@ const TodoDetails = ({ project, todoId }: Props) => {
 		return <Skeleton />
 	}
 
-	return <Body todo={state.todo} />
+	return <Body todo={state.issue} />
 }
 
-export { TodoDetails }
+export { IssueDetails }

@@ -1,6 +1,6 @@
 import type { Branded } from './branded'
 import type { ProjectId, UserId } from './project'
-import type { TicketId } from './ticket'
+import type { IssueId } from './issue'
 
 export type CycleId = Branded<string, 'CycleId'>
 
@@ -13,7 +13,7 @@ export type Phase = (typeof PHASES)[number]
 export type Cycle = {
 	readonly id: CycleId
 	readonly projectId: ProjectId
-	readonly ticketId: TicketId
+	readonly ticketId: IssueId
 	readonly ordinal: number
 	readonly phase: Phase
 	readonly resolution: string

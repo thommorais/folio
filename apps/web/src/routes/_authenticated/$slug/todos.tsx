@@ -1,18 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { TODO_STATUSES, PRIORITIES, type Priority, type TodoStatus } from '_/core/domain/todo'
-import { TODO_SORT_FIELDS, type Sort, type TodoSortField } from '_/core/ports/sort'
-import { Todos } from '_/pages/todos'
+import { ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue'
+import { ISSUE_SORT_FIELDS, type IssueSortField, type Sort } from '_/core/ports/sort'
+import { Issues } from '_/pages/issues'
 import { asMember, asMembers, asSort, asString, asStrings } from '_/routes/search-params'
 
 export type TodosSearch = {
 	readonly todo?: string
 	readonly ticket?: string
 	readonly plan?: string
-	readonly statuses?: readonly TodoStatus[]
+	readonly statuses?: readonly IssueStatus[]
 	readonly priority?: Priority
 	readonly tags?: readonly string[]
 	readonly q?: string
-	readonly sort?: Sort<TodoSortField>
+	readonly sort?: Sort<IssueSortField>
 }
 
 export const Route = createFileRoute('/_authenticated/$slug/todos')({
@@ -20,11 +20,11 @@ export const Route = createFileRoute('/_authenticated/$slug/todos')({
 		todo: asString(search.todo),
 		ticket: asString(search.ticket),
 		plan: asString(search.plan),
-		statuses: asMembers(TODO_STATUSES, search.statuses),
+		statuses: asMembers(ISSUE_STATUSES, search.statuses),
 		priority: asMember(PRIORITIES, search.priority),
 		tags: asStrings(search.tags),
 		q: asString(search.q),
-		sort: asSort(TODO_SORT_FIELDS, search.sort),
+		sort: asSort(ISSUE_SORT_FIELDS, search.sort),
 	}),
-	component: Todos,
+	component: () => <Issues kind='todo' emptyLabel='todos' />,
 })

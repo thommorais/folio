@@ -1,6 +1,6 @@
 import type { Branded } from './branded'
 import type { ProjectId, UserId } from './project'
-import type { TicketId } from './ticket'
+import type { IssueId } from './issue'
 
 export type PlanId = Branded<string, 'PlanId'>
 
@@ -13,7 +13,7 @@ export type PlanStatus = (typeof PLAN_STATUSES)[number]
 export type Plan = {
 	readonly id: PlanId
 	readonly projectId: ProjectId
-	readonly ticketId: TicketId | undefined
+	readonly ticketId: IssueId | undefined
 	readonly title: string
 	readonly goal: string
 	readonly status: PlanStatus

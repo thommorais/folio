@@ -3,14 +3,15 @@ import { Badge } from '@thom/ui/badge'
 import { Card, CardDescription, CardHeader, CardTitle } from '@thom/ui/card'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
-import { useDocs } from '_/app/use-docs'
+import { useEntries } from '_/app/use-entries'
 import { DocsFilters } from './doc-filters'
 
 const Docs = () => {
 	const { slug } = useParams({ from: '/_authenticated/$slug/docs/' })
 	const search = useSearch({ from: '/_authenticated/$slug/docs/' })
-	const state = useDocs(slug, {
-		ticketId: search.ticket,
+	const state = useEntries(slug, {
+		kind: 'doc',
+		issueId: search.ticket,
 		tags: search.tags,
 		search: search.q,
 		sort: search.sort,
@@ -33,13 +34,13 @@ const Docs = () => {
 			return <p className='text-destructive text-sm'>{state.message}</p>
 		}
 
-		if (state.docs.length === 0) {
+		if (state.entries.length === 0) {
 			return <p className='text-dim text-sm'>{filtered ? 'No docs match.' : 'No docs yet.'}</p>
 		}
 
 		return (
 			<div className='grid gap-4 sm:grid-cols-2'>
-				{state.docs.map((doc, index) => (
+				{state.entries.map((doc, index) => (
 					<StaggerItem key={doc.id} index={index}>
 						<Link to='/$slug/docs/$doc' params={{ slug, doc: doc.slug }} className='block'>
 							<Card interactive>

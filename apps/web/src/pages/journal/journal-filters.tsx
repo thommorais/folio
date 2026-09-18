@@ -1,14 +1,15 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { DropdownMenuItem } from '@thom/ui/dropdown-menu'
-import { useTickets } from '_/app/use-tickets'
-import { LOG_SORT_FIELDS, type LogSortField } from '_/core/ports/sort'
+import { useIssues } from '_/app/use-issues'
+import { ENTRY_SORT_FIELDS, type EntrySortField } from '_/core/ports/sort'
 import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
 import { SortMenu } from '_/components/list/sort-menu'
-import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/todos/tag-vocabulary'
+import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
 import type { LogsSearch } from '_/routes/_authenticated/$slug/journal'
 
-const SORT_LABELS: Record<LogSortField, string> = {
+const SORT_LABELS: Record<EntrySortField, string> = {
 	title: 'Title',
+	slug: 'Slug',
 	created: 'Created',
 	updated: 'Updated',
 }
@@ -17,14 +18,14 @@ const LogsFilters = () => {
 	const { slug } = useParams({ from: '/_authenticated/$slug/journal/' })
 	const search = useSearch({ from: '/_authenticated/$slug/journal/' })
 	const navigate = useNavigate()
-	const tickets = useTickets(slug)
+	const tickets = useIssues(slug, { kind: 'ticket' })
 
 	const setFilter = (patch: Partial<LogsSearch>) => {
 		void navigate({ from: '/$slug/journal/', to: '.', search: (prev: LogsSearch) => ({ ...prev, ...patch }) })
 	}
 
 	const ticketTitle = (id: string): string =>
-		tickets.status === 'ready' ? (tickets.tickets.find(entry => entry.id === id)?.title ?? id) : id
+		tickets.status === 'ready' ? (tickets.issues.find(entry => entry.id === id)?.title ?? id) : id
 
 	const chips: ActiveFilter[] = []
 
@@ -57,7 +58,7 @@ const LogsFilters = () => {
 			chips={chips}
 			trailing={
 				<SortMenu
-					fields={LOG_SORT_FIELDS}
+					fields={ENTRY_SORT_FIELDS}
 					labels={SORT_LABELS}
 					sort={search.sort}
 					onChange={sort => {
@@ -66,13 +67,13 @@ const LogsFilters = () => {
 				/>
 			}
 		>
-			<FilterMenuItem label='Ticket'>
+			<FilterMenuItem label='Issue'>
 				<div className='max-h-[300px] overflow-y-auto'>
-					{tickets.status === 'ready' && tickets.tickets.length === 0 && (
+					{tickets.status === 'ready' && tickets.issues.length === 0 && (
 						<DropdownMenuItem disabled>No tickets found</DropdownMenuItem>
 					)}
 					{tickets.status === 'ready' &&
-						tickets.tickets.map(ticket => (
+						tickets.issues.map(ticket => (
 							<FilterCheckboxItem
 								key={ticket.id}
 								label={ticket.title}

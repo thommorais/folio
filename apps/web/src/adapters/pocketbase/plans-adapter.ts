@@ -1,7 +1,7 @@
 import { sortExpr } from './sort'
 import type { Plan, PlanStatus } from '_/core/domain/plan'
 import { planId as toPlanId } from '_/core/domain/plan'
-import { ticketId as toTicketId } from '_/core/domain/ticket'
+import { issueId as toIssueId } from '_/core/domain/issue'
 import { projectId as toProjectId, userId as toUserId } from '_/core/domain/project'
 import type { PlanFilter, PlansPort } from '_/core/ports/plans'
 import type { Unsubscribe } from '_/core/ports/subscription'
@@ -20,7 +20,7 @@ type PlanRecord = JournPlansResponse<string[]>
 type PlanColumns = {
 	'project.slug': string
 	id: string
-	ticket: string
+	issue: string
 	title: string
 	goal: string
 	status: PlanStatus
@@ -34,7 +34,7 @@ const message = (error: unknown): string => (error instanceof Error ? error.mess
 const toPlan = (record: PlanRecord): Plan => ({
 	id: toPlanId(record.id),
 	projectId: toProjectId(record.project),
-	ticketId: record.ticket ? toTicketId(record.ticket) : undefined,
+	ticketId: record.issue ? toIssueId(record.issue) : undefined,
 	title: record.title,
 	goal: record.goal ?? '',
 	status: record.status as PlanStatus,
@@ -47,7 +47,7 @@ const toPlan = (record: PlanRecord): Plan => ({
 const columns = (project: string, filter: PlanFilter) =>
 	filterFor<PlanColumns>()([
 		{ field: 'project.slug', comparator: 'eq', value: project },
-		{ field: 'ticket', comparator: 'eq', value: filter.ticketId },
+		{ field: 'issue', comparator: 'eq', value: filter.ticketId },
 		{ field: 'status', comparator: 'anyOf', value: filter.status },
 		{ field: 'tags', comparator: 'containsAll', value: filter.tags },
 		{ field: 'title', comparator: 'contains', value: filter.search },

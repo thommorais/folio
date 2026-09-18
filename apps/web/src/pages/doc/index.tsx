@@ -4,13 +4,13 @@ import { RecordGone } from '_/components/record/record-gone'
 import { Badge } from '@thom/ui/badge'
 import { Heading } from '@thom/ui/heading'
 import { Markdown } from '_/components/markdown'
-import { useDoc } from '_/app/use-doc'
-import type { Doc } from '_/core/domain/doc'
+import { useEntry } from '_/app/use-entry'
+import type { Entry } from '_/core/domain/entry'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 
-const DocBody = ({ doc }: { readonly doc: Doc }) => (
+const DocBody = ({ doc }: { readonly doc: Entry }) => (
 	<article className='space-y-8'>
 		<header className='space-y-3'>
 			<Heading>{doc.title}</Heading>
@@ -32,13 +32,13 @@ const DocBody = ({ doc }: { readonly doc: Doc }) => (
 
 const DocDetail = () => {
 	const { slug, doc } = useParams({ from: '/_authenticated/$slug/docs/$doc' })
-	const state = useDoc(slug, doc)
+	const state = useEntry(slug, doc)
 
 	const navigate = useNavigate()
 
 	useSlugSync({
 		current: doc,
-		record: state.status === 'ready' ? state.doc : undefined,
+		record: state.status === 'ready' ? state.entry : undefined,
 		rename: renamed => void navigate({ to: '/$slug/docs/$doc', params: { slug, doc: renamed }, replace: true }),
 	})
 
@@ -60,7 +60,7 @@ const DocDetail = () => {
 		return <p className='text-destructive text-sm'>{state.message}</p>
 	}
 
-	return <DocBody doc={state.doc} />
+	return <DocBody doc={state.entry} />
 }
 
 export { DocDetail }

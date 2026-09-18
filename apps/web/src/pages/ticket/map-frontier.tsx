@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
-import { useTickets } from '_/app/use-tickets'
+import { useIssues } from '_/app/use-issues'
 import { partitionChildren } from '_/core/domain/frontier'
-import type { Ticket } from '_/core/domain/ticket'
+import type { Issue } from '_/core/domain/issue'
 
 type Props = {
 	readonly project: string
@@ -15,7 +15,7 @@ const Group = ({
 	project,
 }: {
 	readonly title: string
-	readonly tickets: readonly Ticket[]
+	readonly tickets: readonly Issue[]
 	readonly project: string
 }) => {
 	if (tickets.length === 0) return null
@@ -47,15 +47,15 @@ const Group = ({
 }
 
 const MapFrontier = ({ project, mapId }: Props) => {
-	const children = useTickets(project, { parentId: mapId })
+	const children = useIssues(project, { parentId: mapId })
 
 	if (children.status !== 'ready') return null
 
-	if (children.tickets.length === 0) {
+	if (children.issues.length === 0) {
 		return <p className='text-dim text-sm'>No decision tickets on this map yet.</p>
 	}
 
-	const { frontier, blocked, claimed, done } = partitionChildren(children.tickets)
+	const { frontier, blocked, claimed, done } = partitionChildren(children.issues)
 
 	return (
 		<section className='space-y-4'>

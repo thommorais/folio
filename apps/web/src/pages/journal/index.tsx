@@ -2,7 +2,7 @@ import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
-import { useJournal } from '_/app/use-journal'
+import { useEntries } from '_/app/use-entries'
 import { LogsFilters } from './journal-filters'
 
 const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' })
@@ -10,8 +10,9 @@ const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' 
 const Logs = () => {
 	const { slug } = useParams({ from: '/_authenticated/$slug/journal/' })
 	const search = useSearch({ from: '/_authenticated/$slug/journal/' })
-	const state = useJournal(slug, {
-		ticketId: search.ticket,
+	const state = useEntries(slug, {
+		kind: 'journal',
+		issueId: search.ticket,
 		tags: search.tags,
 		search: search.q,
 		sort: search.sort,
@@ -34,13 +35,13 @@ const Logs = () => {
 			return <p className='text-destructive text-sm'>{state.message}</p>
 		}
 
-		if (state.journal.length === 0) {
+		if (state.entries.length === 0) {
 			return <p className='text-dim text-sm'>{filtered ? 'No journal entries match.' : 'No journal entries yet.'}</p>
 		}
 
 		return (
 			<div className='border-border divide-border divide-y border'>
-				{state.journal.map((entry, index) => (
+				{state.entries.map((entry, index) => (
 					<StaggerItem key={entry.id} index={index}>
 						<Link
 							to='/$slug/journal/$entry'

@@ -1,9 +1,9 @@
 import { Link, useMatches, useParams } from '@tanstack/react-router'
 import { House } from 'lucide-react'
-import { useDoc } from '_/app/use-doc'
-import { useJournalEntry } from '_/app/use-journal-entry'
+import { useEntry } from '_/app/use-entry'
+
 import { usePlan } from '_/app/use-plan'
-import { useTicket } from '_/app/use-ticket'
+import { useIssue } from '_/app/use-issue'
 
 const sectionLabels: Record<string, string> = {
 	tickets: 'Tickets',
@@ -30,18 +30,18 @@ const Separator = () => (
 // A record's title only exists after its fetch resolves, so a leaf crumb falls
 // back to the slug already in the URL rather than collapsing the trail.
 const useLeafLabel = (project: string | undefined, params: LeafParams) => {
-	const ticket = useTicket(project ?? '', params.ticket ?? '')
-	const doc = useDoc(project ?? '', params.doc ?? '')
-	const entry = useJournalEntry(project ?? '', params.entry ?? '')
+	const ticket = useIssue(project ?? '', params.ticket ?? '')
+	const doc = useEntry(project ?? '', params.doc ?? '')
+	const entry = useEntry(project ?? '', params.entry ?? '')
 	const plan = usePlan(project ?? '', params.plan)
 
 	if (project === undefined) return undefined
 
 	if (params.ticket !== undefined) {
-		return ticket.status === 'ready' ? ticket.ticket.title : params.ticket
+		return ticket.status === 'ready' ? ticket.issue.title : params.ticket
 	}
 	if (params.doc !== undefined) {
-		return doc.status === 'ready' ? doc.doc.title : params.doc
+		return doc.status === 'ready' ? doc.entry.title : params.doc
 	}
 	if (params.entry !== undefined) {
 		return entry.status === 'ready' ? entry.entry.title : params.entry

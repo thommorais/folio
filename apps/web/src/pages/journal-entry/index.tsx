@@ -4,18 +4,18 @@ import { RecordGone } from '_/components/record/record-gone'
 import { Badge } from '@thom/ui/badge'
 import { Heading } from '@thom/ui/heading'
 import { Markdown } from '_/components/markdown'
-import { useJournalEntry } from '_/app/use-journal-entry'
-import { useTickets } from '_/app/use-tickets'
-import type { JournalEntry } from '_/core/domain/journal'
+import { useEntry } from '_/app/use-entry'
+import { useIssues } from '_/app/use-issues'
+import type { Entry } from '_/core/domain/entry'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 
-const EntryBody = ({ project, entry }: { readonly project: string; readonly entry: JournalEntry }) => {
-	const tickets = useTickets(project, {})
+const EntryBody = ({ project, entry }: { readonly project: string; readonly entry: Entry }) => {
+	const tickets = useIssues(project, {})
 	const ticket =
-		entry.ticketId !== undefined && tickets.status === 'ready'
-			? tickets.tickets.find(candidate => candidate.id === entry.ticketId)
+		entry.issueId !== undefined && tickets.status === 'ready'
+			? tickets.issues.find(candidate => candidate.id === entry.issueId)
 			: undefined
 
 	return (
@@ -58,7 +58,7 @@ const EntryBody = ({ project, entry }: { readonly project: string; readonly entr
 
 const JournalEntryDetail = () => {
 	const { slug, entry } = useParams({ from: '/_authenticated/$slug/journal/$entry' })
-	const state = useJournalEntry(slug, entry)
+	const state = useEntry(slug, entry)
 
 	const navigate = useNavigate()
 

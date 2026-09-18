@@ -3,11 +3,20 @@ import { cn } from '@thom/libs/cn'
 import { Badge } from '@thom/ui/badge'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
-import { useTickets } from '_/app/use-tickets'
-import { isTerminal } from '_/core/domain/ticket'
-import { buildTicketTree, type TicketRow } from '_/core/domain/ticket-tree'
-import { TicketFilters } from './ticket-filters'
-import { TICKET_STATUS_LABELS as statusLabels } from './status-labels'
+import { useIssues } from '_/app/use-issues'
+import { isTerminal, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue'
+import type { IssueSortField, Sort } from '_/core/ports/sort'
+import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree'
+import { IssueFilters } from './issue-filters'
+import { ISSUE_STATUS_LABELS as statusLabels } from './status-labels'
+
+type IssuesSearch = {
+	readonly statuses?: readonly IssueStatus[]
+	readonly priority?: Priority
+	readonly tags?: readonly string[]
+	readonly q?: string
+	readonly sort?: Sort<IssueSortField>
+}
 
 const INDENT = 22
 // Vertical center of a nested row's title line, where the connector meets it.
@@ -15,7 +24,7 @@ const ELBOW = '1.1rem'
 
 // Guides live in the row's left gutter rather than in the flow, so the title
 // column keeps one offset per depth instead of drifting with the markup.
-const Guides = ({ row }: { readonly row: TicketRow }) => {
+const Guides = ({ row }: { readonly row: IssueRow }) => {
 	if (row.depth === 0) return null
 
 	const trunk = (row.depth - 1) * INDENT + INDENT / 2
@@ -45,8 +54,8 @@ const Guides = ({ row }: { readonly row: TicketRow }) => {
 	)
 }
 
-const Row = ({ row, project }: { readonly row: TicketRow; readonly project: string }) => {
-	const { ticket } = row
+const Row = ({ row, project }: { readonly row: IssueRow; readonly project: string }) => {
+	const { issue } = row
 
 	return (
 		<article className={cn('relative px-4', row.depth === 0 ? 'py-4' : 'py-3')}>
@@ -56,18 +65,18 @@ const Row = ({ row, project }: { readonly row: TicketRow; readonly project: stri
 				<div className='flex items-start justify-between gap-4'>
 					<Link
 						to='/$slug/tickets/$ticket'
-						params={{ slug: project, ticket: ticket.slug }}
+						params={{ slug: project, ticket: issue.slug }}
 						className={cn(
 							'text-sm font-medium hover:underline',
-							(isTerminal(ticket.status) || row.isContext) && 'text-dim',
+							(isTerminal(issue.status) || row.isContext) && 'text-dim',
 						)}
 					>
-						{ticket.title}
+						{issue.title}
 					</Link>
 
 					<span className='flex shrink-0 items-center gap-2'>
-						{ticket.wayfinder && <Badge color='muted'>{ticket.wayfinder}</Badge>}
-						<span className='text-dim text-xs'>{statusLabels[ticket.status]}</span>
+						{issue.wayfinder && <Badge color='muted'>{issue.wayfinder}</Badge>}
+						<span className='text-dim text-xs'>{statusLabels[issue.status]}</span>
 					</span>
 				</div>
 
@@ -75,12 +84,12 @@ const Row = ({ row, project }: { readonly row: TicketRow; readonly project: stri
 				    body and metadata would read as a false match. */}
 				{!row.isContext && (
 					<>
-						{ticket.body && <p className='text-dim line-clamp-2 text-sm'>{ticket.body}</p>}
+						{issue.body && <p className='text-dim line-clamp-2 text-sm'>{issue.body}</p>}
 
 						<div className='flex flex-wrap items-center gap-2 pt-1'>
-							<span className='text-dimmer font-mono text-xs'>{ticket.priority}</span>
-							{ticket.externalRef && <span className='text-dimmer font-mono text-xs'>{ticket.externalRef}</span>}
-							{ticket.tags.map(tag => (
+							<span className='text-dimmer font-mono text-xs'>{issue.priority}</span>
+							{issue.externalRef && <span className='text-dimmer font-mono text-xs'>{issue.externalRef}</span>}
+							{issue.tags.map(tag => (
 								<Badge key={tag} color='muted'>
 									{tag}
 								</Badge>
@@ -93,11 +102,17 @@ const Row = ({ row, project }: { readonly row: TicketRow; readonly project: stri
 	)
 }
 
-const Tickets = () => {
-	const { slug } = useParams({ from: '/_authenticated/$slug/tickets/' })
-	const search = useSearch({ from: '/_authenticated/$slug/tickets/' })
+type IssuesProps = {
+	readonly kind: IssueKind
+	readonly emptyLabel: string
+}
 
-	const state = useTickets(slug, {
+const Issues = ({ kind, emptyLabel }: IssuesProps) => {
+	const { slug } = useParams({ strict: false }) as { readonly slug: string }
+	const search = useSearch({ strict: false }) as IssuesSearch
+
+	const state = useIssues(slug, {
+		kind,
 		status: search.statuses,
 		priority: search.priority,
 		tags: search.tags,
@@ -112,9 +127,9 @@ const Tickets = () => {
 		search.priority !== undefined
 
 	// A filtered list carries matches only, so the ancestors needed to place them
-	// come from an unfiltered read. The adapter fetches the project's tickets
+	// come from an unfiltered read. The adapter fetches the project's issues
 	// whole either way, so this is the same query the list already makes.
-	const everything = useTickets(slug, { sort: search.sort })
+	const everything = useIssues(slug, { kind, sort: search.sort })
 
 	const list = (() => {
 		if (state.status === 'loading') {
@@ -131,17 +146,17 @@ const Tickets = () => {
 			return <p className='text-destructive text-sm'>{state.message}</p>
 		}
 
-		if (state.tickets.length === 0) {
-			return <p className='text-dim text-sm'>{filtered ? 'No tickets match.' : 'No tickets yet.'}</p>
+		if (state.issues.length === 0) {
+			return <p className='text-dim text-sm'>{filtered ? `No ${emptyLabel} match.` : `No ${emptyLabel} yet.`}</p>
 		}
 
-		const context = filtered && everything.status === 'ready' ? everything.tickets : []
-		const rows = buildTicketTree(state.tickets, { context })
+		const context = filtered && everything.status === 'ready' ? everything.issues : []
+		const rows = buildIssueTree(state.issues, { context })
 
 		return (
 			<div className='border-border border'>
 				{rows.map((row, index) => (
-					<StaggerItem key={row.ticket.id} index={index}>
+					<StaggerItem key={row.issue.id} index={index}>
 						{/* Only roots get a rule. Nested rows are already separated by
 						    their connector, and a full-width border would cut across it. */}
 						<div className={cn(index > 0 && row.depth === 0 && 'border-border border-t')}>
@@ -155,10 +170,10 @@ const Tickets = () => {
 
 	return (
 		<div className='space-y-4'>
-			<TicketFilters />
+			<IssueFilters />
 			{list}
 		</div>
 	)
 }
 
-export { Tickets }
+export { Issues }

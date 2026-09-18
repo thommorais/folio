@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { partitionChildren } from './frontier'
-import type { Ticket, TicketId } from './ticket'
+import type { Issue, IssueId } from './issue'
 
-const ticket = (id: string, over: Partial<Ticket> = {}): Ticket =>
+const issue = (id: string, over: Partial<Issue> = {}): Issue =>
 	({
-		id: id as TicketId,
+		id: id as IssueId,
 		projectId: 'p1',
-		parentId: 'map' as TicketId,
+		parentId: 'map' as IssueId,
 		slug: id,
 		title: id,
 		body: '',
@@ -21,18 +21,18 @@ const ticket = (id: string, over: Partial<Ticket> = {}): Ticket =>
 		createdAt: new Date('2026-01-01'),
 		updatedAt: new Date('2026-01-01'),
 		...over,
-	}) as Ticket
+	}) as Issue
 
 describe('partitionChildren', () => {
 	it('puts an open, unblocked, unassigned child on the frontier', () => {
-		const got = partitionChildren([ticket('a')])
+		const got = partitionChildren([issue('a')])
 
 		expect(got.frontier.map(t => t.id)).toEqual(['a'])
 		expect(got.blocked).toHaveLength(0)
 	})
 
 	it('holds a child back while a blocker is open', () => {
-		const got = partitionChildren([ticket('a'), ticket('b', { dependsOn: ['a' as TicketId] })])
+		const got = partitionChildren([issue('a'), issue('b', { dependsOn: ['a' as IssueId], blocked: true })])
 
 		expect(got.frontier.map(t => t.id)).toEqual(['a'])
 		expect(got.blocked.map(t => t.id)).toEqual(['b'])
@@ -40,8 +40,8 @@ describe('partitionChildren', () => {
 
 	it('releases a child once every blocker is terminal', () => {
 		const got = partitionChildren([
-			ticket('a', { status: 'closed' }),
-			ticket('b', { dependsOn: ['a' as TicketId] }),
+			issue('a', { status: 'done' }),
+			issue('b', { dependsOn: ['a' as IssueId], blocked: false }),
 		])
 
 		expect(got.frontier.map(t => t.id)).toEqual(['b'])
@@ -49,22 +49,22 @@ describe('partitionChildren', () => {
 	})
 
 	it('separates a claimed child from the frontier', () => {
-		const got = partitionChildren([ticket('a', { assignee: 'u1' as Ticket['assignee'] })])
+		const got = partitionChildren([issue('a', { assignee: 'u1' as Issue['assignee'] })])
 
 		expect(got.frontier).toHaveLength(0)
 		expect(got.claimed.map(t => t.id)).toEqual(['a'])
 	})
 
 	it('ignores a blocker that is not among the children', () => {
-		const got = partitionChildren([ticket('b', { dependsOn: ['ghost' as TicketId] })])
+		const got = partitionChildren([issue('b', { dependsOn: ['ghost' as IssueId] })])
 
 		expect(got.frontier.map(t => t.id)).toEqual(['b'])
 	})
 
 	it('orders the frontier oldest first', () => {
 		const got = partitionChildren([
-			ticket('late', { createdAt: new Date('2026-03-01') }),
-			ticket('early', { createdAt: new Date('2026-01-01') }),
+			issue('late', { createdAt: new Date('2026-03-01') }),
+			issue('early', { createdAt: new Date('2026-01-01') }),
 		])
 
 		expect(got.frontier.map(t => t.id)).toEqual(['early', 'late'])

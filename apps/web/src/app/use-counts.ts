@@ -6,16 +6,16 @@ import { useContainer } from './container'
 import { collectCounts, type CountsState } from './counts'
 
 export const useCounts = (project: string): CountsState => {
-	const { docs, journal, plans, tickets, todos, connection } = useContainer()
+	const { entries, issues, plans, connection } = useContainer()
 	const [state, setState] = useState<CountsState>({ status: 'loading' })
 
 	const load = useEffectEvent(async () => {
 		const results = await Promise.all([
-			tickets.count(project),
+			issues.count(project, { kind: 'ticket' }),
 			plans.count(project),
-			todos.count(project),
-			journal.count(project),
-			docs.count(project),
+			issues.count(project, { kind: 'todo' }),
+			entries.count(project, { kind: 'journal' }),
+			entries.count(project, { kind: 'doc' }),
 		])
 
 		setState(collectCounts(results))
@@ -35,11 +35,9 @@ export const useCounts = (project: string): CountsState => {
 
 	const open = useEffectEvent(async (): Promise<Result<Unsubscribe>> => {
 		const opened = await Promise.all([
-			tickets.subscribeToList(project, recount),
+			issues.subscribeToList(project, recount),
 			plans.subscribeToList(project, recount),
-			todos.subscribeToList(project, recount),
-			journal.subscribeToList(project, recount),
-			docs.subscribeToList(project, recount),
+			entries.subscribeToList(project, recount),
 		])
 
 		const closers = opened.filter(result => result.success).map(result => result.value)
@@ -52,7 +50,7 @@ export const useCounts = (project: string): CountsState => {
 		}
 	})
 
-	useSubscription(open, [project, tickets, plans, todos, journal, docs])
+	useSubscription(open, [project, issues, plans, entries])
 
 	useEffect(() => connection.onReconnect(() => void load()), [connection])
 

@@ -1,34 +1,25 @@
-import type { Ticket, TicketId } from './ticket'
-import { isTerminal } from './ticket'
+import type { Issue } from './issue'
+import { isTerminal } from './issue'
 
 export type Partitioned = {
-	readonly frontier: readonly Ticket[]
-	readonly blocked: readonly Ticket[]
-	readonly claimed: readonly Ticket[]
-	readonly done: readonly Ticket[]
+	readonly frontier: readonly Issue[]
+	readonly blocked: readonly Issue[]
+	readonly claimed: readonly Issue[]
+	readonly done: readonly Issue[]
 }
 
-const oldestFirst = (a: Ticket, b: Ticket): number => a.createdAt.getTime() - b.createdAt.getTime()
+const oldestFirst = (a: Issue, b: Issue): number => a.createdAt.getTime() - b.createdAt.getTime()
 
-export const isBlocked = (ticket: Ticket, byId: ReadonlyMap<TicketId, Ticket>): boolean =>
-	ticket.dependsOn.some(id => {
-		const blocker = byId.get(id)
-
-		return blocker !== undefined && !isTerminal(blocker.status)
-	})
-
-export const partitionChildren = (children: readonly Ticket[]): Partitioned => {
-	const byId = new Map(children.map(child => [child.id, child]))
-
-	const frontier: Ticket[] = []
-	const blocked: Ticket[] = []
-	const claimed: Ticket[] = []
-	const done: Ticket[] = []
+export const partitionChildren = (children: readonly Issue[]): Partitioned => {
+	const frontier: Issue[] = []
+	const blocked: Issue[] = []
+	const claimed: Issue[] = []
+	const done: Issue[] = []
 
 	for (const child of children) {
 		if (isTerminal(child.status)) {
 			done.push(child)
-		} else if (isBlocked(child, byId)) {
+		} else if (child.blocked) {
 			blocked.push(child)
 		} else if (child.assignee !== undefined) {
 			claimed.push(child)

@@ -1,7 +1,7 @@
 import type { Cycle, Phase } from '_/core/domain/cycle'
 import { cycleId as toCycleId } from '_/core/domain/cycle'
 import { projectId as toProjectId, userId as toUserId } from '_/core/domain/project'
-import { ticketId as toTicketId } from '_/core/domain/ticket'
+import { issueId as toIssueId } from '_/core/domain/issue'
 import type { CycleFilter, CyclesPort } from '_/core/ports/cycles'
 import type { Unsubscribe } from '_/core/ports/subscription'
 import { err, ok, type Result } from '_/lib/result'
@@ -16,7 +16,7 @@ type CycleRecord = JournCyclesResponse
 
 type CycleColumns = {
 	'project.slug': string
-	ticket: string
+	issue: string
 }
 
 const message = (error: unknown): string => (error instanceof Error ? error.message : 'Unknown error')
@@ -24,7 +24,7 @@ const message = (error: unknown): string => (error instanceof Error ? error.mess
 const toCycle = (record: CycleRecord): Cycle => ({
 	id: toCycleId(record.id),
 	projectId: toProjectId(record.project),
-	ticketId: toTicketId(record.ticket),
+	ticketId: toIssueId(record.issue),
 	ordinal: record.ordinal ?? 0,
 	phase: record.phase as Phase,
 	resolution: record.resolution ?? '',
@@ -37,7 +37,7 @@ const toCycle = (record: CycleRecord): Cycle => ({
 const columns = (project: string, filter: CycleFilter) =>
 	filterFor<CycleColumns>()([
 		{ field: 'project.slug', comparator: 'eq', value: project },
-		{ field: 'ticket', comparator: 'eq', value: filter.ticketId },
+		{ field: 'issue', comparator: 'eq', value: filter.ticketId },
 	])
 
 export const createCyclesAdapter = (): CyclesPort => {

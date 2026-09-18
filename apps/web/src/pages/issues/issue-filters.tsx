@@ -1,27 +1,36 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { TICKET_STATUSES, type TicketStatus } from '_/core/domain/ticket'
-import { PRIORITIES, type Priority } from '_/core/domain/todo'
-import { TICKET_SORT_FIELDS, type TicketSortField } from '_/core/ports/sort'
+import { ISSUE_STATUSES, type IssueStatus } from '_/core/domain/issue'
+import { PRIORITIES, type Priority } from '_/core/domain/issue'
+import { ISSUE_SORT_FIELDS, type IssueSortField } from '_/core/ports/sort'
 import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
 import { SortMenu } from '_/components/list/sort-menu'
-import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/todos/tag-vocabulary'
-import type { TicketsSearch } from '_/routes/_authenticated/$slug/tickets'
-import { TICKET_STATUS_LABELS } from './status-labels'
+import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
+import { ISSUE_STATUS_LABELS } from './status-labels'
 
-const SORT_LABELS: Record<TicketSortField, string> = {
+const SORT_LABELS: Record<IssueSortField, string> = {
 	title: 'Title',
 	status: 'Status',
 	priority: 'Priority',
+	size: 'Size',
+	position: 'Position',
 	created: 'Created',
 	updated: 'Updated',
 }
 
-const TicketFilters = () => {
-	const search = useSearch({ from: '/_authenticated/$slug/tickets/' })
+type IssuesSearch = {
+	readonly statuses?: readonly IssueStatus[]
+	readonly priority?: Priority
+	readonly tags?: readonly string[]
+	readonly q?: string
+	readonly sort?: { readonly field: IssueSortField; readonly direction: 'asc' | 'desc' }
+}
+
+const IssueFilters = () => {
+	const search = useSearch({ strict: false }) as IssuesSearch
 	const navigate = useNavigate()
 
-	const setFilter = (patch: Partial<TicketsSearch>) => {
-		void navigate({ from: '/$slug/tickets/', to: '.', search: (prev: TicketsSearch) => ({ ...prev, ...patch }) })
+	const setFilter = (patch: Partial<IssuesSearch>) => {
+		void navigate({ to: '.', search: (prev: Record<string, unknown>) => ({ ...prev, ...patch }) })
 	}
 
 	const chips: ActiveFilter[] = []
@@ -29,7 +38,7 @@ const TicketFilters = () => {
 	if (search.statuses !== undefined) {
 		chips.push({
 			key: 'statuses',
-			label: search.statuses.map(status => TICKET_STATUS_LABELS[status]).join(', '),
+			label: search.statuses.map(status => ISSUE_STATUS_LABELS[status]).join(', '),
 			onRemove: () => {
 				setFilter({ statuses: undefined })
 			},
@@ -56,7 +65,7 @@ const TicketFilters = () => {
 
 	return (
 		<FilterBar
-			placeholder='Search tickets...'
+			placeholder='Search issues...'
 			term={search.q}
 			onSearch={q => {
 				setFilter({ q })
@@ -64,7 +73,7 @@ const TicketFilters = () => {
 			chips={chips}
 			trailing={
 				<SortMenu
-					fields={TICKET_SORT_FIELDS}
+					fields={ISSUE_SORT_FIELDS}
 					labels={SORT_LABELS}
 					sort={search.sort}
 					onChange={sort => {
@@ -74,13 +83,13 @@ const TicketFilters = () => {
 			}
 		>
 			<FilterMenuItem label='Status'>
-				{TICKET_STATUSES.map(status => (
+				{ISSUE_STATUSES.map(status => (
 					<FilterCheckboxItem
 						key={status}
-						label={TICKET_STATUS_LABELS[status]}
+						label={ISSUE_STATUS_LABELS[status]}
 						checked={search.statuses?.includes(status) ?? false}
 						onCheckedChange={() => {
-							setFilter({ statuses: toggle<TicketStatus>(search.statuses, status) })
+							setFilter({ statuses: toggle<IssueStatus>(search.statuses, status) })
 						}}
 					/>
 				))}
@@ -117,4 +126,4 @@ const TicketFilters = () => {
 	)
 }
 
-export { TicketFilters }
+export { IssueFilters }
