@@ -59,7 +59,7 @@ const Login = () => {
 				<p className='max-w-sm font-serif text-2xl leading-snug text-balance'>
 					The shared channel between developers and their coding agents.
 				</p>
-				<span className='text-dim text-xs'>Plans, todos, work logs and docs.</span>
+				<span className='text-dim text-xs'>Tickets, plans, todos and a shared journal.</span>
 			</div>
 
 			<div className='flex w-full flex-col items-center justify-center p-8 lg:w-1/2 lg:p-12'>

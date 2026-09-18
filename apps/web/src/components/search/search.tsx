@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@thom/ui/command'
-import type { SearchHit, SearchKind } from '_/core/ports/search'
+import { SEARCH_KINDS, type SearchHit, type SearchKind } from '_/core/ports/search'
 import { useSearch } from '_/app/use-search'
 import { usePreviewStore } from '_/app/preview-store'
 import { useSearchStore } from '_/app/search-store'
@@ -22,9 +22,11 @@ const kindIcons: Record<SearchKind, typeof BookText> = {
 	plan: FolderKanban,
 }
 
-const groupLabels: Record<string, string> = {
+// Keyed by SearchKind, which calls a journal entry "log". A key that misses
+// leaves the group with no heading at all.
+const groupLabels: Record<SearchKind | 'shortcut', string> = {
 	shortcut: 'Shortcuts',
-	journal: 'Journal',
+	log: 'Journal',
 	doc: 'Docs',
 	todo: 'Todos',
 	plan: 'Plans',
@@ -113,21 +115,20 @@ export const Search = () => {
 	}
 
 	const grouped = useMemo(() => {
-		const groups: Record<string, SearchHit[]> = {}
+		const groups = new Map<SearchKind, SearchHit[]>()
 
 		for (const hit of hits) {
-			const key = hit.kind
-			groups[key] ??= []
-			groups[key].push(hit)
+			const group = groups.get(hit.kind) ?? []
+			group.push(hit)
+			groups.set(hit.kind, group)
 		}
 
-		const ordered: Record<string, SearchHit[]> = {}
-		for (const key of ['log', 'doc', 'todo', 'plan']) {
-			const group = groups[key]
-			if (group && group.length > 0) ordered[key] = group
-		}
-
-		return ordered
+		// SEARCH_KINDS is the display order, so a kind added there shows up here
+		// without a second list to keep in step.
+		return SEARCH_KINDS.flatMap(kind => {
+			const group = groups.get(kind)
+			return group && group.length > 0 ? [[kind, group] as const] : []
+		})
 	}, [hits])
 
 	const matchingShortcuts = debounced
@@ -204,7 +205,7 @@ export const Search = () => {
 						</CommandGroup>
 					)}
 
-					{Object.entries(grouped).map(([kind, items]) => (
+					{grouped.map(([kind, items]) => (
 						<CommandGroup key={kind} heading={groupLabels[kind]}>
 							{items.map((hit, index) => (
 								<CommandItem

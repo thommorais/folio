@@ -2,6 +2,8 @@ import { Badge } from '@thom/ui/badge'
 import { RecordGone } from '_/components/record/record-gone'
 import { cn } from '@thom/libs/cn'
 import { useIssueById } from '_/app/use-issue'
+import { useIssues } from '_/app/use-issues'
+import { usePlans } from '_/app/use-plans'
 import type { Issue, IssueStatus } from '_/core/domain/issue'
 import { ISSUE_STATUS_LABELS } from './status-labels'
 
@@ -34,40 +36,61 @@ const Skeleton = () => (
 	</div>
 )
 
-const Body = ({ todo }: { readonly todo: Issue }) => (
-	<div className='scrollbar-hide h-full overflow-auto pb-6'>
-		<header className='mb-8'>
-			<div className='text-dim flex items-center justify-between text-xs'>
-				<span className='font-mono'>{todo.priority}</span>
-				<span>{formatDate(todo.createdAt)}</span>
+const Body = ({ todo, project }: { readonly todo: Issue; readonly project: string }) => {
+	// The record stores ids; a bare id tells the reader nothing, so each is
+	// resolved to the title and falls back to the id if the lookup is not in yet.
+	const tickets = useIssues(project, { kind: 'ticket' })
+	const plans = usePlans(project)
+
+	const ticketTitle =
+		todo.parentId !== undefined && tickets.status === 'ready'
+			? (tickets.issues.find(candidate => candidate.id === todo.parentId)?.title ?? todo.parentId)
+			: todo.parentId
+
+	const planTitle =
+		todo.planId !== undefined && plans.status === 'ready'
+			? (plans.plans.find(candidate => candidate.id === todo.planId)?.title ?? todo.planId)
+			: todo.planId
+
+	return (
+		<div className='scrollbar-hide h-full overflow-auto pb-6'>
+			<header className='mb-8'>
+				<div className='text-dim flex items-center justify-between text-xs'>
+					<span className='font-mono'>{todo.priority}</span>
+					<span>{formatDate(todo.createdAt)}</span>
+				</div>
+
+				<h2 className={cn('mt-6 mb-3 text-lg', todo.status === 'done' && 'text-dim line-through')}>{todo.title}</h2>
+
+				<div className='flex flex-wrap items-center gap-2'>
+					<Badge color={statusColor(todo.status)}>{ISSUE_STATUS_LABELS[todo.status]}</Badge>
+					{todo.tags.map(tag => (
+						<Badge key={tag} color='muted'>
+							{tag}
+						</Badge>
+					))}
+				</div>
+			</header>
+
+			{todo.body && <div className='mb-6 border px-4 py-3 text-sm whitespace-pre-line'>{todo.body}</div>}
+
+			<div className='grid grid-cols-2 gap-4'>
+				<Field label='Ticket'>{ticketTitle ?? <Empty />}</Field>
+				<Field label='Plan'>{planTitle ?? <Empty />}</Field>
+				<Field label='Due'>{todo.dueDate ? formatDate(todo.dueDate) : <Empty />}</Field>
+				<Field label='Position'>{todo.position}</Field>
+				<Field label='Depends on'>
+					{todo.dependsOn.length > 0 ? (
+						`${todo.dependsOn.length} todo${todo.dependsOn.length === 1 ? '' : 's'}`
+					) : (
+						<Empty />
+					)}
+				</Field>
+				<Field label='Updated'>{formatDate(todo.updatedAt)}</Field>
 			</div>
-
-			<h2 className={cn('mt-6 mb-3 text-lg', todo.status === 'done' && 'text-dim line-through')}>{todo.title}</h2>
-
-			<div className='flex flex-wrap items-center gap-2'>
-				<Badge color={statusColor(todo.status)}>{ISSUE_STATUS_LABELS[todo.status]}</Badge>
-				{todo.tags.map(tag => (
-					<Badge key={tag} color='muted'>
-						{tag}
-					</Badge>
-				))}
-			</div>
-		</header>
-
-		{todo.body && <div className='mb-6 border px-4 py-3 text-sm whitespace-pre-line'>{todo.body}</div>}
-
-		<div className='grid grid-cols-2 gap-4'>
-			<Field label='Ticket'>{todo.parentId ?? <Empty />}</Field>
-			<Field label='Plan'>{todo.planId ?? <Empty />}</Field>
-			<Field label='Due'>{todo.dueDate ? formatDate(todo.dueDate) : <Empty />}</Field>
-			<Field label='Position'>{todo.position}</Field>
-			<Field label='Depends on'>
-				{todo.dependsOn.length > 0 ? `${todo.dependsOn.length} todo${todo.dependsOn.length === 1 ? '' : 's'}` : <Empty />}
-			</Field>
-			<Field label='Updated'>{formatDate(todo.updatedAt)}</Field>
 		</div>
-	</div>
-)
+	)
+}
 
 const statusColor = (status: IssueStatus) => {
 	if (status === 'blocked') {
@@ -96,7 +119,7 @@ const IssueDetails = ({ project, todoId }: Props) => {
 		return <Skeleton />
 	}
 
-	return <Body todo={state.issue} />
+	return <Body todo={state.issue} project={project} />
 }
 
 export { IssueDetails }

@@ -234,7 +234,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 			</Section>
 
 			<Section title='Journal'>
-				{journal.status === 'ready' && journal.entries.length === 0 && <Empty what='journal entries' />}
+				{journal.status === 'ready' && journal.entries.length === 0 && <Empty what='entries' />}
 				{journal.status === 'ready' && journal.entries.length > 0 && (
 					<ul className='border-border divide-border divide-y border'>
 						{journal.entries.map(entry => (
