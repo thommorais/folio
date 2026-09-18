@@ -3,11 +3,12 @@ import { projectId as toProjectId, userId as toUserId } from '_/core/domain/proj
 import { planId as toPlanId } from '_/core/domain/plan'
 import type { Issue, IssueKind, IssueStatus, Priority, Size, WayfinderType } from '_/core/domain/issue'
 import { isSize, issueId as toIssueId } from '_/core/domain/issue'
+import { withBlocked } from '_/core/domain/blocked'
 import type { Unsubscribe } from '_/core/ports/subscription'
 import type { IssueFilter, IssuesPort } from '_/core/ports/issues'
 import { err, ok, type Result } from '_/lib/result'
 import { tryCatch } from '_/lib/try-catch'
-import { Collections, type JournIssuesResponse } from '_/pocketbase-types'
+import { Collections, type JournIssueLinksRecord, type JournIssuesResponse } from '_/pocketbase-types'
 import type { ActionEvent } from '_/types'
 import { getPocketBaseClient } from './client'
 import { keyed } from './request-key'
@@ -66,26 +67,20 @@ const hydrate = async (issues: readonly Issue[]): Promise<readonly Issue[]> => {
 	const ids = issues.map(issue => issue.id as string)
 	const [tags, links] = await Promise.all([tagsByTarget('issue', ids), linksOf(ids)])
 
-	const status = new Map(issues.map(issue => [issue.id as string, issue.status]))
-
-	return issues.map(issue => {
+	const linked = issues.map(issue => {
 		const id = issue.id as string
-		const dependsOn = links.dependsOn.get(id) ?? []
 		const parent = links.parentOf.get(id)
 
 		return {
 			...issue,
 			tags: tags.get(id) ?? [],
 			parentId: parent ? toIssueId(parent) : undefined,
-			dependsOn: dependsOn.map(toIssueId),
+			dependsOn: (links.dependsOn.get(id) ?? []).map(toIssueId),
 			relatedTo: (links.relatedTo.get(id) ?? []).map(toIssueId),
-			// A blocker outside the loaded set cannot be judged, so it does not block.
-			blocked: dependsOn.some(blocker => {
-				const state = status.get(blocker)
-				return state !== undefined && state !== 'done' && state !== 'cancelled'
-			}),
 		}
 	})
+
+	return withBlocked(linked)
 }
 
 const hydrateOne = async (issue: Issue): Promise<Issue> => {
@@ -191,18 +186,50 @@ export const createIssuesAdapter = (): IssuesPort => {
 		subscribeToList: async (project, update, filter = {}): Promise<Result<Unsubscribe>> => {
 			const { expr, params } = columns(project, filter)
 
-			try {
-				const unsubscribe = await collection().subscribe<IssueRecord>(
-					'*',
-					event => {
-						void hydrateOne(toIssue(event.record)).then(issue => {
-							update(issue, event.action as ActionEvent)
-						})
-					},
-					{ filter: client.filter(expr, params) },
-				)
+			// A link is a row in its own collection, so reparenting a ticket or
+			// adding a blocker touches no issue record and raises no event here.
+			// Both ends are re-read instead, which is what carries the new
+			// parentId, dependsOn and relatedTo back to the list. The read is
+			// filtered by the same query the list uses, so a link in another
+			// project or of another kind resolves to nothing and is dropped.
+			const refresh = (id: string) => {
+				const scoped = filterFor<IssueColumns & { id: string }>()([
+					{ field: 'id', comparator: 'eq', value: id },
+					{ field: 'project.slug', comparator: 'eq', value: project },
+					{ field: 'kind', comparator: 'eq', value: filter.kind },
+				])
 
-				return ok(unsubscribe)
+				void collection()
+					.getFirstListItem<IssueRecord>(client.filter(scoped.expr, scoped.params), keyed(`issues.relink.${id}`, {}))
+					.then(record => hydrateOne(toIssue(record)))
+					.then(issue => {
+						update(issue, 'update')
+					})
+					// Not in this list, or the link outlived the issue. Either way
+					// there is nothing to fold in.
+					.catch(() => {})
+			}
+
+			try {
+				const [issueEvents, linkEvents] = await Promise.all([
+					collection().subscribe<IssueRecord>(
+						'*',
+						event => {
+							void hydrateOne(toIssue(event.record)).then(issue => {
+								update(issue, event.action as ActionEvent)
+							})
+						},
+						{ filter: client.filter(expr, params) },
+					),
+					client.collection(Collections.JournIssueLinks).subscribe<JournIssueLinksRecord>('*', event => {
+						refresh(event.record.from)
+						refresh(event.record.to)
+					}),
+				])
+
+				return ok(async () => {
+					await Promise.all([issueEvents(), linkEvents()])
+				})
 			} catch (error) {
 				return err(new Error(`Failed to subscribe to issues: ${message(error)}`))
 			}
