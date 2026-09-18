@@ -26,6 +26,21 @@ func bodyFrom(value string) (string, error) {
 	return string(piped), nil
 }
 
+// issueRef collapses --ticket and --todo onto the one issue id the API takes.
+// A todo and a ticket are the same record under different kinds
+// (domain/issue.go:8-9), so both flags address the same field; passing two
+// different ids is a mistake rather than a filter the API could honour, and
+// silently keeping one of them would file the entry against the wrong issue.
+func issueRef(ticket, todo string) (string, error) {
+	if ticket != "" && todo != "" && ticket != todo {
+		return "", errors.New("--ticket and --todo name the same field: pass only one")
+	}
+	if ticket != "" {
+		return ticket, nil
+	}
+	return todo, nil
+}
+
 func journalCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "journal",
@@ -48,7 +63,7 @@ func journalCommand() *cobra.Command {
 
 func journalListCommand() *cobra.Command {
 	var filter client.JournalFilter
-	var tags string
+	var tags, ticket, todo string
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -58,6 +73,11 @@ func journalListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			issue, err := issueRef(ticket, todo)
+			if err != nil {
+				return err
+			}
+			filter.TicketID = issue
 			if tags != "" {
 				filter.Tags = strings.Split(tags, ",")
 			}
@@ -71,15 +91,16 @@ func journalListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			noteIfPaged(len(entries), filter.Limit)
 			return renderLogs(entries)
 		},
 	}
 
 	cmd.Flags().StringVar(&filter.Branch, "branch", "", "entries anchored to this branch")
-	cmd.Flags().StringVar(&filter.TicketID, "ticket", "", "entries filed under this ticket")
+	cmd.Flags().StringVar(&ticket, "ticket", "", "entries filed under this ticket")
 	cmd.Flags().StringVar(&filter.ExternalRef, "external-ref", "", "entries carrying this external tracker key")
 	cmd.Flags().StringVar(&filter.PlanID, "plan", "", "entries under this plan")
-	cmd.Flags().StringVar(&filter.TicketID, "todo", "", "entries under this todo")
+	cmd.Flags().StringVar(&todo, "todo", "", "entries under this todo")
 	cmd.Flags().StringVar(&tags, "tags", "", "comma separated tags")
 	registerTagCompletion(cmd)
 	cmd.Flags().StringVarP(&filter.Search, "query", "q", "", "match the title and body")
@@ -129,7 +150,12 @@ func journalWriteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "write <title>",
 		Short: "Write a journal entry, with --body - to read markdown from stdin",
-		Args:  cobra.ExactArgs(1),
+		Example: `  folio journal write "Shipped mobile nav" --tags frontend,release
+  folio journal write "Cut the 0.4 release" --body - <<'EOF'
+  Tagged and pushed. The migration ran clean.
+  EOF
+  folio journal write "Fixed the filter" --ticket $ID --pr 42`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			project, err := resolveProject()
 			if err != nil {
@@ -151,15 +177,19 @@ func journalWriteCommand() *cobra.Command {
 				pr = git.PR(wd)
 			}
 
+			issue, err := issueRef(ticket, todo)
+			if err != nil {
+				return err
+			}
+
 			in := client.LogInput{Title: &args[0]}
 			setIf(&in.Slug, slug)
 			setIf(&in.Body, text)
 			setIf(&in.Branch, branch)
 			setIf(&in.PR, pr)
-			setIf(&in.TicketID, ticket)
+			setIf(&in.TicketID, issue)
 			setIf(&in.ExternalRef, externalRef)
 			setIf(&in.PlanID, plan)
-			setIf(&in.TicketID, todo)
 			if err := setTags(&in.Tags, tags); err != nil {
 				return err
 			}

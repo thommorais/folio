@@ -185,3 +185,45 @@ func TestJournalUpdateDoesNotDefault(t *testing.T) {
 		t.Errorf("body = %v, want no branch: update must not default", (*got)[0].body)
 	}
 }
+
+func TestJournalIssueFlagsShareOneField(t *testing.T) {
+	// --ticket and --todo both address Entry.IssueID, since a todo is an issue
+	// of another kind. Binding both to one variable let the second flag
+	// silently overwrite the first, so a --ticket X --todo Y call filed the
+	// entry against Y with no warning.
+	t.Run("--todo reaches the wire as the issue id", func(t *testing.T) {
+		got := journalServer(t)
+
+		if _, err := runJournal(t, "write", "shipped it", "--todo", "t9"); err != nil {
+			t.Fatalf("journal write: %v", err)
+		}
+
+		if issue := (*got)[0].body["issue_id"]; issue != "t9" {
+			t.Errorf("issue_id = %v, want t9", issue)
+		}
+	})
+
+	t.Run("two different ids are refused rather than one being dropped", func(t *testing.T) {
+		got := journalServer(t)
+
+		if _, err := runJournal(t, "write", "shipped it", "--ticket", "k1", "--todo", "t9"); err == nil {
+			t.Fatal("journal write: want an error naming the conflict")
+		}
+
+		if len(*got) != 0 {
+			t.Errorf("requests = %d, want 0: nothing should reach the API", len(*got))
+		}
+	})
+
+	t.Run("the same id twice is not a conflict", func(t *testing.T) {
+		got := journalServer(t)
+
+		if _, err := runJournal(t, "write", "shipped it", "--ticket", "k1", "--todo", "k1"); err != nil {
+			t.Fatalf("journal write: %v", err)
+		}
+
+		if issue := (*got)[0].body["issue_id"]; issue != "k1" {
+			t.Errorf("issue_id = %v, want k1", issue)
+		}
+	})
+}
