@@ -21,10 +21,8 @@ type App struct {
 	Projects ports.ProjectUseCase
 	Plans    ports.PlanUseCase
 	Issues   ports.IssueUseCase
-	Journal  ports.JournalUseCase
+	Entries  ports.EntryUseCase
 	Cycles   ports.CycleUseCase
-	WorkLogs ports.WorkLogUseCase
-	Docs     ports.DocUseCase
 	Search   ports.SearchUseCase
 }
 
@@ -37,25 +35,19 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 	projectRepo := pb.NewProjectRepository(app)
 	planRepo := pb.NewPlanRepository(app)
 	issueRepo := pb.NewIssueRepository(app)
-	journalRepo := pb.NewJournalRepository(app)
-	docRepo := pb.NewDocRepository(app)
+	entryRepo := pb.NewEntryRepository(app)
 	cycleRepo := pb.NewCycleRepository(app)
-	ticketLogRepo := pb.NewTicketLogRepository(app)
-	planLogRepo := pb.NewPlanLogRepository(app)
-	todoLogRepo := pb.NewTodoLogRepository(app)
 	searchRepo := pb.NewSearchRepository(app)
 
 	guard := services.NewProjectGuard(projectRepo)
-	issues := services.NewIssueService(issueRepo, planRepo, journalRepo, docRepo, cycleRepo, guard, clock, ids, log)
+	issues := services.NewIssueService(issueRepo, planRepo, entryRepo, cycleRepo, guard, clock, ids, log)
 
 	return &App{
 		Projects: services.NewProjectService(projectRepo, guard, clock, ids, log),
 		Plans:    services.NewPlanService(planRepo, issueRepo, issues, guard, clock, ids, log),
 		Issues:   issues,
-		Journal:  services.NewJournalService(journalRepo, issueRepo, guard, clock, ids, log),
+		Entries:  services.NewEntryService(entryRepo, issueRepo, planRepo, guard, clock, ids, log),
 		Cycles:   services.NewCycleService(cycleRepo, issueRepo, guard, clock, ids, log),
-		WorkLogs: services.NewWorkLogService(ticketLogRepo, planLogRepo, todoLogRepo, issueRepo, planRepo, cycleRepo, guard, clock, ids, log),
-		Docs:     services.NewDocService(docRepo, issueRepo, guard, clock, ids, log),
 		Search:   services.NewSearchService(searchRepo, guard),
 	}
 }
@@ -65,10 +57,8 @@ func (a *App) Deps() httpapi.Deps {
 		Projects: a.Projects,
 		Plans:    a.Plans,
 		Issues:   a.Issues,
-		Journal:  a.Journal,
+		Entries:  a.Entries,
 		Cycles:   a.Cycles,
-		WorkLogs: a.WorkLogs,
-		Docs:     a.Docs,
 		Search:   a.Search,
 	}
 }

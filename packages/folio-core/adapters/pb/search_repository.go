@@ -14,9 +14,6 @@ import (
 	"folio/folio-core/ports"
 )
 
-// SearchRepository runs one query per requested kind and merges the results
-// newest first. Each query is bounded by the caller's limit, so the merge
-// never holds more than kinds x limit rows.
 type SearchRepository struct {
 	app core.App
 }
@@ -27,8 +24,6 @@ func NewSearchRepository(app core.App) *SearchRepository {
 
 var _ ports.SearchRepository = (*SearchRepository)(nil)
 
-// snippetLen is how much surrounding text a hit carries: enough for an agent
-// to judge relevance without fetching the record.
 const snippetLen = 200
 
 func (r *SearchRepository) Search(ctx context.Context, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
@@ -39,27 +34,40 @@ func (r *SearchRepository) Search(ctx context.Context, project domain.ProjectID,
 	all := len(want) == 0
 
 	var hits []domain.SearchHit
-	if all || want[domain.SearchKindJournal] {
-		found, err := r.searchJournal(project, q)
-		if err != nil {
-			return nil, err
-		}
-		hits = append(hits, found...)
-	}
-	if all || want[domain.SearchKindDoc] {
-		found, err := r.searchDocs(project, q)
-		if err != nil {
-			return nil, err
-		}
-		hits = append(hits, found...)
+
+	issueKinds := make([]string, 0, 2)
+	if all || want[domain.SearchKindTicket] {
+		issueKinds = append(issueKinds, string(domain.IssueTicket))
 	}
 	if all || want[domain.SearchKindTodo] {
-		found, err := r.searchTodos(project, q)
+		issueKinds = append(issueKinds, string(domain.IssueTodo))
+	}
+	if len(issueKinds) > 0 {
+		found, err := r.searchIssues(project, q, issueKinds)
 		if err != nil {
 			return nil, err
 		}
 		hits = append(hits, found...)
 	}
+
+	entryKinds := make([]string, 0, 3)
+	if all || want[domain.SearchKindJournal] {
+		entryKinds = append(entryKinds, string(domain.EntryJournal))
+	}
+	if all || want[domain.SearchKindDoc] {
+		entryKinds = append(entryKinds, string(domain.EntryDoc))
+	}
+	if all || want[domain.SearchKindWorkLog] {
+		entryKinds = append(entryKinds, string(domain.EntryLog))
+	}
+	if len(entryKinds) > 0 {
+		found, err := r.searchEntries(project, q, entryKinds)
+		if err != nil {
+			return nil, err
+		}
+		hits = append(hits, found...)
+	}
+
 	if all || want[domain.SearchKindPlan] {
 		found, err := r.searchPlans(project, q)
 		if err != nil {
@@ -67,25 +75,8 @@ func (r *SearchRepository) Search(ctx context.Context, project domain.ProjectID,
 		}
 		hits = append(hits, found...)
 	}
-
-	if all || want[domain.SearchKindTicket] {
-		found, err := r.searchTickets(project, q)
-		if err != nil {
-			return nil, err
-		}
-		hits = append(hits, found...)
-	}
-
-	if all || want[domain.SearchKindWorkLog] {
-		found, err := r.searchWorkLogs(project, q)
-		if err != nil {
-			return nil, err
-		}
-		hits = append(hits, found...)
-	}
-
 	if all || want[domain.SearchKindCycle] {
-		found, err := r.searchResolutions(project, q)
+		found, err := r.searchCycles(project, q)
 		if err != nil {
 			return nil, err
 		}
@@ -96,8 +87,6 @@ func (r *SearchRepository) Search(ctx context.Context, project domain.ProjectID,
 	return applyPaging(hits, q.Offset, q.Limit), nil
 }
 
-// textFilter builds the shared "project + text + tags" filter for a
-// collection, given which fields hold its searchable text.
 func textFilter(project domain.ProjectID, q domain.SearchQuery, fields ...string) (string, dbx.Params) {
 	filter := []string{"project = {:project}"}
 	params := dbx.Params{"project": string(project)}
@@ -118,16 +107,32 @@ func textFilter(project domain.ProjectID, q domain.SearchQuery, fields ...string
 	return strings.Join(filter, " && "), params
 }
 
-func (r *SearchRepository) searchJournal(project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+func kindClause(filter string, params dbx.Params, kinds []string) (string, dbx.Params) {
+	ors := make([]string, 0, len(kinds))
+	for i, k := range kinds {
+		key := "kind" + strconv.Itoa(i)
+		ors = append(ors, "kind = {:"+key+"}")
+		params[key] = k
+	}
+	return filter + " && (" + strings.Join(ors, " || ") + ")", params
+}
+
+func (r *SearchRepository) searchIssues(project domain.ProjectID, q domain.SearchQuery, kinds []string) ([]domain.SearchHit, error) {
 	filter, params := textFilter(project, q, "title", "body")
-	records, err := r.app.FindRecordsByFilter(ColJournal, filter, "-created", q.Limit, 0, params)
+	filter, params = kindClause(filter, params, kinds)
+
+	records, err := r.app.FindRecordsByFilter(ColIssues, filter, "-created", q.Limit, 0, params)
 	if err != nil {
 		return nil, mapErr(err)
 	}
 	out := make([]domain.SearchHit, 0, len(records))
 	for _, rec := range records {
+		kind := domain.SearchKindTicket
+		if rec.GetString("kind") == string(domain.IssueTodo) {
+			kind = domain.SearchKindTodo
+		}
 		out = append(out, domain.SearchHit{
-			Kind:      domain.SearchKindJournal,
+			Kind:      kind,
 			ID:        rec.Id,
 			ProjectID: project,
 			Title:     rec.GetString("title"),
@@ -139,41 +144,32 @@ func (r *SearchRepository) searchJournal(project domain.ProjectID, q domain.Sear
 	return out, nil
 }
 
-func (r *SearchRepository) searchDocs(project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
-	filter, params := textFilter(project, q, "title", "body")
-	records, err := r.app.FindRecordsByFilter(ColDocs, filter, "-updated", q.Limit, 0, params)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	out := make([]domain.SearchHit, 0, len(records))
-	for _, rec := range records {
-		out = append(out, domain.SearchHit{
-			Kind:      domain.SearchKindDoc,
-			ID:        rec.Id,
-			ProjectID: project,
-			Title:     rec.GetString("title"),
-			Snippet:   rules.Snippet(rec.GetString("body"), snippetLen),
-			Tags:      strSlice(rec, "tags"),
-			CreatedAt: rec.GetDateTime("created").Time(),
-		})
-	}
-	return out, nil
+var entrySearchKind = map[string]domain.SearchKind{
+	string(domain.EntryJournal): domain.SearchKindJournal,
+	string(domain.EntryDoc):     domain.SearchKindDoc,
+	string(domain.EntryLog):     domain.SearchKindWorkLog,
 }
 
-func (r *SearchRepository) searchTodos(project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
-	filter, params := textFilter(project, q, "title", "details")
-	records, err := r.app.FindRecordsByFilter(ColTodos, filter, "-created", q.Limit, 0, params)
+func (r *SearchRepository) searchEntries(project domain.ProjectID, q domain.SearchQuery, kinds []string) ([]domain.SearchHit, error) {
+	filter, params := textFilter(project, q, "title", "body")
+	filter, params = kindClause(filter, params, kinds)
+
+	records, err := r.app.FindRecordsByFilter(ColEntries, filter, "-created", q.Limit, 0, params)
 	if err != nil {
 		return nil, mapErr(err)
 	}
 	out := make([]domain.SearchHit, 0, len(records))
 	for _, rec := range records {
+		title := rec.GetString("title")
+		if title == "" {
+			title = "Work log"
+		}
 		out = append(out, domain.SearchHit{
-			Kind:      domain.SearchKindTodo,
+			Kind:      entrySearchKind[rec.GetString("kind")],
 			ID:        rec.Id,
 			ProjectID: project,
-			Title:     rec.GetString("title"),
-			Snippet:   rules.Snippet(rec.GetString("details"), snippetLen),
+			Title:     title,
+			Snippet:   rules.Snippet(rec.GetString("body"), snippetLen),
 			Tags:      strSlice(rec, "tags"),
 			CreatedAt: rec.GetDateTime("created").Time(),
 		})
@@ -202,73 +198,18 @@ func (r *SearchRepository) searchPlans(project domain.ProjectID, q domain.Search
 	return out, nil
 }
 
-func (r *SearchRepository) searchTickets(project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
-	filter, params := textFilter(project, q, "title", "body")
-	records, err := r.app.FindRecordsByFilter(ColTickets, filter, "-created", q.Limit, 0, params)
-	if err != nil {
-		return nil, mapErr(err)
+func (r *SearchRepository) searchCycles(project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+	filter := []string{"project = {:project}", "resolution != ''"}
+	params := dbx.Params{"project": string(project)}
+	if text := strings.TrimSpace(q.Text); text != "" {
+		filter = append(filter, "resolution ~ {:text}")
+		params["text"] = text
 	}
-	out := make([]domain.SearchHit, 0, len(records))
-	for _, rec := range records {
-		out = append(out, domain.SearchHit{
-			Kind:      domain.SearchKindTicket,
-			ID:        rec.Id,
-			ProjectID: project,
-			Title:     rec.GetString("title"),
-			Snippet:   rules.Snippet(rec.GetString("body"), snippetLen),
-			Tags:      strSlice(rec, "tags"),
-			CreatedAt: rec.GetDateTime("created").Time(),
-		})
-	}
-	return out, nil
-}
-
-// searchWorkLogs spans the three work log collections. They carry no title of
-// their own, so the hit is titled by the parent kind and the body does the
-// work of both title and snippet.
-func (r *SearchRepository) searchWorkLogs(project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
 	if len(q.Tags) > 0 {
-		return nil, nil
-	}
-	sources := []struct {
-		collection string
-		title      string
-	}{
-		{ColTicketLogs, "Ticket work log"},
-		{ColPlanLogs, "Plan work log"},
-		{ColTodoLogs, "Todo work log"},
+		return []domain.SearchHit{}, nil
 	}
 
-	var out []domain.SearchHit
-	for _, source := range sources {
-		filter, params := textFilter(project, q, "body")
-		records, err := r.app.FindRecordsByFilter(source.collection, filter, "-created", q.Limit, 0, params)
-		if err != nil {
-			return nil, mapErr(err)
-		}
-		for _, rec := range records {
-			out = append(out, domain.SearchHit{
-				Kind:      domain.SearchKindWorkLog,
-				ID:        rec.Id,
-				ProjectID: project,
-				Title:     source.title,
-				Snippet:   rules.Snippet(rec.GetString("body"), snippetLen),
-				CreatedAt: rec.GetDateTime("created").Time(),
-			})
-		}
-	}
-	return out, nil
-}
-
-// searchResolutions finds the one-line answer a cycle closed with, which is
-// the record of why a ticket was done and the reason it can be reviewed.
-func (r *SearchRepository) searchResolutions(project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
-	if len(q.Tags) > 0 {
-		return nil, nil
-	}
-	filter, params := textFilter(project, q, "resolution")
-	filter += " && resolution != ''"
-	records, err := r.app.FindRecordsByFilter(ColCycles, filter, "-created", q.Limit, 0, params)
+	records, err := r.app.FindRecordsByFilter(ColCycles, strings.Join(filter, " && "), "-created", q.Limit, 0, params)
 	if err != nil {
 		return nil, mapErr(err)
 	}

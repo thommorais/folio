@@ -57,15 +57,13 @@ type IssueRepository interface {
 	SetLinks(ctx context.Context, from domain.IssueID, kind domain.LinkKind, to []domain.IssueID) error
 }
 
-// JournalRepository stores the work log. Entries are editable: a log documents
-// the state of a piece of work, and that state changes as the work proceeds.
-type JournalRepository interface {
-	List(ctx context.Context, project domain.ProjectID, f domain.JournalFilter) ([]domain.JournalEntry, error)
-	GetByID(ctx context.Context, id domain.JournalID) (domain.JournalEntry, error)
-	GetBySlug(ctx context.Context, project domain.ProjectID, slug string) (domain.JournalEntry, error)
-	Create(ctx context.Context, e domain.JournalEntry) (domain.JournalEntry, error)
-	Update(ctx context.Context, e domain.JournalEntry) (domain.JournalEntry, error)
-	Delete(ctx context.Context, id domain.JournalID) error
+type EntryRepository interface {
+	List(ctx context.Context, project domain.ProjectID, f domain.EntryFilter) ([]domain.Entry, error)
+	GetByID(ctx context.Context, id domain.EntryID) (domain.Entry, error)
+	GetBySlug(ctx context.Context, project domain.ProjectID, slug string) (domain.Entry, error)
+	Create(ctx context.Context, e domain.Entry) (domain.Entry, error)
+	Update(ctx context.Context, e domain.Entry) (domain.Entry, error)
+	Delete(ctx context.Context, id domain.EntryID) error
 }
 
 type CycleRepository interface {
@@ -76,42 +74,6 @@ type CycleRepository interface {
 	Delete(ctx context.Context, id domain.CycleID) error
 }
 
-type TicketLogRepository interface {
-	List(ctx context.Context, project domain.ProjectID, f domain.TicketLogFilter) ([]domain.TicketLog, error)
-	GetByID(ctx context.Context, id domain.TicketLogID) (domain.TicketLog, error)
-	Create(ctx context.Context, l domain.TicketLog) (domain.TicketLog, error)
-	Update(ctx context.Context, l domain.TicketLog) (domain.TicketLog, error)
-	Delete(ctx context.Context, id domain.TicketLogID) error
-}
-
-type PlanLogRepository interface {
-	List(ctx context.Context, project domain.ProjectID, f domain.PlanLogFilter) ([]domain.PlanLog, error)
-	GetByID(ctx context.Context, id domain.PlanLogID) (domain.PlanLog, error)
-	Create(ctx context.Context, l domain.PlanLog) (domain.PlanLog, error)
-	Update(ctx context.Context, l domain.PlanLog) (domain.PlanLog, error)
-	Delete(ctx context.Context, id domain.PlanLogID) error
-}
-
-type TodoLogRepository interface {
-	List(ctx context.Context, project domain.ProjectID, f domain.TodoLogFilter) ([]domain.TodoLog, error)
-	GetByID(ctx context.Context, id domain.TodoLogID) (domain.TodoLog, error)
-	Create(ctx context.Context, l domain.TodoLog) (domain.TodoLog, error)
-	Update(ctx context.Context, l domain.TodoLog) (domain.TodoLog, error)
-	Delete(ctx context.Context, id domain.TodoLogID) error
-}
-
-type DocRepository interface {
-	List(ctx context.Context, project domain.ProjectID, f domain.DocFilter) ([]domain.Doc, error)
-	GetByID(ctx context.Context, id domain.DocID) (domain.Doc, error)
-	GetBySlug(ctx context.Context, project domain.ProjectID, slug string) (domain.Doc, error)
-	Create(ctx context.Context, d domain.Doc) (domain.Doc, error)
-	Update(ctx context.Context, d domain.Doc) (domain.Doc, error)
-	Delete(ctx context.Context, id domain.DocID) error
-}
-
-// SearchRepository runs the cross-collection text search. It is a separate
-// port because the efficient implementation is one query per storage engine,
-// not a fan-out over the other repositories.
 type SearchRepository interface {
 	Search(ctx context.Context, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error)
 }

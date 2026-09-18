@@ -382,6 +382,66 @@ func ensureJournal(app core.App) error {
 	return app.Save(c)
 }
 
+func ensureEntries(app core.App) error {
+	if _, ok := find(app, ColEntries); ok {
+		return nil
+	}
+	projects, err := app.FindCollectionByNameOrId(ColProjects)
+	if err != nil {
+		return err
+	}
+	domains, err := app.FindCollectionByNameOrId(ColDomains)
+	if err != nil {
+		return err
+	}
+	issues, err := app.FindCollectionByNameOrId(ColIssues)
+	if err != nil {
+		return err
+	}
+	plans, err := app.FindCollectionByNameOrId(ColPlans)
+	if err != nil {
+		return err
+	}
+	cycles, err := app.FindCollectionByNameOrId(ColCycles)
+	if err != nil {
+		return err
+	}
+	users, err := app.FindCollectionByNameOrId(ColUsers)
+	if err != nil {
+		return err
+	}
+
+	c := core.NewBaseCollection(ColEntries)
+	c.Fields.Add(
+		&core.RelationField{Name: "domain", Required: true, CollectionId: domains.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.SelectField{Name: "kind", Required: true, MaxSelect: 1, Values: entryKinds},
+		&core.RelationField{Name: "issue", CollectionId: issues.Id, CascadeDelete: false, MaxSelect: 1},
+		&core.RelationField{Name: "plan", CollectionId: plans.Id, CascadeDelete: false, MaxSelect: 1},
+		&core.RelationField{Name: "cycle", CollectionId: cycles.Id, CascadeDelete: false, MaxSelect: 1},
+		&core.TextField{Name: "slug", Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
+		&core.TextField{Name: "title", Max: 200, Presentable: true},
+		&core.EditorField{Name: "body", MaxSize: 500000},
+		&core.TextField{Name: "branch", Max: 200},
+		&core.TextField{Name: "pr", Max: 200},
+		&core.TextField{Name: "external_ref", Max: 200},
+		&core.JSONField{Name: "meta", MaxSize: 100000},
+		&core.JSONField{Name: "tags", MaxSize: 4000},
+		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
+	)
+	c.Fields.Add(autodates()...)
+	c.AddIndex("idx_journ_entries_slug", true, "project, slug", "slug != ''")
+	c.AddIndex("idx_journ_entries_kind", false, "project, kind, created", "")
+	c.AddIndex("idx_journ_entries_issue", false, "issue", "")
+	c.AddIndex("idx_journ_entries_plan", false, "plan", "")
+	c.AddIndex("idx_journ_entries_branch", false, "branch", "")
+	c.AddIndex("idx_journ_entries_external_ref", false, "external_ref", "")
+
+	return app.Save(c)
+}
+
+var entryKinds = []string{"journal", "doc", "log"}
+
 func ensureCycles(app core.App) error {
 	if _, ok := find(app, ColCycles); ok {
 		return nil

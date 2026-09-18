@@ -130,7 +130,7 @@ type IssueBrief struct {
 	Issue    Issue
 	Children []Issue
 	Plans    []Plan
-	Journal  []JournalEntry
-	Docs     []Doc
+	Journal  []Entry
+	Docs     []Entry
 	Cycles   []Cycle
 }

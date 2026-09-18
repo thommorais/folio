@@ -13,8 +13,7 @@ import (
 type IssueService struct {
 	repo    ports.IssueRepository
 	plans   ports.PlanRepository
-	journal ports.JournalRepository
-	docs    ports.DocRepository
+	entries ports.EntryRepository
 	cycles  ports.CycleRepository
 	guard   ports.Guard
 	clock   ports.Clock
@@ -22,8 +21,8 @@ type IssueService struct {
 	log     ports.Logger
 }
 
-func NewIssueService(repo ports.IssueRepository, plans ports.PlanRepository, journal ports.JournalRepository, docs ports.DocRepository, cycles ports.CycleRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *IssueService {
-	return &IssueService{repo: repo, plans: plans, journal: journal, docs: docs, cycles: cycles, guard: guard, clock: clock, ids: ids, log: log}
+func NewIssueService(repo ports.IssueRepository, plans ports.PlanRepository, entries ports.EntryRepository, cycles ports.CycleRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *IssueService {
+	return &IssueService{repo: repo, plans: plans, entries: entries, cycles: cycles, guard: guard, clock: clock, ids: ids, log: log}
 }
 
 var _ ports.IssueUseCase = (*IssueService)(nil)
@@ -525,26 +524,26 @@ func (s *IssueService) detachChildren(ctx context.Context, issue domain.Issue) e
 		}
 	}
 
-	entries, err := s.journal.List(ctx, issue.ProjectID, domain.JournalFilter{IssueID: issue.ID, Limit: MaxPageSize})
+	entries, err := s.entries.List(ctx, issue.ProjectID, domain.EntryFilter{Kind: domain.EntryJournal, IssueID: issue.ID, Limit: MaxPageSize})
 	if err != nil {
 		return err
 	}
 	for _, e := range entries {
 		e.IssueID = ""
 		e.UpdatedAt = now
-		if _, err := s.journal.Update(ctx, e); err != nil {
+		if _, err := s.entries.Update(ctx, e); err != nil {
 			return err
 		}
 	}
 
-	docs, err := s.docs.List(ctx, issue.ProjectID, domain.DocFilter{IssueID: issue.ID, Limit: MaxPageSize})
+	docs, err := s.entries.List(ctx, issue.ProjectID, domain.EntryFilter{Kind: domain.EntryDoc, IssueID: issue.ID, Limit: MaxPageSize})
 	if err != nil {
 		return err
 	}
 	for _, d := range docs {
 		d.IssueID = ""
 		d.UpdatedAt = now
-		if _, err := s.docs.Update(ctx, d); err != nil {
+		if _, err := s.entries.Update(ctx, d); err != nil {
 			return err
 		}
 	}
@@ -614,12 +613,12 @@ func (s *IssueService) brief(ctx context.Context, issue domain.Issue, in ports.B
 		return domain.IssueBrief{}, err
 	}
 
-	journal, err := s.journal.List(ctx, issue.ProjectID, domain.JournalFilter{IssueID: issue.ID, Limit: recent})
+	journal, err := s.entries.List(ctx, issue.ProjectID, domain.EntryFilter{Kind: domain.EntryJournal, IssueID: issue.ID, Limit: recent})
 	if err != nil {
 		return domain.IssueBrief{}, err
 	}
 
-	docs, err := s.docs.List(ctx, issue.ProjectID, domain.DocFilter{IssueID: issue.ID, Limit: MaxPageSize})
+	docs, err := s.entries.List(ctx, issue.ProjectID, domain.EntryFilter{Kind: domain.EntryDoc, IssueID: issue.ID, Limit: MaxPageSize})
 	if err != nil {
 		return domain.IssueBrief{}, err
 	}

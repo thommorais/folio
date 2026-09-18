@@ -95,28 +95,6 @@ var priorities = map[domain.Priority]bool{
 
 // ValidateJournalEntry checks a work log. The body is optional: an entry may be
 // created as a stub and filled in as the work proceeds.
-func ValidateJournalEntry(e domain.JournalEntry) error {
-	if e.ProjectID == "" {
-		return domain.Invalid("project", "is required")
-	}
-	if err := ValidateSlug("slug", e.Slug); err != nil {
-		return err
-	}
-	if err := required("title", e.Title, TitleMaxLen); err != nil {
-		return err
-	}
-	if err := optional("body", e.Body, BodyMaxLen); err != nil {
-		return err
-	}
-	if err := optional("branch", e.Branch, RefMaxLen); err != nil {
-		return err
-	}
-	if err := optional("pr", e.PR, RefMaxLen); err != nil {
-		return err
-	}
-	return optional("external_ref", e.ExternalRef, RefMaxLen)
-}
-
 var wayfinderTypes = map[domain.WayfinderType]bool{
 	domain.WayfinderMap: true, domain.WayfinderResearch: true, domain.WayfinderPrototype: true,
 	domain.WayfinderGrilling: true, domain.WayfinderTask: true,

@@ -117,25 +117,50 @@ type BriefOptions struct {
 	RecentJournal int
 }
 
+type EntryUseCase interface {
+	ListEntries(ctx context.Context, actor Actor, project domain.ProjectID, f domain.EntryFilter) ([]domain.Entry, error)
+	GetEntry(ctx context.Context, actor Actor, id domain.EntryID) (domain.Entry, error)
+	GetEntryBySlug(ctx context.Context, actor Actor, project domain.ProjectID, slug string) (domain.Entry, error)
+	WriteEntry(ctx context.Context, actor Actor, in WriteEntryInput) (domain.Entry, error)
+	UpdateEntry(ctx context.Context, actor Actor, id domain.EntryID, in UpdateEntryInput) (domain.Entry, error)
+	AppendToEntry(ctx context.Context, actor Actor, id domain.EntryID, section string) (domain.Entry, error)
+	DeleteEntry(ctx context.Context, actor Actor, id domain.EntryID) error
+}
+
+type WriteEntryInput struct {
+	ProjectID   domain.ProjectID
+	Kind        domain.EntryKind
+	IssueID     domain.IssueID
+	PlanID      domain.PlanID
+	CycleID     domain.CycleID
+	Slug        string
+	Title       string
+	Body        string
+	Branch      string
+	PR          string
+	ExternalRef string
+	Tags        []string
+	Meta        map[string]any
+}
+
+type UpdateEntryInput struct {
+	IssueID     *domain.IssueID
+	PlanID      *domain.PlanID
+	Slug        *string
+	Title       *string
+	Body        *string
+	Branch      *string
+	PR          *string
+	ExternalRef *string
+	Tags        *[]string
+	Meta        *map[string]any
+}
+
 type CycleUseCase interface {
 	ListCycles(ctx context.Context, actor Actor, issue domain.IssueID) ([]domain.Cycle, error)
 	OpenCycle(ctx context.Context, actor Actor, issue domain.IssueID) (domain.Cycle, error)
 	AdvancePhase(ctx context.Context, actor Actor, id domain.CycleID, phase domain.Phase) (domain.Cycle, error)
 	ResolveCycle(ctx context.Context, actor Actor, id domain.CycleID, resolution string) (domain.Cycle, error)
-}
-
-type WorkLogUseCase interface {
-	ListTicketLogs(ctx context.Context, actor Actor, issue domain.IssueID, f domain.TicketLogFilter) ([]domain.TicketLog, error)
-	WriteTicketLog(ctx context.Context, actor Actor, issue domain.IssueID, body string) (domain.TicketLog, error)
-	DeleteTicketLog(ctx context.Context, actor Actor, id domain.TicketLogID) error
-
-	ListPlanLogs(ctx context.Context, actor Actor, plan domain.PlanID, f domain.PlanLogFilter) ([]domain.PlanLog, error)
-	WritePlanLog(ctx context.Context, actor Actor, plan domain.PlanID, body string) (domain.PlanLog, error)
-	DeletePlanLog(ctx context.Context, actor Actor, id domain.PlanLogID) error
-
-	ListTodoLogs(ctx context.Context, actor Actor, issue domain.IssueID, f domain.TodoLogFilter) ([]domain.TodoLog, error)
-	WriteTodoLog(ctx context.Context, actor Actor, issue domain.IssueID, body string) (domain.TodoLog, error)
-	DeleteTodoLog(ctx context.Context, actor Actor, id domain.TodoLogID) error
 }
 
 // BatchResult reports a partial success: what was written, and why the rest
@@ -149,68 +174,6 @@ type BatchError struct {
 	Index  int
 	Title  string
 	Reason string
-}
-
-type JournalUseCase interface {
-	ListJournal(ctx context.Context, actor Actor, project domain.ProjectID, f domain.JournalFilter) ([]domain.JournalEntry, error)
-	GetJournalEntry(ctx context.Context, actor Actor, id domain.JournalID) (domain.JournalEntry, error)
-	GetJournalEntryBySlug(ctx context.Context, actor Actor, project domain.ProjectID, slug string) (domain.JournalEntry, error)
-	WriteJournalEntry(ctx context.Context, actor Actor, in WriteJournalInput) (domain.JournalEntry, error)
-	UpdateJournalEntry(ctx context.Context, actor Actor, id domain.JournalID, in UpdateJournalInput) (domain.JournalEntry, error)
-	AppendToJournalEntry(ctx context.Context, actor Actor, id domain.JournalID, section string) (domain.JournalEntry, error)
-	DeleteJournalEntry(ctx context.Context, actor Actor, id domain.JournalID) error
-}
-
-type WriteJournalInput struct {
-	ProjectID   domain.ProjectID
-	IssueID     domain.IssueID
-	PlanID      domain.PlanID
-	Slug        string
-	Title       string
-	Body        string
-	Branch      string
-	PR          string
-	ExternalRef string
-	Tags        []string
-	Meta        map[string]any
-}
-
-type UpdateJournalInput struct {
-	IssueID     *domain.IssueID
-	PlanID      *domain.PlanID
-	Title       *string
-	Body        *string
-	Branch      *string
-	PR          *string
-	ExternalRef *string
-	Tags        *[]string
-	Meta        *map[string]any
-}
-
-type DocUseCase interface {
-	ListDocs(ctx context.Context, actor Actor, project domain.ProjectID, f domain.DocFilter) ([]domain.Doc, error)
-	GetDoc(ctx context.Context, actor Actor, id domain.DocID) (domain.Doc, error)
-	GetDocBySlug(ctx context.Context, actor Actor, project domain.ProjectID, slug string) (domain.Doc, error)
-	CreateDoc(ctx context.Context, actor Actor, in CreateDocInput) (domain.Doc, error)
-	UpdateDoc(ctx context.Context, actor Actor, id domain.DocID, in UpdateDocInput) (domain.Doc, error)
-	DeleteDoc(ctx context.Context, actor Actor, id domain.DocID) error
-}
-
-type CreateDocInput struct {
-	ProjectID domain.ProjectID
-	IssueID  domain.IssueID
-	Slug      string
-	Title     string
-	Body      string
-	Tags      []string
-}
-
-type UpdateDocInput struct {
-	IssueID *domain.IssueID
-	Slug     *string
-	Title    *string
-	Body     *string
-	Tags     *[]string
 }
 
 type SearchUseCase interface {

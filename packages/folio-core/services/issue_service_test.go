@@ -40,8 +40,7 @@ func newIssueFixture(t *testing.T) *issueFixture {
 	return &issueFixture{
 		issues: issues,
 		plans:  plans,
-		svc: services.NewIssueService(issues, plans, newFakeJournal(), newFakeDocs(),
-			newFakeCycles(), guard, clock, &seqIDs{}, nopLogger{}),
+		svc: services.NewIssueService(issues, plans, newFakeEntries(), newFakeCycles(), guard, clock, &seqIDs{}, nopLogger{}),
 		owner:   ports.Actor{UserID: "u-owner"},
 		viewer:  ports.Actor{UserID: "u-viewer"},
 		outside: ports.Actor{UserID: "u-nobody"},

@@ -17,8 +17,7 @@ type SeedUseCases struct {
 	Projects ports.ProjectUseCase
 	Plans    ports.PlanUseCase
 	Issues   ports.IssueUseCase
-	Journal  ports.JournalUseCase
-	Docs     ports.DocUseCase
+	Entries  ports.EntryUseCase
 }
 
 // SeedReport counts what a seed run wrote.
@@ -106,10 +105,11 @@ func Seed(ctx context.Context, uc SeedUseCases, actor ports.Actor) (SeedReport, 
 
 		for _, entry := range spec.journal {
 			entry.ProjectID = project.ID
+			entry.Kind = domain.EntryJournal
 			if len(planIDs) > 0 && entry.PlanID == "" {
 				entry.PlanID = planIDs[0]
 			}
-			if _, err := uc.Journal.WriteJournalEntry(ctx, actor, entry); err != nil {
+			if _, err := uc.Entries.WriteEntry(ctx, actor, entry); err != nil {
 				return report, fmt.Errorf("log %q: %w", entry.Title, err)
 			}
 			report.Journal++
@@ -117,7 +117,8 @@ func Seed(ctx context.Context, uc SeedUseCases, actor ports.Actor) (SeedReport, 
 
 		for _, doc := range spec.docs {
 			doc.ProjectID = project.ID
-			if _, err := uc.Docs.CreateDoc(ctx, actor, doc); err != nil {
+			doc.Kind = domain.EntryDoc
+			if _, err := uc.Entries.WriteEntry(ctx, actor, doc); err != nil {
 				return report, fmt.Errorf("doc %q: %w", doc.Title, err)
 			}
 			report.Docs++

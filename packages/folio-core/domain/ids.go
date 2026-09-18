@@ -8,6 +8,7 @@ type (
 	DomainID  string
 	ProjectID string
 	IssueID   string
+	EntryID   string
 	PlanID    string
 	TicketID  string
 	TodoID    string

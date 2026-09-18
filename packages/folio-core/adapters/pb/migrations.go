@@ -62,8 +62,12 @@ func Register(app core.App) error {
 	if err := ensureCycles(app); err != nil {
 		return fmt.Errorf("cycles: %w", err)
 	}
+
 	if err := ensureWorkLogs(app); err != nil {
 		return fmt.Errorf("work logs: %w", err)
+	}
+	if err := ensureEntries(app); err != nil {
+		return fmt.Errorf("entries: %w", err)
 	}
 	// Existing databases predate tickets: their collections were created by
 	// an earlier Register and ensureX leaves them alone, so the new fields
@@ -88,6 +92,9 @@ func Register(app core.App) error {
 	}
 	if err := repointToIssues(app); err != nil {
 		return fmt.Errorf("repoint to issues: %w", err)
+	}
+	if err := backfillEntries(app); err != nil {
+		return fmt.Errorf("backfill entries: %w", err)
 	}
 	if err := applyRules(app); err != nil {
 		return fmt.Errorf("rules: %w", err)
@@ -607,6 +614,101 @@ func repointToIssues(app core.App) error {
 			row.Set("issue_todo", ref)
 			if err := app.Save(row); err != nil {
 				return fmt.Errorf("fill issue_todo on %s: %w", row.Id, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func backfillEntries(app core.App) error {
+	entries, err := app.FindCollectionByNameOrId(ColEntries)
+	if err != nil {
+		return err
+	}
+
+	projectDomain := make(map[string]string)
+	projects, err := app.FindAllRecords(ColProjects)
+	if err != nil {
+		return fmt.Errorf("load projects: %w", err)
+	}
+	for _, p := range projects {
+		projectDomain[p.Id] = p.GetString("domain")
+	}
+
+	migrated := make(map[string]bool)
+	existing, err := app.FindAllRecords(ColEntries)
+	if err != nil {
+		return fmt.Errorf("load entries: %w", err)
+	}
+	for _, rec := range existing {
+		migrated[rec.Id] = true
+	}
+
+	copyRow := func(src *core.Record, kind string, rich bool) error {
+		if migrated[src.Id] {
+			return nil
+		}
+		projectID := src.GetString("project")
+		domainID := projectDomain[projectID]
+		if domainID == "" {
+			return fmt.Errorf("%s %s: project %s has no domain", kind, src.Id, projectID)
+		}
+
+		rec := core.NewRecord(entries)
+		rec.Id = src.Id
+		rec.Set("domain", domainID)
+		rec.Set("project", projectID)
+		rec.Set("kind", kind)
+		rec.Set("body", src.GetString("body"))
+		rec.Set("created_by", src.GetString("created_by"))
+		rec.Set("created", src.GetString("created"))
+		rec.Set("updated", src.GetString("updated"))
+
+		if issue := src.GetString("issue"); issue != "" {
+			rec.Set("issue", issue)
+		}
+		if plan := src.GetString("plan"); plan != "" {
+			rec.Set("plan", plan)
+		}
+		if cycle := src.GetString("cycle"); cycle != "" {
+			rec.Set("cycle", cycle)
+		}
+		if rich {
+			rec.Set("slug", src.GetString("slug"))
+			rec.Set("title", src.GetString("title"))
+			rec.Set("tags", src.GetString("tags"))
+			rec.Set("branch", src.GetString("branch"))
+			rec.Set("pr", src.GetString("pr"))
+			rec.Set("external_ref", src.GetString("external_ref"))
+			rec.Set("meta", src.GetString("meta"))
+		}
+
+		if err := app.Save(rec); err != nil {
+			return fmt.Errorf("copy %s %s: %w", kind, src.Id, err)
+		}
+		migrated[src.Id] = true
+		return nil
+	}
+
+	for _, src := range []struct {
+		collection string
+		kind       string
+		rich       bool
+	}{
+		{ColJournal, "journal", true},
+		{ColDocs, "doc", true},
+		{ColTicketLogs, "log", false},
+		{ColPlanLogs, "log", false},
+		{ColTodoLogs, "log", false},
+	} {
+		rows, err := app.FindAllRecords(src.collection)
+		if err != nil {
+			return fmt.Errorf("load %s: %w", src.collection, err)
+		}
+		for _, row := range rows {
+			if err := copyRow(row, src.kind, src.rich); err != nil {
+				return err
 			}
 		}
 	}

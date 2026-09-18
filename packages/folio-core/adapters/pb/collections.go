@@ -12,6 +12,7 @@ const (
 	ColProjects = "journ_projects"
 	ColIssues   = "journ_issues"
 	ColLinks    = "journ_issue_links"
+	ColEntries  = "journ_entries"
 	ColMembers  = "journ_members"
 	ColPlans    = "journ_plans"
 	ColTickets  = "journ_tickets"

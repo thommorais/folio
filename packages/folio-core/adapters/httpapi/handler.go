@@ -18,10 +18,8 @@ type Handler struct {
 	projects ports.ProjectUseCase
 	plans    ports.PlanUseCase
 	issues   ports.IssueUseCase
-	journal  ports.JournalUseCase
+	entries  ports.EntryUseCase
 	cycles   ports.CycleUseCase
-	workLogs ports.WorkLogUseCase
-	docs     ports.DocUseCase
 	search   ports.SearchUseCase
 }
 
@@ -29,17 +27,14 @@ type Deps struct {
 	Projects ports.ProjectUseCase
 	Plans    ports.PlanUseCase
 	Issues   ports.IssueUseCase
-	Journal  ports.JournalUseCase
+	Entries  ports.EntryUseCase
 	Cycles   ports.CycleUseCase
-	WorkLogs ports.WorkLogUseCase
-	Docs     ports.DocUseCase
 	Search   ports.SearchUseCase
 }
 
 func New(d Deps) *Handler {
 	return &Handler{
-		projects: d.Projects, plans: d.Plans, issues: d.Issues,
-		journal: d.Journal, cycles: d.Cycles, workLogs: d.WorkLogs, docs: d.Docs, search: d.Search,
+		projects: d.Projects, plans: d.Plans, issues: d.Issues, entries: d.Entries, cycles: d.Cycles, search: d.Search,
 	}
 }
 
@@ -75,12 +70,6 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.GET("/issues/{issue}/cycles", h.listCycles)
 	g.POST("/issues/{issue}/cycles", h.openCycle)
 	g.PATCH("/cycles/{cycle}", h.updateCycle)
-	g.GET("/issues/{issue}/logs", h.listTicketLogs)
-	g.POST("/issues/{issue}/logs", h.writeTicketLog)
-	g.DELETE("/issue-logs/{log}", h.deleteTicketLog)
-	g.GET("/plans/{plan}/logs", h.listPlanLogs)
-	g.POST("/plans/{plan}/logs", h.writePlanLog)
-	g.DELETE("/plan-logs/{log}", h.deletePlanLog)
 
 	g.GET("/projects/{project}/issues", h.listIssues)
 	g.POST("/projects/{project}/issues", h.createIssues)
@@ -95,20 +84,15 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.DELETE("/issues/{issue}/links/{to}", h.unlinkIssue)
 
 
-	g.GET("/projects/{project}/journal", h.listJournal)
-	g.POST("/projects/{project}/journal", h.writeJournalEntry)
-	g.GET("/projects/{project}/journal/{slug}", h.getJournalEntryBySlug)
-	g.GET("/journal/{entry}", h.getJournalEntry)
-	g.PATCH("/journal/{entry}", h.updateJournalEntry)
-	g.POST("/journal/{entry}/append", h.appendJournalEntry)
-	g.DELETE("/journal/{entry}", h.deleteJournalEntry)
 
-	g.GET("/projects/{project}/docs", h.listDocs)
-	g.POST("/projects/{project}/docs", h.createDoc)
-	g.GET("/projects/{project}/docs/{slug}", h.getDocBySlug)
-	g.GET("/docs/{doc}", h.getDoc)
-	g.PATCH("/docs/{doc}", h.updateDoc)
-	g.DELETE("/docs/{doc}", h.deleteDoc)
+
+	g.GET("/projects/{project}/entries", h.listEntries)
+	g.POST("/projects/{project}/entries", h.writeEntry)
+	g.GET("/projects/{project}/entries/{slug}", h.getEntryBySlug)
+	g.GET("/entries/{entry}", h.getEntry)
+	g.PATCH("/entries/{entry}", h.updateEntry)
+	g.POST("/entries/{entry}/append", h.appendEntry)
+	g.DELETE("/entries/{entry}", h.deleteEntry)
 
 	g.GET("/projects/{project}/search", h.searchProject)
 }

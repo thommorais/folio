@@ -102,110 +102,6 @@ func toCycleView(c domain.Cycle) cycleView {
 	return out
 }
 
-type ticketLogView struct {
-	ID        string `json:"id"`
-	ProjectID string `json:"project_id"`
-	IssueID  string `json:"issue_id,omitempty"`
-	CycleID   string `json:"cycle_id,omitempty"`
-	Body      string `json:"body"`
-	CreatedBy string `json:"created_by,omitempty"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
-
-func toTicketLogView(l domain.TicketLog) ticketLogView {
-	return ticketLogView{
-		ID: string(l.ID), ProjectID: string(l.ProjectID), IssueID: string(l.IssueID),
-		CycleID: string(l.CycleID), Body: l.Body, CreatedBy: string(l.CreatedBy),
-		CreatedAt: rfc3339(l.CreatedAt), UpdatedAt: rfc3339(l.UpdatedAt),
-	}
-}
-
-type planLogView struct {
-	ID        string `json:"id"`
-	ProjectID string `json:"project_id"`
-	PlanID    string `json:"plan_id"`
-	Body      string `json:"body"`
-	CreatedBy string `json:"created_by,omitempty"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
-
-func toPlanLogView(l domain.PlanLog) planLogView {
-	return planLogView{
-		ID: string(l.ID), ProjectID: string(l.ProjectID), PlanID: string(l.PlanID),
-		Body: l.Body, CreatedBy: string(l.CreatedBy),
-		CreatedAt: rfc3339(l.CreatedAt), UpdatedAt: rfc3339(l.UpdatedAt),
-	}
-}
-
-type todoLogView struct {
-	ID        string `json:"id"`
-	ProjectID string `json:"project_id"`
-	IssueID    string `json:"issue_id,omitempty"`
-	Body      string `json:"body"`
-	CreatedBy string `json:"created_by,omitempty"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
-
-func toTodoLogView(l domain.TodoLog) todoLogView {
-	return todoLogView{
-		ID: string(l.ID), ProjectID: string(l.ProjectID), IssueID: string(l.IssueID),
-		Body: l.Body, CreatedBy: string(l.CreatedBy),
-		CreatedAt: rfc3339(l.CreatedAt), UpdatedAt: rfc3339(l.UpdatedAt),
-	}
-}
-
-type journalView struct {
-	ID          string         `json:"id"`
-	ProjectID   string         `json:"project_id"`
-	IssueID     string         `json:"issue_id,omitempty"`
-	PlanID      string         `json:"plan_id,omitempty"`
-	Slug        string         `json:"slug"`
-	Title       string         `json:"title"`
-	Body        string         `json:"body"`
-	Branch      string         `json:"branch,omitempty"`
-	PR          string         `json:"pr,omitempty"`
-	ExternalRef string         `json:"external_ref,omitempty"`
-	Meta        map[string]any `json:"meta,omitempty"`
-	Tags        []string       `json:"tags"`
-	CreatedBy   string         `json:"created_by,omitempty"`
-	CreatedAt   string         `json:"created_at"`
-	UpdatedAt   string         `json:"updated_at"`
-}
-
-func toJournalView(e domain.JournalEntry) journalView {
-	return journalView{
-		ID: string(e.ID), ProjectID: string(e.ProjectID), IssueID: string(e.IssueID),
-		PlanID: string(e.PlanID), Slug: e.Slug, Title: e.Title, Body: e.Body,
-		Branch: e.Branch, PR: e.PR, ExternalRef: e.ExternalRef,
-		Meta: e.Meta, Tags: orEmpty(e.Tags), CreatedBy: string(e.CreatedBy),
-		CreatedAt: rfc3339(e.CreatedAt), UpdatedAt: rfc3339(e.UpdatedAt),
-	}
-}
-
-type docView struct {
-	ID        string   `json:"id"`
-	ProjectID string   `json:"project_id"`
-	IssueID  string   `json:"issue_id,omitempty"`
-	Slug      string   `json:"slug"`
-	Title     string   `json:"title"`
-	Body      string   `json:"body"`
-	Tags      []string `json:"tags"`
-	CreatedBy string   `json:"created_by,omitempty"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
-}
-
-func toDocView(d domain.Doc) docView {
-	return docView{
-		ID: string(d.ID), ProjectID: string(d.ProjectID), IssueID: string(d.IssueID), Slug: d.Slug, Title: d.Title,
-		Body: d.Body, Tags: orEmpty(d.Tags), CreatedBy: string(d.CreatedBy),
-		CreatedAt: rfc3339(d.CreatedAt), UpdatedAt: rfc3339(d.UpdatedAt),
-	}
-}
-
 type searchHitView struct {
 	Kind      string   `json:"kind"`
 	ID        string   `json:"id"`
@@ -318,8 +214,8 @@ type issueBriefView struct {
 	Issue    issueView      `json:"issue"`
 	Children []issueView    `json:"children"`
 	Plans    []planView     `json:"plans"`
-	Journal  []journalView  `json:"journal"`
-	Docs     []docView      `json:"docs"`
+	Journal  []entryView    `json:"journal"`
+	Docs     []entryView    `json:"docs"`
 	Cycles   []cycleView    `json:"cycles"`
 }
 
@@ -332,13 +228,13 @@ func toIssueBriefView(b domain.IssueBrief) issueBriefView {
 	for _, p := range b.Plans {
 		plans = append(plans, toPlanView(p))
 	}
-	journal := make([]journalView, 0, len(b.Journal))
+	journal := make([]entryView, 0, len(b.Journal))
 	for _, j := range b.Journal {
-		journal = append(journal, toJournalView(j))
+		journal = append(journal, toEntryView(j))
 	}
-	docs := make([]docView, 0, len(b.Docs))
+	docs := make([]entryView, 0, len(b.Docs))
 	for _, d := range b.Docs {
-		docs = append(docs, toDocView(d))
+		docs = append(docs, toEntryView(d))
 	}
 	cycles := make([]cycleView, 0, len(b.Cycles))
 	for _, c := range b.Cycles {
@@ -347,5 +243,36 @@ func toIssueBriefView(b domain.IssueBrief) issueBriefView {
 	return issueBriefView{
 		Issue: toIssueView(b.Issue), Children: children, Plans: plans,
 		Journal: journal, Docs: docs, Cycles: cycles,
+	}
+}
+
+type entryView struct {
+	ID          string         `json:"id"`
+	Kind        string         `json:"kind"`
+	ProjectID   string         `json:"project_id"`
+	IssueID     string         `json:"issue_id,omitempty"`
+	PlanID      string         `json:"plan_id,omitempty"`
+	CycleID     string         `json:"cycle_id,omitempty"`
+	Slug        string         `json:"slug,omitempty"`
+	Title       string         `json:"title,omitempty"`
+	Body        string         `json:"body"`
+	Branch      string         `json:"branch,omitempty"`
+	PR          string         `json:"pr,omitempty"`
+	ExternalRef string         `json:"external_ref,omitempty"`
+	Tags        []string       `json:"tags"`
+	Meta        map[string]any `json:"meta,omitempty"`
+	CreatedBy   string         `json:"created_by,omitempty"`
+	CreatedAt   string         `json:"created_at"`
+	UpdatedAt   string         `json:"updated_at"`
+}
+
+func toEntryView(e domain.Entry) entryView {
+	return entryView{
+		ID: string(e.ID), Kind: string(e.Kind), ProjectID: string(e.ProjectID),
+		IssueID: string(e.IssueID), PlanID: string(e.PlanID), CycleID: string(e.CycleID),
+		Slug: e.Slug, Title: e.Title, Body: e.Body,
+		Branch: e.Branch, PR: e.PR, ExternalRef: e.ExternalRef,
+		Tags: orEmpty(e.Tags), Meta: e.Meta, CreatedBy: string(e.CreatedBy),
+		CreatedAt: rfc3339(e.CreatedAt), UpdatedAt: rfc3339(e.UpdatedAt),
 	}
 }

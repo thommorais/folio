@@ -10,8 +10,8 @@ type seedSpec struct {
 	project ports.CreateProjectInput
 	plans   []ports.CreatePlanInput
 	tickets []ports.CreateIssueInput
-	journal []ports.WriteJournalInput
-	docs    []ports.CreateDocInput
+	journal []ports.WriteEntryInput
+	docs    []ports.WriteEntryInput
 	// done advances the first todos of plan i to the given statuses, so the
 	// demo shows plans in progress rather than every one at 0%.
 	done [][]domain.IssueStatus
@@ -70,7 +70,7 @@ matches three times. Needs a score that combines match count with age.`,
 			done: [][]domain.IssueStatus{
 				{domain.IssueDone, domain.IssueDone, domain.IssueInProgress},
 			},
-			journal: []ports.WriteJournalInput{
+			journal: []ports.WriteEntryInput{
 				{
 					Title:       "Chose SQLite FTS5 over a separate search service",
 					Branch:      "feat/search",
@@ -163,7 +163,7 @@ Dates stay server-assigned: a log is only useful read chronologically if
 the timestamps are trustworthy.`,
 				},
 			},
-			docs: []ports.CreateDocInput{
+			docs: []ports.WriteEntryInput{
 				{
 					Slug:  "architecture",
 					Title: "Architecture",
@@ -249,7 +249,7 @@ starts.`,
 			done: [][]domain.IssueStatus{
 				{domain.IssueDone, domain.IssueInProgress},
 			},
-			journal: []ports.WriteJournalInput{
+			journal: []ports.WriteEntryInput{
 				{
 					Title:       "GA4 pageview tracking restored on prod",
 					Branch:      "release/r378-ga-pageview-fix",
@@ -306,7 +306,7 @@ Three different filter-bar patterns, four variants of an unlabeled "save view"
 icon, three detail-surface metaphors. Worth one pass rather than five fixes.`,
 				},
 			},
-			docs: []ports.CreateDocInput{
+			docs: []ports.WriteEntryInput{
 				{
 					Slug:  "release-process",
 					Title: "Release process",

@@ -9,7 +9,21 @@ import (
 	"folio/folio-core/ports"
 )
 
-const DefaultRecentJournal = 10
+const (
+	DefaultPageSize      = 50
+	MaxPageSize          = 500
+	DefaultRecentJournal = 10
+)
+
+func clampLimit(limit int) int {
+	if limit <= 0 {
+		return DefaultPageSize
+	}
+	if limit > MaxPageSize {
+		return MaxPageSize
+	}
+	return limit
+}
 
 // issueScope resolves the issue a child entity is being attached to. The
 // project guard alone is not enough: a caller with write access to project A
