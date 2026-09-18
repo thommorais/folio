@@ -442,6 +442,72 @@ func ensureEntries(app core.App) error {
 
 var entryKinds = []string{"journal", "doc", "log"}
 
+func ensureTags(app core.App) error {
+	if _, ok := find(app, ColTags); ok {
+		return nil
+	}
+	domains, err := app.FindCollectionByNameOrId(ColDomains)
+	if err != nil {
+		return err
+	}
+
+	c := core.NewBaseCollection(ColTags)
+	c.Fields.Add(
+		&core.RelationField{Name: "domain", Required: true, CollectionId: domains.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
+		&core.TextField{Name: "name", Required: true, Max: 60, Presentable: true},
+	)
+	c.Fields.Add(autodates()...)
+	c.AddIndex("idx_journ_tags_slug", true, "domain, slug", "")
+
+	return app.Save(c)
+}
+
+func ensureTagJoins(app core.App) error {
+	tags, err := app.FindCollectionByNameOrId(ColTags)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := find(app, ColIssueTags); !ok {
+		issues, err := app.FindCollectionByNameOrId(ColIssues)
+		if err != nil {
+			return err
+		}
+		c := core.NewBaseCollection(ColIssueTags)
+		c.Fields.Add(
+			&core.RelationField{Name: "issue", Required: true, CollectionId: issues.Id, CascadeDelete: true, MaxSelect: 1},
+			&core.RelationField{Name: "tag", Required: true, CollectionId: tags.Id, CascadeDelete: true, MaxSelect: 1},
+		)
+		c.Fields.Add(autodates()...)
+		c.AddIndex("idx_journ_issue_tags_unique", true, "issue, tag", "")
+		c.AddIndex("idx_journ_issue_tags_tag", false, "tag", "")
+		if err := app.Save(c); err != nil {
+			return err
+		}
+	}
+
+	if _, ok := find(app, ColEntryTags); !ok {
+		entries, err := app.FindCollectionByNameOrId(ColEntries)
+		if err != nil {
+			return err
+		}
+		c := core.NewBaseCollection(ColEntryTags)
+		c.Fields.Add(
+			&core.RelationField{Name: "entry", Required: true, CollectionId: entries.Id, CascadeDelete: true, MaxSelect: 1},
+			&core.RelationField{Name: "tag", Required: true, CollectionId: tags.Id, CascadeDelete: true, MaxSelect: 1},
+		)
+		c.Fields.Add(autodates()...)
+		c.AddIndex("idx_journ_entry_tags_unique", true, "entry, tag", "")
+		c.AddIndex("idx_journ_entry_tags_tag", false, "tag", "")
+		if err := app.Save(c); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func ensureCycles(app core.App) error {
 	if _, ok := find(app, ColCycles); ok {
 		return nil

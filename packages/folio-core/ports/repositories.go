@@ -66,6 +66,21 @@ type EntryRepository interface {
 	Delete(ctx context.Context, id domain.EntryID) error
 }
 
+type TagTarget string
+
+const (
+	TagIssue TagTarget = "issue"
+	TagEntry TagTarget = "entry"
+)
+
+type TagRepository interface {
+	ListByDomain(ctx context.Context, domainID domain.DomainID) ([]domain.Tag, error)
+	Ensure(ctx context.Context, domainID domain.DomainID, names []string) ([]domain.Tag, error)
+	TagsOf(ctx context.Context, target TagTarget, ids []string) (map[string][]string, error)
+	SetTags(ctx context.Context, target TagTarget, id string, domainID domain.DomainID, names []string) error
+	IDsWithTags(ctx context.Context, target TagTarget, domainID domain.DomainID, names []string) ([]string, error)
+}
+
 type CycleRepository interface {
 	ListByIssue(ctx context.Context, issue domain.IssueID) ([]domain.Cycle, error)
 	GetByID(ctx context.Context, id domain.CycleID) (domain.Cycle, error)

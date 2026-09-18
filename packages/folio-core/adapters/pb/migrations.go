@@ -69,6 +69,12 @@ func Register(app core.App) error {
 	if err := ensureEntries(app); err != nil {
 		return fmt.Errorf("entries: %w", err)
 	}
+	if err := ensureTags(app); err != nil {
+		return fmt.Errorf("tags: %w", err)
+	}
+	if err := ensureTagJoins(app); err != nil {
+		return fmt.Errorf("tag joins: %w", err)
+	}
 	// Existing databases predate tickets: their collections were created by
 	// an earlier Register and ensureX leaves them alone, so the new fields
 	// are added in a separate pass.
@@ -95,6 +101,9 @@ func Register(app core.App) error {
 	}
 	if err := backfillEntries(app); err != nil {
 		return fmt.Errorf("backfill entries: %w", err)
+	}
+	if err := backfillTags(app); err != nil {
+		return fmt.Errorf("backfill tags: %w", err)
 	}
 	if err := applyRules(app); err != nil {
 		return fmt.Errorf("rules: %w", err)
@@ -709,6 +718,93 @@ func backfillEntries(app core.App) error {
 		for _, row := range rows {
 			if err := copyRow(row, src.kind, src.rich); err != nil {
 				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func backfillTags(app core.App) error {
+	tags, err := app.FindCollectionByNameOrId(ColTags)
+	if err != nil {
+		return err
+	}
+
+	known := make(map[string]string)
+	rows, err := app.FindAllRecords(ColTags)
+	if err != nil {
+		return fmt.Errorf("load tags: %w", err)
+	}
+	for _, row := range rows {
+		known[row.GetString("domain")+"/"+row.GetString("slug")] = row.Id
+	}
+
+	tagID := func(domainID, name string) (string, error) {
+		slug := rules.Slugify(name)
+		if slug == "" {
+			return "", nil
+		}
+		key := domainID + "/" + slug
+		if id, ok := known[key]; ok {
+			return id, nil
+		}
+		rec := core.NewRecord(tags)
+		rec.Set("domain", domainID)
+		rec.Set("slug", slug)
+		rec.Set("name", name)
+		if err := app.Save(rec); err != nil {
+			return "", fmt.Errorf("create tag %q: %w", name, err)
+		}
+		known[key] = rec.Id
+		return rec.Id, nil
+	}
+
+	for _, src := range []struct{ collection, join, field string }{
+		{ColIssues, ColIssueTags, "issue"},
+		{ColEntries, ColEntryTags, "entry"},
+	} {
+		join, err := app.FindCollectionByNameOrId(src.join)
+		if err != nil {
+			return err
+		}
+		linked := make(map[string]bool)
+		existing, err := app.FindAllRecords(src.join)
+		if err != nil {
+			return fmt.Errorf("load %s: %w", src.join, err)
+		}
+		for _, row := range existing {
+			linked[row.GetString(src.field)+"/"+row.GetString("tag")] = true
+		}
+
+		records, err := app.FindAllRecords(src.collection)
+		if err != nil {
+			return fmt.Errorf("load %s: %w", src.collection, err)
+		}
+		for _, rec := range records {
+			names := strSlice(rec, "tags")
+			if len(names) == 0 {
+				continue
+			}
+			domainID := rec.GetString("domain")
+			if domainID == "" {
+				return fmt.Errorf("%s %s has no domain", src.collection, rec.Id)
+			}
+			for _, name := range names {
+				id, err := tagID(domainID, name)
+				if err != nil {
+					return err
+				}
+				if id == "" || linked[rec.Id+"/"+id] {
+					continue
+				}
+				row := core.NewRecord(join)
+				row.Set(src.field, rec.Id)
+				row.Set("tag", id)
+				if err := app.Save(row); err != nil {
+					return fmt.Errorf("link tag on %s: %w", rec.Id, err)
+				}
+				linked[rec.Id+"/"+id] = true
 			}
 		}
 	}

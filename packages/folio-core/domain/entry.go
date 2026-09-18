@@ -48,3 +48,10 @@ type EntryFilter struct {
 	Limit       int
 	Offset      int
 }
+
+type Tag struct {
+	ID       TagID
+	DomainID DomainID
+	Slug     string
+	Name     string
+}

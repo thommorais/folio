@@ -12,11 +12,12 @@ import (
 )
 
 type IssueRepository struct {
-	app core.App
+	app  core.App
+	tags *TagRepository
 }
 
 func NewIssueRepository(app core.App) *IssueRepository {
-	return &IssueRepository{app: app}
+	return &IssueRepository{app: app, tags: NewTagRepository(app)}
 }
 
 var _ ports.IssueRepository = (*IssueRepository)(nil)
@@ -34,7 +35,6 @@ func toIssue(rec *core.Record) domain.Issue {
 		Priority:    domain.Priority(rec.GetString("priority")),
 		Size:        domain.Size(rec.GetInt("size")),
 		Assignee:    domain.UserID(rec.GetString("assignee")),
-		Tags:        strSlice(rec, "tags"),
 		Position:    rec.GetInt("position"),
 		DueDate:     timePtr(rec.GetDateTime("due_date")),
 		Wayfinder:   domain.WayfinderType(rec.GetString("wayfinder")),
@@ -56,7 +56,6 @@ func applyIssue(rec *core.Record, i domain.Issue) {
 	rec.Set("priority", string(i.Priority))
 	rec.Set("size", int(i.Size))
 	rec.Set("assignee", string(i.Assignee))
-	setJSON(rec, "tags", i.Tags)
 	rec.Set("position", i.Position)
 	setDate(rec, "due_date", i.DueDate)
 	rec.Set("wayfinder", string(i.Wayfinder))
@@ -90,10 +89,6 @@ func (r *IssueRepository) List(ctx context.Context, project domain.ProjectID, f 
 	if q := strings.TrimSpace(f.Search); q != "" {
 		exprs = append(exprs, dbx.Or(dbx.Like("title", q), dbx.Like("body", q)))
 	}
-	for _, tag := range f.Tags {
-		exprs = append(exprs, dbx.Like("tags", `"`+tag+`"`))
-	}
-
 	records, err := r.app.FindAllRecords(ColIssues, exprs...)
 	if err != nil {
 		return nil, mapErr(err)
@@ -101,6 +96,12 @@ func (r *IssueRepository) List(ctx context.Context, project domain.ProjectID, f 
 	out := make([]domain.Issue, 0, len(records))
 	for _, rec := range records {
 		out = append(out, toIssue(rec))
+	}
+	if err := r.attachTags(ctx, out); err != nil {
+		return nil, err
+	}
+	if len(f.Tags) > 0 {
+		out = filterByTags(out, f.Tags)
 	}
 
 	if f.ParentID != "" {
@@ -111,6 +112,45 @@ func (r *IssueRepository) List(ctx context.Context, project domain.ProjectID, f 
 		out = filterByID(out, children)
 	}
 	return applyPaging(out, f.Offset, f.Limit), nil
+}
+
+func (r *IssueRepository) attachTags(ctx context.Context, issues []domain.Issue) error {
+	if len(issues) == 0 {
+		return nil
+	}
+	ids := make([]string, 0, len(issues))
+	for _, i := range issues {
+		ids = append(ids, string(i.ID))
+	}
+	byID, err := r.tags.TagsOf(ctx, ports.TagIssue, ids)
+	if err != nil {
+		return err
+	}
+	for i := range issues {
+		issues[i].Tags = byID[string(issues[i].ID)]
+	}
+	return nil
+}
+
+func filterByTags(issues []domain.Issue, want []string) []domain.Issue {
+	out := make([]domain.Issue, 0, len(issues))
+	for _, issue := range issues {
+		have := make(map[string]bool, len(issue.Tags))
+		for _, t := range issue.Tags {
+			have[strings.ToLower(t)] = true
+		}
+		match := true
+		for _, w := range want {
+			if !have[strings.ToLower(w)] {
+				match = false
+				break
+			}
+		}
+		if match {
+			out = append(out, issue)
+		}
+	}
+	return out
 }
 
 func filterByID(issues []domain.Issue, keep map[domain.IssueID]bool) []domain.Issue {
@@ -140,10 +180,10 @@ func (r *IssueRepository) ListByParent(ctx context.Context, parent domain.IssueI
 	if err != nil {
 		return nil, err
 	}
-	return r.byIDs(children)
+	return r.byIDs(ctx, children)
 }
 
-func (r *IssueRepository) byIDs(ids map[domain.IssueID]bool) ([]domain.Issue, error) {
+func (r *IssueRepository) byIDs(ctx context.Context, ids map[domain.IssueID]bool) ([]domain.Issue, error) {
 	if len(ids) == 0 {
 		return []domain.Issue{}, nil
 	}
@@ -159,6 +199,9 @@ func (r *IssueRepository) byIDs(ids map[domain.IssueID]bool) ([]domain.Issue, er
 	for _, rec := range records {
 		out = append(out, toIssue(rec))
 	}
+	if err := r.attachTags(ctx, out); err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 
@@ -171,6 +214,9 @@ func (r *IssueRepository) ListByPlan(ctx context.Context, plan domain.PlanID) ([
 	for _, rec := range records {
 		out = append(out, toIssue(rec))
 	}
+	if err := r.attachTags(ctx, out); err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 
@@ -179,7 +225,11 @@ func (r *IssueRepository) GetByID(ctx context.Context, id domain.IssueID) (domai
 	if err != nil {
 		return domain.Issue{}, mapErr(err)
 	}
-	return toIssue(rec), nil
+	one := []domain.Issue{toIssue(rec)}
+	if err := r.attachTags(ctx, one); err != nil {
+		return domain.Issue{}, err
+	}
+	return one[0], nil
 }
 
 func (r *IssueRepository) GetBySlug(ctx context.Context, project domain.ProjectID, slug string) (domain.Issue, error) {
@@ -191,7 +241,11 @@ func (r *IssueRepository) GetBySlug(ctx context.Context, project domain.ProjectI
 	if err != nil {
 		return domain.Issue{}, mapErr(err)
 	}
-	return toIssue(rec), nil
+	one := []domain.Issue{toIssue(rec)}
+	if err := r.attachTags(ctx, one); err != nil {
+		return domain.Issue{}, err
+	}
+	return one[0], nil
 }
 
 func (r *IssueRepository) Create(ctx context.Context, i domain.Issue) (domain.Issue, error) {
@@ -211,7 +265,12 @@ func (r *IssueRepository) Create(ctx context.Context, i domain.Issue) (domain.Is
 	if err := r.app.Save(rec); err != nil {
 		return domain.Issue{}, mapErr(err)
 	}
-	return toIssue(rec), nil
+	if err := r.tags.SetTags(ctx, ports.TagIssue, rec.Id, domain.DomainID(domainID), i.Tags); err != nil {
+		return domain.Issue{}, err
+	}
+	out := toIssue(rec)
+	out.Tags = i.Tags
+	return out, nil
 }
 
 func (r *IssueRepository) domainOf(project domain.ProjectID) (string, error) {
@@ -231,7 +290,12 @@ func (r *IssueRepository) Update(ctx context.Context, i domain.Issue) (domain.Is
 	if err := r.app.Save(rec); err != nil {
 		return domain.Issue{}, mapErr(err)
 	}
-	return toIssue(rec), nil
+	if err := r.tags.SetTags(ctx, ports.TagIssue, rec.Id, domain.DomainID(rec.GetString("domain")), i.Tags); err != nil {
+		return domain.Issue{}, err
+	}
+	out := toIssue(rec)
+	out.Tags = i.Tags
+	return out, nil
 }
 
 func (r *IssueRepository) Delete(ctx context.Context, id domain.IssueID) error {

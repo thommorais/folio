@@ -12,11 +12,12 @@ import (
 )
 
 type EntryRepository struct {
-	app core.App
+	app  core.App
+	tags *TagRepository
 }
 
 func NewEntryRepository(app core.App) *EntryRepository {
-	return &EntryRepository{app: app}
+	return &EntryRepository{app: app, tags: NewTagRepository(app)}
 }
 
 var _ ports.EntryRepository = (*EntryRepository)(nil)
@@ -35,7 +36,6 @@ func toEntry(rec *core.Record) domain.Entry {
 		Branch:      rec.GetString("branch"),
 		PR:          rec.GetString("pr"),
 		ExternalRef: rec.GetString("external_ref"),
-		Tags:        strSlice(rec, "tags"),
 		Meta:        jsonMap(rec, "meta"),
 		CreatedBy:   domain.UserID(rec.GetString("created_by")),
 		CreatedAt:   rec.GetDateTime("created").Time(),
@@ -55,7 +55,6 @@ func applyEntry(rec *core.Record, e domain.Entry) {
 	rec.Set("branch", e.Branch)
 	rec.Set("pr", e.PR)
 	rec.Set("external_ref", e.ExternalRef)
-	setJSON(rec, "tags", e.Tags)
 	setJSON(rec, "meta", e.Meta)
 	if e.CreatedBy != "" {
 		rec.Set("created_by", string(e.CreatedBy))
@@ -85,9 +84,6 @@ func (r *EntryRepository) List(ctx context.Context, project domain.ProjectID, f 
 	if q := strings.TrimSpace(f.Search); q != "" {
 		exprs = append(exprs, dbx.Or(dbx.Like("title", q), dbx.Like("body", q)))
 	}
-	for _, tag := range f.Tags {
-		exprs = append(exprs, dbx.Like("tags", `"`+tag+`"`))
-	}
 	if f.Since != nil {
 		exprs = append(exprs, dbx.NewExp("created >= {:since}", dbx.Params{"since": f.Since.UTC().Format("2006-01-02 15:04:05.000Z")}))
 	}
@@ -103,7 +99,52 @@ func (r *EntryRepository) List(ctx context.Context, project domain.ProjectID, f 
 	for _, rec := range records {
 		out = append(out, toEntry(rec))
 	}
+	if err := r.attachTags(ctx, out); err != nil {
+		return nil, err
+	}
+	if len(f.Tags) > 0 {
+		out = filterEntriesByTags(out, f.Tags)
+	}
 	return applyPaging(out, f.Offset, f.Limit), nil
+}
+
+func (r *EntryRepository) attachTags(ctx context.Context, entries []domain.Entry) error {
+	if len(entries) == 0 {
+		return nil
+	}
+	ids := make([]string, 0, len(entries))
+	for _, e := range entries {
+		ids = append(ids, string(e.ID))
+	}
+	byID, err := r.tags.TagsOf(ctx, ports.TagEntry, ids)
+	if err != nil {
+		return err
+	}
+	for i := range entries {
+		entries[i].Tags = byID[string(entries[i].ID)]
+	}
+	return nil
+}
+
+func filterEntriesByTags(entries []domain.Entry, want []string) []domain.Entry {
+	out := make([]domain.Entry, 0, len(entries))
+	for _, entry := range entries {
+		have := make(map[string]bool, len(entry.Tags))
+		for _, t := range entry.Tags {
+			have[strings.ToLower(t)] = true
+		}
+		match := true
+		for _, w := range want {
+			if !have[strings.ToLower(w)] {
+				match = false
+				break
+			}
+		}
+		if match {
+			out = append(out, entry)
+		}
+	}
+	return out
 }
 
 func (r *EntryRepository) GetByID(ctx context.Context, id domain.EntryID) (domain.Entry, error) {
@@ -111,7 +152,11 @@ func (r *EntryRepository) GetByID(ctx context.Context, id domain.EntryID) (domai
 	if err != nil {
 		return domain.Entry{}, mapErr(err)
 	}
-	return toEntry(rec), nil
+	one := []domain.Entry{toEntry(rec)}
+	if err := r.attachTags(ctx, one); err != nil {
+		return domain.Entry{}, err
+	}
+	return one[0], nil
 }
 
 func (r *EntryRepository) GetBySlug(ctx context.Context, project domain.ProjectID, slug string) (domain.Entry, error) {
@@ -123,7 +168,11 @@ func (r *EntryRepository) GetBySlug(ctx context.Context, project domain.ProjectI
 	if err != nil {
 		return domain.Entry{}, mapErr(err)
 	}
-	return toEntry(rec), nil
+	one := []domain.Entry{toEntry(rec)}
+	if err := r.attachTags(ctx, one); err != nil {
+		return domain.Entry{}, err
+	}
+	return one[0], nil
 }
 
 func (r *EntryRepository) Create(ctx context.Context, e domain.Entry) (domain.Entry, error) {
@@ -143,7 +192,12 @@ func (r *EntryRepository) Create(ctx context.Context, e domain.Entry) (domain.En
 	if err := r.app.Save(rec); err != nil {
 		return domain.Entry{}, mapErr(err)
 	}
-	return toEntry(rec), nil
+	if err := r.tags.SetTags(ctx, ports.TagEntry, rec.Id, domain.DomainID(domainID), e.Tags); err != nil {
+		return domain.Entry{}, err
+	}
+	out := toEntry(rec)
+	out.Tags = e.Tags
+	return out, nil
 }
 
 func (r *EntryRepository) domainOf(project domain.ProjectID) (string, error) {
@@ -163,7 +217,12 @@ func (r *EntryRepository) Update(ctx context.Context, e domain.Entry) (domain.En
 	if err := r.app.Save(rec); err != nil {
 		return domain.Entry{}, mapErr(err)
 	}
-	return toEntry(rec), nil
+	if err := r.tags.SetTags(ctx, ports.TagEntry, rec.Id, domain.DomainID(rec.GetString("domain")), e.Tags); err != nil {
+		return domain.Entry{}, err
+	}
+	out := toEntry(rec)
+	out.Tags = e.Tags
+	return out, nil
 }
 
 func (r *EntryRepository) Delete(ctx context.Context, id domain.EntryID) error {

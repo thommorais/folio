@@ -9,6 +9,7 @@ type (
 	ProjectID string
 	IssueID   string
 	EntryID   string
+	TagID     string
 	PlanID    string
 	TicketID  string
 	TodoID    string
