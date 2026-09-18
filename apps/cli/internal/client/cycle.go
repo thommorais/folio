@@ -23,7 +23,7 @@ func (c *Client) ListCycles(ticket string) ([]Cycle, error) {
 	var body struct {
 		Cycles []Cycle `json:"cycles"`
 	}
-	if err := c.do(http.MethodGet, "/api/folio/tickets/"+ticket+"/cycles", nil, &body); err != nil {
+	if err := c.do(http.MethodGet, "/api/folio/issues/"+ticket+"/cycles", nil, &body); err != nil {
 		return nil, err
 	}
 	return body.Cycles, nil
@@ -31,7 +31,7 @@ func (c *Client) ListCycles(ticket string) ([]Cycle, error) {
 
 func (c *Client) OpenCycle(ticket string) (Cycle, error) {
 	var cycle Cycle
-	err := c.do(http.MethodPost, "/api/folio/tickets/"+ticket+"/cycles", struct{}{}, &cycle)
+	err := c.do(http.MethodPost, "/api/folio/issues/"+ticket+"/cycles", struct{}{}, &cycle)
 	return cycle, err
 }
 

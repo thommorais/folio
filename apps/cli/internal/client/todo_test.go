@@ -15,11 +15,11 @@ func TestListTodos(t *testing.T) {
 			gotAuth = r.Header.Get("Authorization")
 			gotPath = r.URL.Path
 			gotQuery = r.URL.RawQuery
-			_, _ = w.Write([]byte(`{"todos":[{"id":"t1","project_id":"p1","title":"write it","status":"pending","priority":"high","tags":["x"],"position":1,"depends_on":[],"blocked":false,"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}]}`))
+			_, _ = w.Write([]byte(`{"issues":[{"id":"t1","project_id":"p1","title":"write it","status":"open","priority":"high","tags":["x"],"position":1,"depends_on":[],"blocked":false,"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}]}`))
 		}))
 		defer server.Close()
 
-		todos, err := New(server.URL, "tok").ListTodos("folio", TodoFilter{Status: []string{"pending"}, Limit: 5})
+		todos, err := New(server.URL, "tok").ListTodos("folio", TodoFilter{Status: []string{"open"}, Limit: 5})
 		if err != nil {
 			t.Fatalf("ListTodos() error = %v", err)
 		}
@@ -27,11 +27,11 @@ func TestListTodos(t *testing.T) {
 		if gotAuth != "tok" {
 			t.Errorf("Authorization = %q, want %q", gotAuth, "tok")
 		}
-		if gotPath != "/api/folio/projects/folio/todos" {
+		if gotPath != "/api/folio/projects/folio/issues" {
 			t.Errorf("path = %q", gotPath)
 		}
-		if gotQuery != "limit=5&status=pending" {
-			t.Errorf("query = %q, want %q", gotQuery, "limit=5&status=pending")
+		if gotQuery != "kind=todo&limit=5&status=open" {
+			t.Errorf("query = %q, want %q", gotQuery, "kind=todo&limit=5&status=open")
 		}
 		if len(todos) != 1 {
 			t.Fatalf("len(todos) = %d, want 1", len(todos))
@@ -73,7 +73,7 @@ func TestCreateTodo(t *testing.T) {
 		gotMethod = r.Method
 		_ = json.NewDecoder(r.Body).Decode(&gotBody)
 		w.WriteHeader(http.StatusCreated)
-		_, _ = w.Write([]byte(`{"id":"t9","project_id":"p1","title":"ship it","status":"pending","priority":"medium","tags":[],"position":1,"depends_on":[],"blocked":false,"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}`))
+		_, _ = w.Write([]byte(`{"id":"t9","project_id":"p1","title":"ship it","status":"open","priority":"medium","tags":[],"position":1,"depends_on":[],"blocked":false,"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}`))
 	}))
 	defer server.Close()
 
@@ -114,7 +114,7 @@ func TestUpdateTodo(t *testing.T) {
 	if gotMethod != http.MethodPatch {
 		t.Errorf("method = %q, want PATCH", gotMethod)
 	}
-	if gotPath != "/api/folio/todos/t1" {
+	if gotPath != "/api/folio/issues/t1" {
 		t.Errorf("path = %q", gotPath)
 	}
 	if gotBody["status"] != "done" {
@@ -144,17 +144,17 @@ func TestDeleteTodo(t *testing.T) {
 	if gotMethod != http.MethodDelete {
 		t.Errorf("method = %q, want DELETE", gotMethod)
 	}
-	if gotPath != "/api/folio/todos/t1" {
+	if gotPath != "/api/folio/issues/t1" {
 		t.Errorf("path = %q", gotPath)
 	}
 }
 
 func TestGetTodo(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/folio/todos/t1" {
+		if r.URL.Path != "/api/folio/issues/t1" {
 			t.Errorf("path = %q", r.URL.Path)
 		}
-		_, _ = w.Write([]byte(`{"id":"t1","project_id":"p1","title":"one","status":"pending","priority":"low","tags":[],"position":1,"depends_on":[],"blocked":true,"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}`))
+		_, _ = w.Write([]byte(`{"id":"t1","project_id":"p1","title":"one","status":"open","priority":"low","tags":[],"position":1,"depends_on":[],"blocked":true,"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}`))
 	}))
 	defer server.Close()
 

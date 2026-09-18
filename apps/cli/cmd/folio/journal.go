@@ -79,7 +79,7 @@ func journalListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&filter.TicketID, "ticket", "", "entries filed under this ticket")
 	cmd.Flags().StringVar(&filter.ExternalRef, "external-ref", "", "entries carrying this external tracker key")
 	cmd.Flags().StringVar(&filter.PlanID, "plan", "", "entries under this plan")
-	cmd.Flags().StringVar(&filter.TodoID, "todo", "", "entries under this todo")
+	cmd.Flags().StringVar(&filter.TicketID, "todo", "", "entries under this todo")
 	cmd.Flags().StringVar(&tags, "tags", "", "comma separated tags")
 	registerTagCompletion(cmd)
 	cmd.Flags().StringVarP(&filter.Search, "query", "q", "", "match the title and body")
@@ -159,7 +159,7 @@ func journalWriteCommand() *cobra.Command {
 			setIf(&in.TicketID, ticket)
 			setIf(&in.ExternalRef, externalRef)
 			setIf(&in.PlanID, plan)
-			setIf(&in.TodoID, todo)
+			setIf(&in.TicketID, todo)
 			if err := setTags(&in.Tags, tags); err != nil {
 				return err
 			}

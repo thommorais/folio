@@ -107,7 +107,7 @@ func TestListJournal(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotQuery = r.URL.RawQuery
-		_, _ = w.Write([]byte(`{"journal":[{"id":"l1","project_id":"pr1","title":"Chose FTS5","body":"## Context","branch":"feat/search","ticket":"J-12","tags":["decision"],"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}]}`))
+		_, _ = w.Write([]byte(`{"entries":[{"id":"l1","project_id":"pr1","title":"Chose FTS5","body":"## Context","branch":"feat/search","ticket":"J-12","tags":["decision"],"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}]}`))
 	}))
 	defer server.Close()
 
@@ -115,7 +115,7 @@ func TestListJournal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListJournal() error = %v", err)
 	}
-	if gotQuery != "branch=feat%2Fsearch&limit=5&q=fts5" {
+	if gotQuery != "branch=feat%2Fsearch&kind=journal&limit=5&q=fts5" {
 		t.Errorf("query = %q", gotQuery)
 	}
 	if len(logs) != 1 || logs[0].Branch != "feat/search" {
@@ -160,7 +160,7 @@ func TestAppendJournalEntry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AppendJournalEntry() error = %v", err)
 	}
-	if gotPath != "/api/folio/journal/l1/append" {
+	if gotPath != "/api/folio/entries/l1/append" {
 		t.Errorf("path = %q", gotPath)
 	}
 	if gotBody["section"] != "more" {
@@ -176,7 +176,7 @@ func TestListDocs(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
-		_, _ = w.Write([]byte(`{"docs":[{"id":"d1","project_id":"pr1","slug":"architecture","title":"Architecture","body":"Hexagonal.","tags":["reference"],"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}]}`))
+		_, _ = w.Write([]byte(`{"entries":[{"id":"d1","project_id":"pr1","slug":"architecture","title":"Architecture","body":"Hexagonal.","tags":["reference"],"created_at":"2026-09-11T01:07:01Z","updated_at":"2026-09-11T01:07:01Z"}]}`))
 	}))
 	defer server.Close()
 
@@ -184,7 +184,7 @@ func TestListDocs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListDocs() error = %v", err)
 	}
-	if gotPath != "/api/folio/projects/folio/docs" {
+	if gotPath != "/api/folio/projects/folio/entries" {
 		t.Errorf("path = %q", gotPath)
 	}
 	if len(docs) != 1 || docs[0].Slug != "architecture" {
@@ -205,7 +205,7 @@ func TestGetDocBySlug(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetDocBySlug() error = %v", err)
 	}
-	if gotPath != "/api/folio/projects/folio/docs/architecture" {
+	if gotPath != "/api/folio/projects/folio/entries/architecture" {
 		t.Errorf("path = %q", gotPath)
 	}
 	if doc.Title != "Architecture" {

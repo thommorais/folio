@@ -90,7 +90,7 @@ func TestTodoStatusShortcuts(t *testing.T) {
 			if req.method != http.MethodPatch {
 				t.Errorf("method = %q, want PATCH", req.method)
 			}
-			if req.path != "/api/folio/todos/t1" {
+			if req.path != "/api/folio/issues/t1" {
 				t.Errorf("path = %q", req.path)
 			}
 			if len(req.body) != 1 || req.body["status"] != status {

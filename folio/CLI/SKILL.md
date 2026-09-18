@@ -70,6 +70,16 @@ EOF
 `--body -` works on `journal write`, `journal update`, `doc create`, `doc update`;
 `journal append --section -` adds to an existing entry without rewriting it.
 
+## Tickets and todos are the same record
+
+A ticket and a todo differ only by kind. Either can sit under the other, so a
+todo that grows can carry tickets beneath it, and `--ticket <id>` on `todo
+create` files the todo under any issue, not only a ticket.
+
+`--size` takes 1, 2, 3, 5 or 8. Paired with priority it ranks work by value per
+unit of effort, so a small high-priority ticket outranks a large one. Leave it
+off and the issue scores zero and sorts last.
+
 ## Tags are a closed vocabulary
 
 Write commands reject any tag outside the known list, with a spelling
@@ -94,10 +104,11 @@ findable only by title. Tag todos you create.
 
 ## Reading
 
-`folio ticket brief <id-or-slug>` returns a ticket with its plans, todos, journal
-and docs in one call. This is what to run when opening a session on a known
-ticket. Todos come back open first, so the next step is the first row; journal entries are
-the 10 most recent, `--recent-journal` overrides.
+`folio ticket brief <id-or-slug>` returns a ticket with its children, plans,
+journal and docs in one call. This is what to run when opening a session on a
+known ticket. Children come back open first, so the next step is the first row,
+and each row names its kind; journal entries are the 10 most recent,
+`--recent-journal` overrides.
 
 `folio search` hits journal, docs, todos and plans in one call, newest first, each
 hit with a snippet. Reach for it when you do not know where something lives;
@@ -112,8 +123,9 @@ List commands take `--query/-q`, `--tags`, `--limit`, `--offset`, and
 kind-specific filters (`--status`, `--priority`, `--ticket`, `--plan`,
 `--branch`, `--since`, `--until`). `--status` and `--tags` are comma separated.
 
-Status values differ by kind — ticket: `open,in_progress,blocked,closed,cancelled`;
-todo: `pending,in_progress,done,blocked,cancelled`; plan: `draft,active,done,abandoned`.
+Tickets and todos are one kind of record and share one status set:
+`open,in_progress,blocked,done,cancelled`. Plans keep their own:
+`draft,active,done,abandoned`.
 
 `ticket get` and `doc get` accept an id or a slug, but a **slug only resolves
 with a project selected** — it is unique within a project, not globally. With a
@@ -188,7 +200,7 @@ folio journal write "Shipped mobile nav" --branch develop --pr 42 --ticket <id> 
 
 `todo start`, `todo done` and `todo cancel` are shortcuts over the same patch
 `--status` writes, so either spelling does the same thing. `--status` stays the
-way to reach the statuses without a shortcut, `pending` and `blocked`.
+way to reach the statuses without a shortcut, `open` and `blocked`.
 
 `todo block <id> --on <ids>` is the exception: it records a dependency rather
 than writing the blocked status, since `blocked` on a read is derived from

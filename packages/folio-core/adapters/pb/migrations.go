@@ -105,6 +105,9 @@ func Register(app core.App) error {
 	if err := backfillTags(app); err != nil {
 		return fmt.Errorf("backfill tags: %w", err)
 	}
+	if err := relaxSupersededColumns(app); err != nil {
+		return fmt.Errorf("relax superseded columns: %w", err)
+	}
 	if err := applyRules(app); err != nil {
 		return fmt.Errorf("rules: %w", err)
 	}
@@ -809,6 +812,32 @@ func backfillTags(app core.App) error {
 		}
 	}
 
+	return nil
+}
+
+// relaxSupersededColumns clears the required flag on the columns the issue and
+// entry collections replaced. They are kept for the rollback window, but
+// nothing writes them any more, so a required one rejects every insert.
+func relaxSupersededColumns(app core.App) error {
+	for _, target := range []struct{ collection, field string }{
+		{ColCycles, "ticket"},
+		{ColTicketLogs, "ticket"},
+		{ColTodoLogs, "todo"},
+		{ColPlanLogs, "plan"},
+	} {
+		c, err := app.FindCollectionByNameOrId(target.collection)
+		if err != nil {
+			return err
+		}
+		field, ok := c.Fields.GetByName(target.field).(*core.RelationField)
+		if !ok || !field.Required {
+			continue
+		}
+		field.Required = false
+		if err := app.Save(c); err != nil {
+			return fmt.Errorf("relax %s.%s: %w", target.collection, target.field, err)
+		}
+	}
 	return nil
 }
 

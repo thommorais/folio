@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
@@ -61,7 +62,7 @@ func ticketListCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&status, "status", "", "comma separated: open,in_progress,blocked,closed,cancelled")
+	cmd.Flags().StringVar(&status, "status", "", "comma separated: open,in_progress,blocked,done,cancelled")
 	cmd.Flags().StringVar(&filter.Priority, "priority", "", "low, medium or high")
 	cmd.Flags().StringVar(&filter.Assignee, "assignee", "", "user id")
 	cmd.Flags().StringVar(&tags, "tags", "", "comma separated tags")
@@ -171,11 +172,11 @@ func renderBrief(b client.TicketBrief) error {
 	}
 	section("plans", plans)
 
-	todos := make([]string, 0, len(b.Todos))
-	for _, t := range b.Todos {
-		todos = append(todos, fmt.Sprintf("%s  %-12s %-6s %s", t.ID, t.Status, t.Priority, t.Title))
+	children := make([]string, 0, len(b.Children))
+	for _, t := range b.Children {
+		children = append(children, fmt.Sprintf("%s  %-6s %-12s %-6s %s", t.ID, t.Kind, t.Status, t.Priority, t.Title))
 	}
-	section("todos", todos)
+	section("children", children)
 
 	journal := make([]string, 0, len(b.Journal))
 	for _, e := range b.Journal {
@@ -204,6 +205,7 @@ func renderBrief(b client.TicketBrief) error {
 
 func ticketCreateCommand() *cobra.Command {
 	var slug, body, status, priority, assignee, externalRef, tags string
+	var size string
 	var parent, wayfinder, dependsOn string
 
 	cmd := &cobra.Command{
@@ -221,6 +223,9 @@ func ticketCreateCommand() *cobra.Command {
 			setIf(&in.Body, body)
 			setIf(&in.Status, status)
 			setIf(&in.Priority, priority)
+			if err := setSize(&in.Size, size); err != nil {
+				return err
+			}
 			setIf(&in.Assignee, assignee)
 			setIf(&in.ExternalRef, externalRef)
 			setIf(&in.ParentID, parent)
@@ -247,6 +252,7 @@ func ticketCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&body, "body", "", "what the ticket is about")
 	cmd.Flags().StringVar(&status, "status", "", "defaults to open")
 	cmd.Flags().StringVar(&priority, "priority", "", "low, medium or high; defaults to medium")
+	cmd.Flags().StringVar(&size, "size", "", "effort: 1, 2, 3, 5 or 8")
 	cmd.Flags().StringVar(&assignee, "assignee", "", "user id")
 	cmd.Flags().StringVar(&externalRef, "external-ref", "", "key in another tracker, e.g. JIRA-123")
 	cmd.Flags().StringVar(&tags, "tags", "", tagHelp())
@@ -260,6 +266,7 @@ func ticketCreateCommand() *cobra.Command {
 
 func ticketUpdateCommand() *cobra.Command {
 	var slug, title, body, status, priority, assignee, externalRef, tags string
+	var size string
 	var parent, wayfinder, dependsOn string
 
 	cmd := &cobra.Command{
@@ -273,6 +280,9 @@ func ticketUpdateCommand() *cobra.Command {
 			setIf(&in.Body, body)
 			setIf(&in.Status, status)
 			setIf(&in.Priority, priority)
+			if err := setSize(&in.Size, size); err != nil {
+				return err
+			}
 			setIf(&in.Assignee, assignee)
 			setIf(&in.ExternalRef, externalRef)
 			setIf(&in.ParentID, parent)
@@ -302,8 +312,9 @@ func ticketUpdateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&slug, "slug", "", "new slug")
 	cmd.Flags().StringVar(&title, "title", "", "new title")
 	cmd.Flags().StringVar(&body, "body", "", "new body")
-	cmd.Flags().StringVar(&status, "status", "", "open, in_progress, blocked, closed or cancelled")
+	cmd.Flags().StringVar(&status, "status", "", "open, in_progress, blocked, done or cancelled")
 	cmd.Flags().StringVar(&priority, "priority", "", "low, medium or high")
+	cmd.Flags().StringVar(&size, "size", "", "effort: 1, 2, 3, 5 or 8")
 	cmd.Flags().StringVar(&assignee, "assignee", "", "user id")
 	cmd.Flags().StringVar(&externalRef, "external-ref", "", "key in another tracker")
 	cmd.Flags().StringVar(&tags, "tags", "", "replace the tags; "+tagHelp())
@@ -447,4 +458,25 @@ func renderTicketDetail(ticket client.Ticket) error {
 		fmt.Println(ticket.Body)
 	}
 	return nil
+}
+
+func setSize(target **int, raw string) error {
+	if raw == "" {
+		return nil
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || !validSize(n) {
+		return errors.New("size must be one of 1, 2, 3, 5, 8")
+	}
+	*target = &n
+	return nil
+}
+
+func validSize(n int) bool {
+	for _, allowed := range []int{1, 2, 3, 5, 8} {
+		if n == allowed {
+			return true
+		}
+	}
+	return false
 }

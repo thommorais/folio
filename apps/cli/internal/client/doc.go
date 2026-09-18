@@ -10,7 +10,8 @@ import (
 type Doc struct {
 	ID        string   `json:"id"`
 	ProjectID string   `json:"project_id"`
-	TicketID  string   `json:"ticket_id,omitempty"`
+	Kind      string   `json:"kind"`
+	TicketID  string   `json:"issue_id,omitempty"`
 	Slug      string   `json:"slug"`
 	Title     string   `json:"title"`
 	Body      string   `json:"body"`
@@ -20,7 +21,8 @@ type Doc struct {
 }
 
 type DocInput struct {
-	TicketID *string   `json:"ticket_id,omitempty"`
+	Kind     *string   `json:"kind,omitempty"`
+	TicketID *string   `json:"issue_id,omitempty"`
 	Slug     *string   `json:"slug,omitempty"`
 	Title    *string   `json:"title,omitempty"`
 	Body     *string   `json:"body,omitempty"`
@@ -37,8 +39,9 @@ type DocFilter struct {
 
 func (f DocFilter) query() string {
 	params := url.Values{}
+	params.Set("kind", KindDoc)
 	if f.TicketID != "" {
-		params.Set("ticket_id", f.TicketID)
+		params.Set("issue_id", f.TicketID)
 	}
 	if len(f.Tags) > 0 {
 		params.Set("tags", strings.Join(f.Tags, ","))
@@ -60,38 +63,38 @@ func (f DocFilter) query() string {
 
 func (c *Client) ListDocs(project string, filter DocFilter) ([]Doc, error) {
 	var body struct {
-		Docs []Doc `json:"docs"`
+		Entries []Doc `json:"entries"`
 	}
-	if err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/docs"+filter.query(), nil, &body); err != nil {
+	if err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/entries"+filter.query(), nil, &body); err != nil {
 		return nil, err
 	}
-	return body.Docs, nil
+	return body.Entries, nil
 }
 
 func (c *Client) GetDoc(id string) (Doc, error) {
 	var doc Doc
-	err := c.do(http.MethodGet, "/api/folio/docs/"+id, nil, &doc)
+	err := c.do(http.MethodGet, "/api/folio/entries/"+id, nil, &doc)
 	return doc, err
 }
 
 func (c *Client) GetDocBySlug(project, slug string) (Doc, error) {
 	var doc Doc
-	err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/docs/"+slug, nil, &doc)
+	err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/entries/"+slug, nil, &doc)
 	return doc, err
 }
 
 func (c *Client) CreateDoc(project string, in DocInput) (Doc, error) {
 	var doc Doc
-	err := c.do(http.MethodPost, "/api/folio/projects/"+project+"/docs", in, &doc)
+	err := c.do(http.MethodPost, "/api/folio/projects/"+project+"/entries", in, &doc)
 	return doc, err
 }
 
 func (c *Client) UpdateDoc(id string, in DocInput) (Doc, error) {
 	var doc Doc
-	err := c.do(http.MethodPatch, "/api/folio/docs/"+id, in, &doc)
+	err := c.do(http.MethodPatch, "/api/folio/entries/"+id, in, &doc)
 	return doc, err
 }
 
 func (c *Client) DeleteDoc(id string) error {
-	return c.do(http.MethodDelete, "/api/folio/docs/"+id, nil, nil)
+	return c.do(http.MethodDelete, "/api/folio/entries/"+id, nil, nil)
 }

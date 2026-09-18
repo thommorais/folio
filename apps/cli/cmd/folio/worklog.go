@@ -68,14 +68,17 @@ func workLogListCommand() *cobra.Command {
 				return err
 			}
 
+			project, err := resolveProject()
+			if err != nil {
+				return err
+			}
+
 			var entries []client.WorkLog
 			switch kind {
-			case "ticket":
-				entries, err = folio.ListTicketLogs(id, filter)
 			case "plan":
-				entries, err = folio.ListPlanLogs(id, filter)
-			case "todo":
-				entries, err = folio.ListTodoLogs(id, filter)
+				entries, err = folio.ListPlanLogs(project, id, filter)
+			default:
+				entries, err = folio.ListIssueLogs(project, id, filter)
 			}
 			if err != nil {
 				return err
@@ -133,14 +136,17 @@ func workLogWriteCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			project, err := resolveProject()
+			if err != nil {
+				return err
+			}
+
 			var entry client.WorkLog
 			switch kind {
-			case "ticket":
-				entry, err = folio.WriteTicketLog(id, text)
 			case "plan":
-				entry, err = folio.WritePlanLog(id, text)
-			case "todo":
-				entry, err = folio.WriteTodoLog(id, text)
+				entry, err = folio.WritePlanLog(project, id, text)
+			default:
+				entry, err = folio.WriteIssueLog(project, id, text)
 			}
 			if err != nil {
 				return err
@@ -170,15 +176,11 @@ func workLogDeleteCommand() *cobra.Command {
 		Short: "Delete a work log entry",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
-			kind, _, err := target.resolve()
-			if err != nil {
-				return err
-			}
 			folio, err := api()
 			if err != nil {
 				return err
 			}
-			return folio.DeleteWorkLog(kind, args[0])
+			return folio.DeleteWorkLog(args[0])
 		},
 	}
 

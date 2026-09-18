@@ -9,7 +9,7 @@ import (
 )
 
 func (h *Handler) listCycles(e *core.RequestEvent) error {
-	cycles, err := h.cycles.ListCycles(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("ticket")))
+	cycles, err := h.cycles.ListCycles(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("issue")))
 	if err != nil {
 		return fail(e, err)
 	}
@@ -21,7 +21,7 @@ func (h *Handler) listCycles(e *core.RequestEvent) error {
 }
 
 func (h *Handler) openCycle(e *core.RequestEvent) error {
-	cycle, err := h.cycles.OpenCycle(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("ticket")))
+	cycle, err := h.cycles.OpenCycle(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("issue")))
 	if err != nil {
 		return fail(e, err)
 	}

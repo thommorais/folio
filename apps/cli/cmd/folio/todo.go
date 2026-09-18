@@ -77,7 +77,7 @@ func todoListCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&status, "status", "", "comma separated: pending,in_progress,done,blocked,cancelled")
+	cmd.Flags().StringVar(&status, "status", "", "comma separated: open,in_progress,blocked,done,cancelled")
 	cmd.Flags().StringVar(&filter.Priority, "priority", "", "low, medium or high")
 	cmd.Flags().StringVar(&tags, "tags", "", "comma separated tags")
 	registerTagCompletion(cmd)
@@ -112,6 +112,7 @@ func todoGetCommand() *cobra.Command {
 
 func todoCreateCommand() *cobra.Command {
 	var details, status, priority, plan, ticket, due, tags string
+	var size string
 
 	cmd := &cobra.Command{
 		Use:   "create <title>",
@@ -127,6 +128,9 @@ func todoCreateCommand() *cobra.Command {
 			setIf(&in.Details, details)
 			setIf(&in.Status, status)
 			setIf(&in.Priority, priority)
+			if err := setSize(&in.Size, size); err != nil {
+				return err
+			}
 			setIf(&in.PlanID, plan)
 			setIf(&in.TicketID, ticket)
 			setIf(&in.DueDate, due)
@@ -158,7 +162,7 @@ func todoCreateCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&details, "details", "", "longer description")
-	cmd.Flags().StringVar(&status, "status", "", "defaults to pending")
+	cmd.Flags().StringVar(&status, "status", "", "defaults to open")
 	cmd.Flags().StringVar(&priority, "priority", "", "defaults to medium")
 	cmd.Flags().StringVar(&plan, "plan", "", "plan id to file it under")
 	cmd.Flags().StringVar(&ticket, "ticket", "", "ticket id to file it under")
@@ -171,6 +175,7 @@ func todoCreateCommand() *cobra.Command {
 
 func todoUpdateCommand() *cobra.Command {
 	var title, details, status, priority, plan, ticket, due, tags string
+	var size string
 
 	cmd := &cobra.Command{
 		Use:   "update <id>",
@@ -182,6 +187,9 @@ func todoUpdateCommand() *cobra.Command {
 			setIf(&in.Details, details)
 			setIf(&in.Status, status)
 			setIf(&in.Priority, priority)
+			if err := setSize(&in.Size, size); err != nil {
+				return err
+			}
 			setIf(&in.PlanID, plan)
 			setIf(&in.TicketID, ticket)
 			setIf(&in.DueDate, due)
@@ -208,8 +216,9 @@ func todoUpdateCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&title, "title", "", "new title")
 	cmd.Flags().StringVar(&details, "details", "", "new description")
-	cmd.Flags().StringVar(&status, "status", "", "pending, in_progress, done, blocked or cancelled")
+	cmd.Flags().StringVar(&status, "status", "", "open, in_progress, blocked, done or cancelled")
 	cmd.Flags().StringVar(&priority, "priority", "", "low, medium or high")
+	cmd.Flags().StringVar(&size, "size", "", "effort: 1, 2, 3, 5 or 8")
 	cmd.Flags().StringVar(&plan, "plan", "", "move under this plan")
 	cmd.Flags().StringVar(&ticket, "ticket", "", "move under this ticket")
 	cmd.Flags().StringVar(&due, "due", "", "due date, RFC 3339")

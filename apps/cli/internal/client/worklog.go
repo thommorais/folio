@@ -8,10 +8,10 @@ import (
 
 type WorkLog struct {
 	ID        string `json:"id"`
+	Kind      string `json:"kind"`
 	ProjectID string `json:"project_id"`
-	TicketID  string `json:"ticket_id,omitempty"`
+	TicketID  string `json:"issue_id,omitempty"`
 	PlanID    string `json:"plan_id,omitempty"`
-	TodoID    string `json:"todo_id,omitempty"`
 	CycleID   string `json:"cycle_id,omitempty"`
 	Body      string `json:"body"`
 	CreatedAt string `json:"created_at"`
@@ -24,10 +24,12 @@ type WorkLogFilter struct {
 	Limit  int
 }
 
-func (f WorkLogFilter) query() string {
+func (f WorkLogFilter) query(target, id string) string {
 	values := url.Values{}
+	values.Set("kind", KindLog)
+	values.Set(target, id)
 	if f.Cycle != "" {
-		values.Set("cycle", f.Cycle)
+		values.Set("cycle_id", f.Cycle)
 	}
 	if f.Search != "" {
 		values.Set("q", f.Search)
@@ -35,52 +37,49 @@ func (f WorkLogFilter) query() string {
 	if f.Limit > 0 {
 		values.Set("limit", strconv.Itoa(f.Limit))
 	}
-	if len(values) == 0 {
-		return ""
-	}
 	return "?" + values.Encode()
 }
 
-func (c *Client) listWorkLogs(path string, f WorkLogFilter) ([]WorkLog, error) {
+func (c *Client) listWorkLogs(project, target, id string, f WorkLogFilter) ([]WorkLog, error) {
 	var body struct {
-		Logs []WorkLog `json:"logs"`
+		Entries []WorkLog `json:"entries"`
 	}
-	if err := c.do(http.MethodGet, path+f.query(), nil, &body); err != nil {
+	if err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/entries"+f.query(target, id), nil, &body); err != nil {
 		return nil, err
 	}
-	return body.Logs, nil
+	return body.Entries, nil
 }
 
-func (c *Client) writeWorkLog(path, text string) (WorkLog, error) {
+func (c *Client) writeWorkLog(project, target, id, text string) (WorkLog, error) {
+	kind := KindLog
+	in := LogInput{Kind: &kind, Body: &text}
+	if target == "issue_id" {
+		in.TicketID = &id
+	} else {
+		in.PlanID = &id
+	}
+
 	var entry WorkLog
-	err := c.do(http.MethodPost, path, map[string]string{"body": text}, &entry)
+	err := c.do(http.MethodPost, "/api/folio/projects/"+project+"/entries", in, &entry)
 	return entry, err
 }
 
-func (c *Client) ListTicketLogs(ticket string, f WorkLogFilter) ([]WorkLog, error) {
-	return c.listWorkLogs("/api/folio/tickets/"+ticket+"/logs", f)
+func (c *Client) ListIssueLogs(project, issue string, f WorkLogFilter) ([]WorkLog, error) {
+	return c.listWorkLogs(project, "issue_id", issue, f)
 }
 
-func (c *Client) WriteTicketLog(ticket, body string) (WorkLog, error) {
-	return c.writeWorkLog("/api/folio/tickets/"+ticket+"/logs", body)
+func (c *Client) WriteIssueLog(project, issue, body string) (WorkLog, error) {
+	return c.writeWorkLog(project, "issue_id", issue, body)
 }
 
-func (c *Client) ListPlanLogs(plan string, f WorkLogFilter) ([]WorkLog, error) {
-	return c.listWorkLogs("/api/folio/plans/"+plan+"/logs", f)
+func (c *Client) ListPlanLogs(project, plan string, f WorkLogFilter) ([]WorkLog, error) {
+	return c.listWorkLogs(project, "plan_id", plan, f)
 }
 
-func (c *Client) WritePlanLog(plan, body string) (WorkLog, error) {
-	return c.writeWorkLog("/api/folio/plans/"+plan+"/logs", body)
+func (c *Client) WritePlanLog(project, plan, body string) (WorkLog, error) {
+	return c.writeWorkLog(project, "plan_id", plan, body)
 }
 
-func (c *Client) ListTodoLogs(todo string, f WorkLogFilter) ([]WorkLog, error) {
-	return c.listWorkLogs("/api/folio/todos/"+todo+"/logs", f)
-}
-
-func (c *Client) WriteTodoLog(todo, body string) (WorkLog, error) {
-	return c.writeWorkLog("/api/folio/todos/"+todo+"/logs", body)
-}
-
-func (c *Client) DeleteWorkLog(kind, id string) error {
-	return c.do(http.MethodDelete, "/api/folio/"+kind+"-logs/"+id, nil, nil)
+func (c *Client) DeleteWorkLog(id string) error {
+	return c.do(http.MethodDelete, "/api/folio/entries/"+id, nil, nil)
 }

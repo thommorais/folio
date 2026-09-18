@@ -10,9 +10,9 @@ import (
 type JournalEntry struct {
 	ID          string         `json:"id"`
 	ProjectID   string         `json:"project_id"`
-	TicketID    string         `json:"ticket_id,omitempty"`
+	Kind        string         `json:"kind"`
+	TicketID    string         `json:"issue_id,omitempty"`
 	PlanID      string         `json:"plan_id,omitempty"`
-	TodoID      string         `json:"todo_id,omitempty"`
 	Slug        string         `json:"slug"`
 	Title       string         `json:"title"`
 	Body        string         `json:"body"`
@@ -26,9 +26,9 @@ type JournalEntry struct {
 }
 
 type LogInput struct {
-	TicketID    *string   `json:"ticket_id,omitempty"`
+	Kind        *string   `json:"kind,omitempty"`
+	TicketID    *string   `json:"issue_id,omitempty"`
 	PlanID      *string   `json:"plan_id,omitempty"`
-	TodoID      *string   `json:"todo_id,omitempty"`
 	Slug        *string   `json:"slug,omitempty"`
 	Title       *string   `json:"title,omitempty"`
 	Body        *string   `json:"body,omitempty"`
@@ -41,7 +41,6 @@ type LogInput struct {
 type JournalFilter struct {
 	TicketID    string
 	PlanID      string
-	TodoID      string
 	Branch      string
 	ExternalRef string
 	Tags        []string
@@ -54,10 +53,10 @@ type JournalFilter struct {
 
 func (f JournalFilter) query() string {
 	params := url.Values{}
+	params.Set("kind", KindJournal)
 	for key, value := range map[string]string{
-		"ticket_id":    f.TicketID,
+		"issue_id":     f.TicketID,
 		"plan_id":      f.PlanID,
-		"todo_id":      f.TodoID,
 		"branch":       f.Branch,
 		"external_ref": f.ExternalRef,
 		"q":            f.Search,
@@ -85,35 +84,35 @@ func (f JournalFilter) query() string {
 
 func (c *Client) ListJournal(project string, filter JournalFilter) ([]JournalEntry, error) {
 	var body struct {
-		Journal []JournalEntry `json:"journal"`
+		Entries []JournalEntry `json:"entries"`
 	}
-	if err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/journal"+filter.query(), nil, &body); err != nil {
+	if err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/entries"+filter.query(), nil, &body); err != nil {
 		return nil, err
 	}
-	return body.Journal, nil
+	return body.Entries, nil
 }
 
 func (c *Client) GetJournalEntry(id string) (JournalEntry, error) {
 	var entry JournalEntry
-	err := c.do(http.MethodGet, "/api/folio/journal/"+id, nil, &entry)
+	err := c.do(http.MethodGet, "/api/folio/entries/"+id, nil, &entry)
 	return entry, err
 }
 
 func (c *Client) GetJournalEntryBySlug(project, slug string) (JournalEntry, error) {
 	var entry JournalEntry
-	err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/journal/"+slug, nil, &entry)
+	err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/entries/"+slug, nil, &entry)
 	return entry, err
 }
 
 func (c *Client) WriteJournalEntry(project string, in LogInput) (JournalEntry, error) {
 	var entry JournalEntry
-	err := c.do(http.MethodPost, "/api/folio/projects/"+project+"/journal", in, &entry)
+	err := c.do(http.MethodPost, "/api/folio/projects/"+project+"/entries", in, &entry)
 	return entry, err
 }
 
 func (c *Client) UpdateJournalEntry(id string, in LogInput) (JournalEntry, error) {
 	var entry JournalEntry
-	err := c.do(http.MethodPatch, "/api/folio/journal/"+id, in, &entry)
+	err := c.do(http.MethodPatch, "/api/folio/entries/"+id, in, &entry)
 	return entry, err
 }
 
@@ -122,10 +121,10 @@ func (c *Client) AppendJournalEntry(id, section string) (JournalEntry, error) {
 	body := struct {
 		Section string `json:"section"`
 	}{Section: section}
-	err := c.do(http.MethodPost, "/api/folio/journal/"+id+"/append", body, &entry)
+	err := c.do(http.MethodPost, "/api/folio/entries/"+id+"/append", body, &entry)
 	return entry, err
 }
 
 func (c *Client) DeleteJournalEntry(id string) error {
-	return c.do(http.MethodDelete, "/api/folio/journal/"+id, nil, nil)
+	return c.do(http.MethodDelete, "/api/folio/entries/"+id, nil, nil)
 }
