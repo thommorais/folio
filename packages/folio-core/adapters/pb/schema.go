@@ -147,6 +147,29 @@ func ensurePlans(app core.App) error {
 	return app.Save(c)
 }
 
+// ensurePlanIssue adds the relation back to issues. It cannot live in
+// ensurePlans: issues carry a plan relation of their own, so plans are created
+// first and this closes the cycle once both collections exist.
+func ensurePlanIssue(app core.App) error {
+	c, err := app.FindCollectionByNameOrId(ColPlans)
+	if err != nil {
+		return err
+	}
+	if c.Fields.GetByName("issue") != nil {
+		return nil
+	}
+	issues, err := app.FindCollectionByNameOrId(ColIssues)
+	if err != nil {
+		return err
+	}
+
+	// Deleting an issue detaches its plans rather than destroying them.
+	c.Fields.Add(&core.RelationField{Name: "issue", CollectionId: issues.Id, CascadeDelete: false, MaxSelect: 1})
+	c.AddIndex("idx_journ_plans_issue", false, "issue", "")
+
+	return app.Save(c)
+}
+
 var wayfinderValues = []string{"map", "research", "prototype", "grilling", "task"}
 
 func ensureIssues(app core.App) error {

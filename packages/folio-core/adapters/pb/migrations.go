@@ -43,6 +43,9 @@ func Register(app core.App) error {
 	if err := ensureIssueLinks(app); err != nil {
 		return fmt.Errorf("issue links: %w", err)
 	}
+	if err := ensurePlanIssue(app); err != nil {
+		return fmt.Errorf("plan issue: %w", err)
+	}
 	if err := ensureCycles(app); err != nil {
 		return fmt.Errorf("cycles: %w", err)
 	}
