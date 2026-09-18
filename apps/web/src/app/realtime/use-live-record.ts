@@ -22,6 +22,19 @@ type Options<T extends Titled> = {
 	readonly skip?: boolean
 }
 
+const abortableCallTimeout = (func: () => Promise<void>, time: number, signal: AbortSignal) => {
+	let timeout: ReturnType<typeof setTimeout> | undefined
+
+	signal.addEventListener('abort', () => clearTimeout(timeout), { once: true })
+
+	return () => {
+		if (signal.aborted) return
+		timeout = setTimeout(() => void func(), time)
+	}
+}
+
+const TIMEOUT = 520
+
 export const useLiveRecord = <T extends Titled>({
 	load,
 	subscribe,
@@ -40,6 +53,14 @@ export const useLiveRecord = <T extends Titled>({
 	const latest = useRef<T | undefined>(undefined)
 	if (state.status === 'ready') latest.current = state.data
 
+	const pending = useRef(new AbortController())
+
+	useEffect(() => {
+		const controller = pending.current
+
+		return () => controller.abort()
+	}, [])
+
 	const open = useEffectEvent(async () => {
 		if (skip || state.status !== 'ready') {
 			return { success: true, value: async () => {} } as Result<Unsubscribe>
@@ -51,13 +72,17 @@ export const useLiveRecord = <T extends Titled>({
 			() => setGone(latest.current?.title ?? ''),
 		)
 
-		if (result.success) void refetch()
+		if (result.success) abortableCallTimeout(refetch, TIMEOUT, pending.current.signal)()
+
 		return result
 	})
 
 	useSubscription(open, [state.status === 'ready' ? state.data.id : undefined])
 
-	useEffect(() => connection.onReconnect(() => void refetch()), [connection, refetch])
+	useEffect(
+		() => connection.onReconnect(() => abortableCallTimeout(refetch, TIMEOUT, pending.current.signal)()),
+		[connection, refetch],
+	)
 
 	if (skip) return { status: 'idle' }
 
