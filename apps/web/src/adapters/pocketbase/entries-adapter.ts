@@ -114,10 +114,14 @@ export const createEntriesAdapter = (): EntriesPort => {
 				paginate<EntryRecord>(
 					collection(),
 					filter,
-					keyed('entries.list', {
-						filter: client.filter(expr, params),
-						sort: sortExpr(filter.sort, '-created'),
-					}),
+					keyed(
+						'entries.list',
+						{
+							filter: client.filter(expr, params),
+							sort: sortExpr(filter.sort, '-created'),
+						},
+						[filter.limit, filter.offset, filter.tags],
+					),
 				),
 			)
 			if (error) return err(new Error(`Failed to list entries: ${error.message}`, { cause: error }))

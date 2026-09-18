@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { keyed } from './request-key'
 
-const keyOf = (scope: string, options: Record<string, unknown>): string => keyed(scope, options).requestKey as string
+const keyOf = (scope: string, options: Record<string, unknown>, distinguish?: unknown): string =>
+	keyed(scope, options, distinguish).requestKey as string
 
 describe('keyed', () => {
 	it('separates two queries against the same collection', () => {
@@ -50,5 +51,31 @@ describe('keyed', () => {
 		const options = keyed('issues.count', { filter: 'kind = "ticket"' })
 
 		expect(options.filter).toBe('kind = "ticket"')
+	})
+
+	it('separates two reads that differ only outside the query', () => {
+		const page = keyOf('issues.list', { filter: 'x' }, [50, 0])
+		const next = keyOf('issues.list', { filter: 'x' }, [50, 50])
+
+		expect(page).not.toBe(next)
+	})
+
+	// parentId narrows the rows after they arrive, so the two reads issue the
+	// same query and would otherwise cancel each other.
+	it('separates reads that differ only by a filter applied after the response', () => {
+		const all = keyOf('issues.list', { filter: 'kind = "ticket"' }, [undefined, undefined, undefined])
+		const children = keyOf('issues.list', { filter: 'kind = "ticket"' }, [undefined, undefined, 'map-id'])
+
+		expect(all).not.toBe(children)
+	})
+
+	it('leaves the distinguishing values out of the options sent to the API', () => {
+		const options = keyed('issues.list', { filter: 'x' }, [50, 100])
+
+		expect(Object.keys(options).sort()).toEqual(['filter', 'requestKey'])
+	})
+
+	it('keys the same read the same way when nothing distinguishes it', () => {
+		expect(keyOf('issues.list', { filter: 'x' })).toBe(keyOf('issues.list', { filter: 'x' }, undefined))
 	})
 })

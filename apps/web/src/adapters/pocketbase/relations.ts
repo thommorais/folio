@@ -1,6 +1,12 @@
 import { Collections } from '_/pocketbase-types'
-import type { JournEntryTagsResponse, JournIssueLinksResponse, JournIssueTagsResponse, JournTagsResponse } from '_/pocketbase-types'
+import type {
+	JournEntryTagsResponse,
+	JournIssueLinksResponse,
+	JournIssueTagsResponse,
+	JournTagsResponse,
+} from '_/pocketbase-types'
 import { getPocketBaseClient } from './client'
+import { keyed } from './request-key'
 
 type TagLink = { readonly tag: string; readonly expand?: { readonly tag?: JournTagsResponse } }
 
@@ -35,10 +41,12 @@ export const tagsByTarget = async (
 	for (const batch of chunked(ids)) {
 		const rows = await client
 			.collection(collection)
-			.getFullList<(JournIssueTagsResponse | JournEntryTagsResponse) & TagLink>({
-				filter: orFilter(target, batch),
-				expand: 'tag',
-			})
+			.getFullList<(JournIssueTagsResponse | JournEntryTagsResponse) & TagLink>(
+				keyed(`relations.tags.${target}`, {
+					filter: orFilter(target, batch),
+					expand: 'tag',
+				}),
+			)
 
 		const grouped = new Map<string, TagLink[]>()
 		for (const row of rows) {
@@ -68,9 +76,11 @@ export const linksOf = async (ids: readonly string[]): Promise<Links> => {
 	const client = getPocketBaseClient()
 
 	for (const batch of chunked(ids)) {
-		const rows = await client.collection(Collections.JournIssueLinks).getFullList<JournIssueLinksResponse>({
-			filter: `(${orFilter('from', batch)}) || (${orFilter('to', batch)})`,
-		})
+		const rows = await client.collection(Collections.JournIssueLinks).getFullList<JournIssueLinksResponse>(
+			keyed('relations.links', {
+				filter: `(${orFilter('from', batch)}) || (${orFilter('to', batch)})`,
+			}),
+		)
 
 		for (const row of rows) {
 			if (row.kind === 'parent') {
@@ -83,10 +93,7 @@ export const linksOf = async (ids: readonly string[]): Promise<Links> => {
 				dependsOn.set(row.to, bucket)
 				continue
 			}
-			for (const [key, other] of [
-				[row.from, row.to] as const,
-				[row.to, row.from] as const,
-			]) {
+			for (const [key, other] of [[row.from, row.to] as const, [row.to, row.from] as const]) {
 				const bucket = relatedTo.get(key) ?? []
 				bucket.push(other)
 				relatedTo.set(key, bucket)

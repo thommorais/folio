@@ -11,7 +11,10 @@ const stable = (value: unknown): string => {
 		.join(',')}}`
 }
 
-export const keyed = (scope: string, options: ListOptions): ListOptions => ({
+// distinguish carries values that identify the read but must not be sent as
+// query params: paging handled by the caller, and filters applied after the
+// response. Without them two such reads share a key and cancel each other.
+export const keyed = (scope: string, options: ListOptions, distinguish?: unknown): ListOptions => ({
 	...options,
-	requestKey: `${scope}:${stable(options)}`,
+	requestKey: `${scope}:${stable(options)}${distinguish === undefined ? '' : `:${stable(distinguish)}`}`,
 })

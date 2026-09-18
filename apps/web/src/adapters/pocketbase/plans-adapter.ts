@@ -89,10 +89,14 @@ export const createPlansAdapter = (): PlansPort => {
 				paginate<PlanRecord>(
 					collection,
 					filter,
-					keyed('plans.list', {
-						filter: client.filter(expr, params),
-						sort: sortExpr(filter.sort, '-created'),
-					}),
+					keyed(
+						'plans.list',
+						{
+							filter: client.filter(expr, params),
+							sort: sortExpr(filter.sort, '-created'),
+						},
+						[filter.limit, filter.offset],
+					),
 				),
 			)
 

@@ -134,10 +134,17 @@ export const createIssuesAdapter = (): IssuesPort => {
 				paginate<IssueRecord>(
 					collection(),
 					filter,
-					keyed('issues.list', {
-						filter: client.filter(expr, params),
-						sort: sortExpr(filter.sort, '-created'),
-					}),
+					keyed(
+						'issues.list',
+						{
+							filter: client.filter(expr, params),
+							sort: sortExpr(filter.sort, '-created'),
+						},
+						// parentId and tags narrow the rows after they arrive, and the
+						// paging is applied by paginate, so none of it reaches the
+						// filter expression the key is otherwise built from.
+						[filter.limit, filter.offset, filter.parentId, filter.tags],
+					),
 				),
 			)
 			if (error) return err(new Error(`Failed to list issues: ${error.message}`, { cause: error }))
