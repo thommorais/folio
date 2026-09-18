@@ -12,7 +12,7 @@ export type TicketsSearch = {
 	readonly sort?: Sort<IssueSortField>
 }
 
-export const Route = createFileRoute('/_authenticated/$slug/tickets/')({
+export const Route = createFileRoute('/_authenticated/$client/$domain/$slug/tickets/')({
 	validateSearch: (search: Record<string, unknown>): TicketsSearch => ({
 		statuses: asMembers(ISSUE_STATUSES, search.statuses),
 		priority: asMember(PRIORITIES, search.priority),

@@ -5,7 +5,7 @@ import { ENTRY_SORT_FIELDS, type EntrySortField } from '_/core/ports/sort'
 import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
 import { SortMenu } from '_/components/list/sort-menu'
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
-import type { DocsSearch } from '_/routes/_authenticated/$slug/docs'
+import type { DocsSearch } from '_/routes/_authenticated/$client/$domain/$slug/docs'
 
 const SORT_LABELS: Record<EntrySortField, string> = {
 	title: 'Title',
@@ -15,13 +15,17 @@ const SORT_LABELS: Record<EntrySortField, string> = {
 }
 
 const DocsFilters = () => {
-	const { slug } = useParams({ from: '/_authenticated/$slug/docs/' })
-	const search = useSearch({ from: '/_authenticated/$slug/docs/' })
+	const { slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/docs/' })
+	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/docs/' })
 	const navigate = useNavigate()
 	const tickets = useIssues(slug, { kind: 'ticket' })
 
 	const setFilter = (patch: Partial<DocsSearch>) => {
-		void navigate({ from: '/$slug/docs/', to: '.', search: (prev: DocsSearch) => ({ ...prev, ...patch }) })
+		void navigate({
+			from: '/$client/$domain/$slug/docs/',
+			to: '.',
+			search: (prev: DocsSearch) => ({ ...prev, ...patch }),
+		})
 	}
 
 	const ticketTitle = (id: string): string =>

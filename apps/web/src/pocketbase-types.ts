@@ -13,23 +13,16 @@ export const Collections = {
 	Superusers: "_superusers",
 	JournClients: "journ_clients",
 	JournCycles: "journ_cycles",
-	JournDocs: "journ_docs",
 	JournDomains: "journ_domains",
 	JournEntries: "journ_entries",
 	JournEntryTags: "journ_entry_tags",
 	JournIssueLinks: "journ_issue_links",
 	JournIssueTags: "journ_issue_tags",
 	JournIssues: "journ_issues",
-	JournJournal: "journ_journal",
 	JournMembers: "journ_members",
-	JournPlanLogs: "journ_plan_logs",
 	JournPlans: "journ_plans",
 	JournProjects: "journ_projects",
 	JournTags: "journ_tags",
-	JournTicketLogs: "journ_ticket_logs",
-	JournTickets: "journ_tickets",
-	JournTodoLogs: "journ_todo_logs",
-	JournTodos: "journ_todos",
 	Users: "users",
 } as const
 export type Collections = typeof Collections[keyof typeof Collections]
@@ -135,26 +128,11 @@ export type JournCyclesRecord = {
 	created: IsoAutoDateString
 	created_by?: RecordIdString
 	id: string
-	issue?: RecordIdString
+	issue: RecordIdString
 	ordinal: number
 	phase: JournCyclesPhaseOptions
 	project: RecordIdString
 	resolution?: string
-	ticket: RecordIdString
-	updated: IsoAutoDateString
-}
-
-export type JournDocsRecord<Ttags = unknown> = {
-	body?: HTMLString
-	created: IsoAutoDateString
-	created_by?: RecordIdString
-	id: string
-	issue?: RecordIdString
-	project: RecordIdString
-	slug: string
-	tags?: null | Ttags
-	ticket?: RecordIdString
-	title: string
 	updated: IsoAutoDateString
 }
 
@@ -280,27 +258,6 @@ export type JournIssuesRecord<Ttags = unknown> = {
 	wayfinder?: JournIssuesWayfinderOptions
 }
 
-export type JournJournalRecord<Tmeta = unknown, Ttags = unknown> = {
-	body?: HTMLString
-	branch?: string
-	created: IsoAutoDateString
-	created_by?: RecordIdString
-	external_ref?: string
-	id: string
-	issue?: RecordIdString
-	issue_todo?: RecordIdString
-	meta?: null | Tmeta
-	plan?: RecordIdString
-	pr?: string
-	project: RecordIdString
-	slug: string
-	tags?: null | Ttags
-	ticket?: RecordIdString
-	title: string
-	todo?: RecordIdString
-	updated: IsoAutoDateString
-}
-
 export const JournMembersRoleOptions = {
 	"owner": "owner",
 	"editor": "editor",
@@ -315,16 +272,6 @@ export type JournMembersRecord = {
 	role: JournMembersRoleOptions
 	updated: IsoAutoDateString
 	user: RecordIdString
-}
-
-export type JournPlanLogsRecord = {
-	body?: HTMLString
-	created: IsoAutoDateString
-	created_by?: RecordIdString
-	id: string
-	plan: RecordIdString
-	project: RecordIdString
-	updated: IsoAutoDateString
 }
 
 export const JournPlansStatusOptions = {
@@ -343,7 +290,6 @@ export type JournPlansRecord<Ttags = unknown> = {
 	project: RecordIdString
 	status: JournPlansStatusOptions
 	tags?: null | Ttags
-	ticket?: RecordIdString
 	title: string
 	updated: IsoAutoDateString
 }
@@ -368,105 +314,6 @@ export type JournTagsRecord = {
 	updated: IsoAutoDateString
 }
 
-export type JournTicketLogsRecord = {
-	body?: HTMLString
-	created: IsoAutoDateString
-	created_by?: RecordIdString
-	cycle?: RecordIdString
-	id: string
-	issue?: RecordIdString
-	project: RecordIdString
-	ticket: RecordIdString
-	updated: IsoAutoDateString
-}
-
-export const JournTicketsStatusOptions = {
-	"open": "open",
-	"in_progress": "in_progress",
-	"blocked": "blocked",
-	"closed": "closed",
-	"cancelled": "cancelled",
-} as const
-export type JournTicketsStatusOptions = typeof JournTicketsStatusOptions[keyof typeof JournTicketsStatusOptions]
-
-export const JournTicketsPriorityOptions = {
-	"low": "low",
-	"medium": "medium",
-	"high": "high",
-} as const
-export type JournTicketsPriorityOptions = typeof JournTicketsPriorityOptions[keyof typeof JournTicketsPriorityOptions]
-
-export const JournTicketsWayfinderOptions = {
-	"map": "map",
-	"research": "research",
-	"prototype": "prototype",
-	"grilling": "grilling",
-	"task": "task",
-} as const
-export type JournTicketsWayfinderOptions = typeof JournTicketsWayfinderOptions[keyof typeof JournTicketsWayfinderOptions]
-export type JournTicketsRecord<Tdepends_on = unknown, Ttags = unknown> = {
-	assignee?: RecordIdString
-	body?: HTMLString
-	created: IsoAutoDateString
-	created_by?: RecordIdString
-	depends_on?: null | Tdepends_on
-	external_ref?: string
-	id: string
-	parent?: RecordIdString
-	priority: JournTicketsPriorityOptions
-	project: RecordIdString
-	slug: string
-	status: JournTicketsStatusOptions
-	tags?: null | Ttags
-	title: string
-	updated: IsoAutoDateString
-	wayfinder?: JournTicketsWayfinderOptions
-}
-
-export type JournTodoLogsRecord = {
-	body?: HTMLString
-	created: IsoAutoDateString
-	created_by?: RecordIdString
-	id: string
-	issue?: RecordIdString
-	project: RecordIdString
-	todo: RecordIdString
-	updated: IsoAutoDateString
-}
-
-export const JournTodosStatusOptions = {
-	"pending": "pending",
-	"in_progress": "in_progress",
-	"done": "done",
-	"blocked": "blocked",
-	"cancelled": "cancelled",
-} as const
-export type JournTodosStatusOptions = typeof JournTodosStatusOptions[keyof typeof JournTodosStatusOptions]
-
-export const JournTodosPriorityOptions = {
-	"low": "low",
-	"medium": "medium",
-	"high": "high",
-} as const
-export type JournTodosPriorityOptions = typeof JournTodosPriorityOptions[keyof typeof JournTodosPriorityOptions]
-export type JournTodosRecord<Tdepends_on = unknown, Ttags = unknown> = {
-	created: IsoAutoDateString
-	created_by?: RecordIdString
-	depends_on?: null | Tdepends_on
-	details?: string
-	due_date?: IsoDateString
-	id: string
-	plan?: RecordIdString
-	position?: number
-	priority: JournTodosPriorityOptions
-	project: RecordIdString
-	status: JournTodosStatusOptions
-	tags?: null | Ttags
-	ticket?: RecordIdString
-	title: string
-	updated: IsoAutoDateString
-}
-
 export type UsersRecord = {
 	avatar?: FileNameString
 	created: IsoAutoDateString
@@ -488,23 +335,16 @@ export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemF
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
 export type JournClientsResponse<Texpand = unknown> = Required<JournClientsRecord> & BaseSystemFields<Texpand>
 export type JournCyclesResponse<Texpand = unknown> = Required<JournCyclesRecord> & BaseSystemFields<Texpand>
-export type JournDocsResponse<Ttags = unknown, Texpand = unknown> = Required<JournDocsRecord<Ttags>> & BaseSystemFields<Texpand>
 export type JournDomainsResponse<Texpand = unknown> = Required<JournDomainsRecord> & BaseSystemFields<Texpand>
 export type JournEntriesResponse<Tmeta = unknown, Ttags = unknown, Texpand = unknown> = Required<JournEntriesRecord<Tmeta, Ttags>> & BaseSystemFields<Texpand>
 export type JournEntryTagsResponse<Texpand = unknown> = Required<JournEntryTagsRecord> & BaseSystemFields<Texpand>
 export type JournIssueLinksResponse<Texpand = unknown> = Required<JournIssueLinksRecord> & BaseSystemFields<Texpand>
 export type JournIssueTagsResponse<Texpand = unknown> = Required<JournIssueTagsRecord> & BaseSystemFields<Texpand>
 export type JournIssuesResponse<Ttags = unknown, Texpand = unknown> = Required<JournIssuesRecord<Ttags>> & BaseSystemFields<Texpand>
-export type JournJournalResponse<Tmeta = unknown, Ttags = unknown, Texpand = unknown> = Required<JournJournalRecord<Tmeta, Ttags>> & BaseSystemFields<Texpand>
 export type JournMembersResponse<Texpand = unknown> = Required<JournMembersRecord> & BaseSystemFields<Texpand>
-export type JournPlanLogsResponse<Texpand = unknown> = Required<JournPlanLogsRecord> & BaseSystemFields<Texpand>
 export type JournPlansResponse<Ttags = unknown, Texpand = unknown> = Required<JournPlansRecord<Ttags>> & BaseSystemFields<Texpand>
 export type JournProjectsResponse<Texpand = unknown> = Required<JournProjectsRecord> & BaseSystemFields<Texpand>
 export type JournTagsResponse<Texpand = unknown> = Required<JournTagsRecord> & BaseSystemFields<Texpand>
-export type JournTicketLogsResponse<Texpand = unknown> = Required<JournTicketLogsRecord> & BaseSystemFields<Texpand>
-export type JournTicketsResponse<Tdepends_on = unknown, Ttags = unknown, Texpand = unknown> = Required<JournTicketsRecord<Tdepends_on, Ttags>> & BaseSystemFields<Texpand>
-export type JournTodoLogsResponse<Texpand = unknown> = Required<JournTodoLogsRecord> & BaseSystemFields<Texpand>
-export type JournTodosResponse<Tdepends_on = unknown, Ttags = unknown, Texpand = unknown> = Required<JournTodosRecord<Tdepends_on, Ttags>> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 
 // Types containing all Records and Responses, useful for creating typing helper functions
@@ -517,23 +357,16 @@ export type CollectionRecords = {
 	_superusers: SuperusersRecord
 	journ_clients: JournClientsRecord
 	journ_cycles: JournCyclesRecord
-	journ_docs: JournDocsRecord
 	journ_domains: JournDomainsRecord
 	journ_entries: JournEntriesRecord
 	journ_entry_tags: JournEntryTagsRecord
 	journ_issue_links: JournIssueLinksRecord
 	journ_issue_tags: JournIssueTagsRecord
 	journ_issues: JournIssuesRecord
-	journ_journal: JournJournalRecord
 	journ_members: JournMembersRecord
-	journ_plan_logs: JournPlanLogsRecord
 	journ_plans: JournPlansRecord
 	journ_projects: JournProjectsRecord
 	journ_tags: JournTagsRecord
-	journ_ticket_logs: JournTicketLogsRecord
-	journ_tickets: JournTicketsRecord
-	journ_todo_logs: JournTodoLogsRecord
-	journ_todos: JournTodosRecord
 	users: UsersRecord
 }
 
@@ -545,23 +378,16 @@ export type CollectionResponses = {
 	_superusers: SuperusersResponse
 	journ_clients: JournClientsResponse
 	journ_cycles: JournCyclesResponse
-	journ_docs: JournDocsResponse
 	journ_domains: JournDomainsResponse
 	journ_entries: JournEntriesResponse
 	journ_entry_tags: JournEntryTagsResponse
 	journ_issue_links: JournIssueLinksResponse
 	journ_issue_tags: JournIssueTagsResponse
 	journ_issues: JournIssuesResponse
-	journ_journal: JournJournalResponse
 	journ_members: JournMembersResponse
-	journ_plan_logs: JournPlanLogsResponse
 	journ_plans: JournPlansResponse
 	journ_projects: JournProjectsResponse
 	journ_tags: JournTagsResponse
-	journ_ticket_logs: JournTicketLogsResponse
-	journ_tickets: JournTicketsResponse
-	journ_todo_logs: JournTodoLogsResponse
-	journ_todos: JournTodosResponse
 	users: UsersResponse
 }
 

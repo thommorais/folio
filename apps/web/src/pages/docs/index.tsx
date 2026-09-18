@@ -7,8 +7,8 @@ import { useEntries } from '_/app/use-entries'
 import { DocsFilters } from './doc-filters'
 
 const Docs = () => {
-	const { slug } = useParams({ from: '/_authenticated/$slug/docs/' })
-	const search = useSearch({ from: '/_authenticated/$slug/docs/' })
+	const { client, domain, slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/docs/' })
+	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/docs/' })
 	const state = useEntries(slug, {
 		kind: 'doc',
 		issueId: search.ticket,
@@ -42,7 +42,11 @@ const Docs = () => {
 			<div className='grid gap-4 sm:grid-cols-2'>
 				{state.entries.map((doc, index) => (
 					<StaggerItem key={doc.id} index={index}>
-						<Link to='/$slug/docs/$doc' params={{ slug, doc: doc.slug }} className='block'>
+						<Link
+							to='/$client/$domain/$slug/docs/$doc'
+							params={{ client, domain, slug, doc: doc.slug }}
+							className='block'
+						>
 							<Card interactive>
 								<CardHeader>
 									<div className='flex items-start justify-between gap-4'>

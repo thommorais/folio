@@ -1,5 +1,7 @@
 import { Link, useMatches, useParams } from '@tanstack/react-router'
 import { House } from 'lucide-react'
+import { useClient } from '_/app/use-client'
+import { useDomain } from '_/app/use-domain'
 import { useEntry } from '_/app/use-entry'
 
 import { usePlan } from '_/app/use-plan'
@@ -65,6 +67,8 @@ type LeafParams = {
 export const Breadcrumbs = () => {
 	const matches = useMatches()
 	const params = useParams({ strict: false })
+	const client = typeof params.client === 'string' ? params.client : undefined
+	const domain = typeof params.domain === 'string' ? params.domain : undefined
 	const slug = typeof params.slug === 'string' ? params.slug : undefined
 	const leaf: LeafParams = {
 		ticket: typeof params.ticket === 'string' ? params.ticket : undefined,
@@ -73,25 +77,47 @@ export const Breadcrumbs = () => {
 		plan: typeof params.plan === 'string' ? params.plan : undefined,
 	}
 	const leafLabel = useLeafLabel(slug, leaf)
+	const clientRecord = useClient(client)
+	const domainRecord = useDomain(client, domain)
 
 	const routeId = matches.at(-1)?.routeId ?? ''
 	const section = Object.keys(sectionLabels).find(name => routeId.includes(`/$slug/${name}`))
 
-	const crumbs: Crumb[] = [
-		{ key: 'root', label: <House size={14} aria-label='Projects' />, title: 'Projects', to: '/' },
-	]
+	const crumbs: Crumb[] = [{ key: 'root', label: <House size={14} aria-label='Clients' />, title: 'Clients', to: '/' }]
 
-	if (slug !== undefined) {
-		crumbs.push({ key: 'project', label: slug, title: slug, to: '/$slug', params: { slug } })
+	if (client !== undefined) {
+		const label = clientRecord.status === 'ready' ? clientRecord.client.name : client
+		crumbs.push({ key: 'client', label, title: label, to: '/$client', params: { client } })
 	}
 
-	if (section !== undefined && slug !== undefined) {
+	if (client !== undefined && domain !== undefined) {
+		const label = domainRecord.status === 'ready' ? domainRecord.domain.name : domain
+		crumbs.push({
+			key: 'domain',
+			label,
+			title: label,
+			to: '/$client/$domain',
+			params: { client, domain },
+		})
+	}
+
+	if (client !== undefined && domain !== undefined && slug !== undefined) {
+		crumbs.push({
+			key: 'project',
+			label: slug,
+			title: slug,
+			to: '/$client/$domain/$slug',
+			params: { client, domain, slug },
+		})
+	}
+
+	if (section !== undefined && client !== undefined && domain !== undefined && slug !== undefined) {
 		crumbs.push({
 			key: 'section',
 			label: sectionLabels[section] as string,
 			title: sectionLabels[section] as string,
-			to: `/$slug/${section}`,
-			params: { slug },
+			to: `/$client/$domain/$slug/${section}`,
+			params: { client, domain, slug },
 		})
 	}
 

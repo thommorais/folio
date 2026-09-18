@@ -8,8 +8,8 @@ import { LogsFilters } from './journal-filters'
 const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' })
 
 const Logs = () => {
-	const { slug } = useParams({ from: '/_authenticated/$slug/journal/' })
-	const search = useSearch({ from: '/_authenticated/$slug/journal/' })
+	const { client, domain, slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/journal/' })
+	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/journal/' })
 	const state = useEntries(slug, {
 		kind: 'journal',
 		issueId: search.ticket,
@@ -44,8 +44,8 @@ const Logs = () => {
 				{state.entries.map((entry, index) => (
 					<StaggerItem key={entry.id} index={index}>
 						<Link
-							to='/$slug/journal/$entry'
-							params={{ slug, entry: entry.slug }}
+							to='/$client/$domain/$slug/journal/$entry'
+							params={{ client, domain, slug, entry: entry.slug }}
 							className='hover:bg-accent/40 block space-y-2 px-4 py-4 transition-colors'
 						>
 							<div className='flex items-start justify-between gap-4'>

@@ -31,7 +31,7 @@ const DocBody = ({ doc }: { readonly doc: Entry }) => (
 )
 
 const DocDetail = () => {
-	const { slug, doc } = useParams({ from: '/_authenticated/$slug/docs/$doc' })
+	const { client, domain, slug, doc } = useParams({ from: '/_authenticated/$client/$domain/$slug/docs/$doc' })
 	const state = useEntry(slug, doc)
 
 	const navigate = useNavigate()
@@ -39,7 +39,12 @@ const DocDetail = () => {
 	useSlugSync({
 		current: doc,
 		record: state.status === 'ready' ? state.entry : undefined,
-		rename: renamed => void navigate({ to: '/$slug/docs/$doc', params: { slug, doc: renamed }, replace: true }),
+		rename: renamed =>
+			void navigate({
+				to: '/$client/$domain/$slug/docs/$doc',
+				params: { client, domain, slug, doc: renamed },
+				replace: true,
+			}),
 	})
 
 	if (state.status === 'idle' || state.status === 'loading') {
@@ -49,7 +54,7 @@ const DocDetail = () => {
 	if (state.status === 'gone') {
 		return (
 			<RecordGone title={state.title}>
-				<Link to='/$slug/docs' params={{ slug }} className='text-sm underline'>
+				<Link to='/$client/$domain/$slug/docs' params={{ client, domain, slug }} className='text-sm underline'>
 					Back to docs
 				</Link>
 			</RecordGone>

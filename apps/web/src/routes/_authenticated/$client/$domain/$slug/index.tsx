@@ -45,7 +45,7 @@ const Counts = ({ slug }: { readonly slug: string }) => {
 }
 
 const Overview = () => {
-	const { slug } = useParams({ from: '/_authenticated/$slug/' })
+	const { slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/' })
 
 	return (
 		<div className='space-y-6'>
@@ -74,6 +74,6 @@ const Overview = () => {
 	)
 }
 
-export const Route = createFileRoute('/_authenticated/$slug/')({
+export const Route = createFileRoute('/_authenticated/$client/$domain/$slug/')({
 	component: Overview,
 })

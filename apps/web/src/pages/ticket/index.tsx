@@ -1,19 +1,20 @@
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { cn } from '@thom/libs/cn';
-import { Badge } from '@thom/ui/badge';
-import { Heading } from '@thom/ui/heading';
-import { useCycles } from '_/app/use-cycles';
-import { useEntries } from '_/app/use-entries';
-import { usePlans } from '_/app/use-plans';
-import { useIssue } from '_/app/use-issue';
-import { useIssues } from '_/app/use-issues';
-import { Markdown } from '_/components/markdown';
-import { RecordGone } from '_/components/record/record-gone';
-import { isResolved } from '_/core/domain/cycle';
-import type { Issue, IssueStatus } from '_/core/domain/issue';
-import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels';
-import { useSlugSync } from '_/routing/use-slug-sync';
-import { MapFrontier } from './map-frontier';
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { cn } from '@thom/libs/cn'
+import { Badge } from '@thom/ui/badge'
+import { Heading } from '@thom/ui/heading'
+import { useCycles } from '_/app/use-cycles'
+import { useEntries } from '_/app/use-entries'
+import { usePlans } from '_/app/use-plans'
+import { useIssue } from '_/app/use-issue'
+import { useIssues } from '_/app/use-issues'
+import { Markdown } from '_/components/markdown'
+import { RecordGone } from '_/components/record/record-gone'
+import { isResolved } from '_/core/domain/cycle'
+import type { Issue, IssueStatus } from '_/core/domain/issue'
+import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
+import { useScope } from '_/routing/use-scope'
+import { useSlugSync } from '_/routing/use-slug-sync'
+import { MapFrontier } from './map-frontier'
 
 const statusLabels: Record<IssueStatus, string> = {
 	open: 'Open',
@@ -36,7 +37,12 @@ const Section = ({ title, children }: { readonly title: string; readonly childre
 const Empty = ({ what }: { readonly what: string }) => <p className='text-dim text-sm'>No {what} on this ticket.</p>
 
 const TicketDetail = () => {
-	const { slug, ticket: ticketSlug } = useParams({ from: '/_authenticated/$slug/tickets/$ticket' })
+	const {
+		client,
+		domain,
+		slug,
+		ticket: ticketSlug,
+	} = useParams({ from: '/_authenticated/$client/$domain/$slug/tickets/$ticket' })
 	const state = useIssue(slug, ticketSlug)
 
 	const navigate = useNavigate()
@@ -45,7 +51,11 @@ const TicketDetail = () => {
 		current: ticketSlug,
 		record: state.status === 'ready' ? state.issue : undefined,
 		rename: renamed =>
-			void navigate({ to: '/$slug/tickets/$ticket', params: { slug, ticket: renamed }, replace: true }),
+			void navigate({
+				to: '/$client/$domain/$slug/tickets/$ticket',
+				params: { client, domain, slug, ticket: renamed },
+				replace: true,
+			}),
 	})
 
 	if (state.status === 'idle' || state.status === 'loading') {
@@ -55,7 +65,7 @@ const TicketDetail = () => {
 	if (state.status === 'gone') {
 		return (
 			<RecordGone title={state.title}>
-				<Link to='/$slug/tickets' params={{ slug }} className='text-sm underline'>
+				<Link to='/$client/$domain/$slug/tickets' params={{ client, domain, slug }} className='text-sm underline'>
 					Back to tickets
 				</Link>
 			</RecordGone>
@@ -75,6 +85,7 @@ type BodyProps = {
 }
 
 const TicketBody = ({ project, ticket }: BodyProps) => {
+	const { client, domain } = useScope()
 	const ticketId = ticket.id
 	const plans = usePlans(project, { ticketId })
 	const todos = useIssues(project, { kind: 'todo', parentId: ticketId })
@@ -112,7 +123,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 					))}
 				</div>
 
-				{ticket.body &&<Markdown>{ticket.body}</Markdown>}
+				{ticket.body && <Markdown>{ticket.body}</Markdown>}
 
 				{(parent !== undefined || ticket.dependsOn.length > 0) && (
 					<div className='text-dimmer flex flex-wrap items-center gap-3 text-xs'>
@@ -120,8 +131,8 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 							<span>
 								under{' '}
 								<Link
-									to='/$slug/tickets/$ticket'
-									params={{ slug: project, ticket: parent.slug }}
+									to='/$client/$domain/$slug/tickets/$ticket'
+									params={{ client, domain, slug: project, ticket: parent.slug }}
 									className='hover:text-foreground underline underline-offset-2 transition-colors'
 								>
 									{parent.title}
@@ -186,8 +197,8 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 						{todos.issues.map(todo => (
 							<li key={todo.id}>
 								<Link
-									to='/$slug/todos'
-									params={{ slug: project }}
+									to='/$client/$domain/$slug/todos'
+									params={{ client, domain, slug: project }}
 									search={{ todo: todo.id }}
 									className='hover:bg-accent/40 flex w-full items-center gap-3 px-4 py-3 transition-colors'
 								>
@@ -251,4 +262,4 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	)
 }
 
-export { TicketDetail };
+export { TicketDetail }

@@ -3,7 +3,12 @@ import type { SearchHit, SearchKind, SearchPort, SearchQuery } from '_/core/port
 import { SEARCH_KINDS } from '_/core/ports/search'
 import { err, ok, type Result } from '_/lib/result'
 import { tryCatch } from '_/lib/try-catch'
-import { Collections, type JournProjectsResponse } from '_/pocketbase-types'
+import {
+	Collections,
+	type JournClientsResponse,
+	type JournDomainsResponse,
+	type JournProjectsResponse,
+} from '_/pocketbase-types'
 import { getPocketBaseClient } from './client'
 import { filterFor } from './filter-builder'
 
@@ -20,7 +25,11 @@ type SearchableRecord = {
 	goal?: string
 	tags?: string[]
 	created: string
-	expand?: { project?: JournProjectsResponse }
+	expand?: {
+		project?: JournProjectsResponse<{
+			domain?: JournDomainsResponse<{ client?: JournClientsResponse }>
+		}>
+	}
 }
 
 type SearchColumns = {
@@ -52,6 +61,8 @@ const toHit = (kind: SearchKind, textField: keyof SearchColumns, record: Searcha
 	id: record.id,
 	projectId: toProjectId(record.project),
 	projectSlug: record.expand?.project?.slug ?? '',
+	clientSlug: record.expand?.project?.expand?.domain?.expand?.client?.slug ?? '',
+	domainSlug: record.expand?.project?.expand?.domain?.slug ?? '',
 	slug: record.slug ?? '',
 	title: record.title,
 	snippet: snippet(String(record[textField as keyof SearchableRecord] ?? '')),
@@ -85,7 +96,7 @@ export const createSearchAdapter = (): SearchPort => {
 
 						const { items } = await client.collection(collection).getList<SearchableRecord>(1, limit, {
 							filter: client.filter(scoped, { ...params, kind: rowKind }),
-							expand: 'project',
+							expand: 'project.domain.client',
 							sort: '-created',
 						})
 

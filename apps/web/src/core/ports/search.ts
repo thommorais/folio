@@ -10,6 +10,8 @@ export type SearchHit = {
 	readonly id: string
 	readonly projectId: ProjectId
 	readonly projectSlug: string
+	readonly clientSlug: string
+	readonly domainSlug: string
 	readonly slug: string
 	readonly title: string
 	readonly snippet: string

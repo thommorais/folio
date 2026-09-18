@@ -82,7 +82,7 @@ export const Search = () => {
 		() => [
 			{
 				id: 'sc-view-projects',
-				title: 'View projects',
+				title: 'View clients',
 				action: () => {
 					setOpen(false)
 					void navigate({ to: '/' })
@@ -100,19 +100,19 @@ export const Search = () => {
 			return
 		}
 
-		const project = { slug: hit.projectSlug }
+		const scope = { client: hit.clientSlug, domain: hit.domainSlug, slug: hit.projectSlug }
 
 		if (hit.kind === 'plan') {
-			void navigate({ to: '/$slug/plans/$plan', params: { ...project, plan: hit.id } })
+			void navigate({ to: '/$client/$domain/$slug/plans/$plan', params: { ...scope, plan: hit.id } })
 			return
 		}
 
 		if (hit.kind === 'doc') {
-			void navigate({ to: '/$slug/docs/$doc', params: { ...project, doc: hit.slug } })
+			void navigate({ to: '/$client/$domain/$slug/docs/$doc', params: { ...scope, doc: hit.slug } })
 			return
 		}
 
-		void navigate({ to: '/$slug/journal/$entry', params: { ...project, entry: hit.slug } })
+		void navigate({ to: '/$client/$domain/$slug/journal/$entry', params: { ...scope, entry: hit.slug } })
 	}
 
 	const grouped = useMemo(() => {

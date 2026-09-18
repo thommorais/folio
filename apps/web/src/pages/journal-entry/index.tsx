@@ -7,11 +7,13 @@ import { Markdown } from '_/components/markdown'
 import { useEntry } from '_/app/use-entry'
 import { useIssues } from '_/app/use-issues'
 import type { Entry } from '_/core/domain/entry'
+import { useScope } from '_/routing/use-scope'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 
 const EntryBody = ({ project, entry }: { readonly project: string; readonly entry: Entry }) => {
+	const { client, domain } = useScope()
 	const tickets = useIssues(project, {})
 	const ticket =
 		entry.issueId !== undefined && tickets.status === 'ready'
@@ -40,8 +42,8 @@ const EntryBody = ({ project, entry }: { readonly project: string; readonly entr
 						<span>
 							under{' '}
 							<Link
-								to='/$slug/tickets/$ticket'
-								params={{ slug: project, ticket: ticket.slug }}
+								to='/$client/$domain/$slug/tickets/$ticket'
+								params={{ client, domain, slug: project, ticket: ticket.slug }}
 								className='hover:text-foreground underline underline-offset-2 transition-colors'
 							>
 								{ticket.title}
@@ -57,7 +59,7 @@ const EntryBody = ({ project, entry }: { readonly project: string; readonly entr
 }
 
 const JournalEntryDetail = () => {
-	const { slug, entry } = useParams({ from: '/_authenticated/$slug/journal/$entry' })
+	const { client, domain, slug, entry } = useParams({ from: '/_authenticated/$client/$domain/$slug/journal/$entry' })
 	const state = useEntry(slug, entry)
 
 	const navigate = useNavigate()
@@ -65,7 +67,12 @@ const JournalEntryDetail = () => {
 	useSlugSync({
 		current: entry,
 		record: state.status === 'ready' ? state.entry : undefined,
-		rename: renamed => void navigate({ to: '/$slug/journal/$entry', params: { slug, entry: renamed }, replace: true }),
+		rename: renamed =>
+			void navigate({
+				to: '/$client/$domain/$slug/journal/$entry',
+				params: { client, domain, slug, entry: renamed },
+				replace: true,
+			}),
 	})
 
 	if (state.status === 'idle' || state.status === 'loading') {
@@ -75,7 +82,7 @@ const JournalEntryDetail = () => {
 	if (state.status === 'gone') {
 		return (
 			<RecordGone title={state.title}>
-				<Link to='/$slug/journal' params={{ slug }} className='text-sm underline'>
+				<Link to='/$client/$domain/$slug/journal' params={{ client, domain, slug }} className='text-sm underline'>
 					Back to the journal
 				</Link>
 			</RecordGone>

@@ -12,7 +12,7 @@ export type PlansSearch = {
 	readonly sort?: Sort<PlanSortField>
 }
 
-export const Route = createFileRoute('/_authenticated/$slug/plans/')({
+export const Route = createFileRoute('/_authenticated/$client/$domain/$slug/plans/')({
 	validateSearch: (search: Record<string, unknown>): PlansSearch => ({
 		ticket: asString(search.ticket),
 		statuses: asMembers(PLAN_STATUSES, search.statuses),

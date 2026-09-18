@@ -9,6 +9,7 @@ import type { IssueSortField, Sort } from '_/core/ports/sort'
 import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree'
 import { IssueFilters } from './issue-filters'
 import { ISSUE_STATUS_LABELS as statusLabels } from './status-labels'
+import { useScope } from '_/routing/use-scope'
 
 type IssuesSearch = {
 	readonly statuses?: readonly IssueStatus[]
@@ -56,6 +57,7 @@ const Guides = ({ row }: { readonly row: IssueRow }) => {
 
 const Row = ({ row, project }: { readonly row: IssueRow; readonly project: string }) => {
 	const { issue } = row
+	const { client, domain } = useScope()
 
 	return (
 		<article className={cn('relative px-4', row.depth === 0 ? 'py-4' : 'py-3')}>
@@ -64,8 +66,8 @@ const Row = ({ row, project }: { readonly row: IssueRow; readonly project: strin
 			<div className='space-y-2' style={{ paddingLeft: row.depth * INDENT }}>
 				<div className='flex items-start justify-between gap-4'>
 					<Link
-						to='/$slug/tickets/$ticket'
-						params={{ slug: project, ticket: issue.slug }}
+						to='/$client/$domain/$slug/tickets/$ticket'
+						params={{ client, domain, slug: project, ticket: issue.slug }}
 						className={cn(
 							'text-sm font-medium hover:underline',
 							(isTerminal(issue.status) || row.isContext) && 'text-dim',

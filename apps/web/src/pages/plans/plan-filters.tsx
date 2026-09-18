@@ -6,7 +6,7 @@ import { PLAN_SORT_FIELDS, type PlanSortField } from '_/core/ports/sort'
 import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
 import { SortMenu } from '_/components/list/sort-menu'
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
-import type { PlansSearch } from '_/routes/_authenticated/$slug/plans/index'
+import type { PlansSearch } from '_/routes/_authenticated/$client/$domain/$slug/plans/index'
 import { PLAN_STATUS_LABELS } from './status-labels'
 
 const SORT_LABELS: Record<PlanSortField, string> = {
@@ -17,13 +17,17 @@ const SORT_LABELS: Record<PlanSortField, string> = {
 }
 
 const PlanFilters = () => {
-	const { slug } = useParams({ from: '/_authenticated/$slug/plans/' })
-	const search = useSearch({ from: '/_authenticated/$slug/plans/' })
+	const { slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/plans/' })
+	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/plans/' })
 	const navigate = useNavigate()
 	const tickets = useIssues(slug)
 
 	const setFilter = (patch: Partial<PlansSearch>) => {
-		void navigate({ from: '/$slug/plans/', to: '.', search: (prev: PlansSearch) => ({ ...prev, ...patch }) })
+		void navigate({
+			from: '/$client/$domain/$slug/plans/',
+			to: '.',
+			search: (prev: PlansSearch) => ({ ...prev, ...patch }),
+		})
 	}
 
 	const ticketTitle = (id: string): string =>

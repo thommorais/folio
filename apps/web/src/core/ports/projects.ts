@@ -4,6 +4,7 @@ import type { Project } from '../domain/project'
 import type { Unsubscribe } from './subscription'
 
 export type ProjectFilter = {
+	readonly domainId?: string
 	readonly includeArchived?: boolean
 	readonly search?: string
 	readonly limit?: number

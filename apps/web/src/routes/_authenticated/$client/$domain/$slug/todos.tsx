@@ -15,7 +15,7 @@ export type TodosSearch = {
 	readonly sort?: Sort<IssueSortField>
 }
 
-export const Route = createFileRoute('/_authenticated/$slug/todos')({
+export const Route = createFileRoute('/_authenticated/$client/$domain/$slug/todos')({
 	validateSearch: (search: Record<string, unknown>): TodosSearch => ({
 		todo: asString(search.todo),
 		ticket: asString(search.ticket),
