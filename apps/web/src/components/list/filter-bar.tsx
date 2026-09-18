@@ -79,7 +79,7 @@ type Props = {
 	readonly term: string | undefined
 	readonly onSearch: (term: string | undefined) => void
 	readonly chips: readonly ActiveFilter[]
-	readonly children: React.ReactNode
+	readonly children?: React.ReactNode
 	readonly trailing?: React.ReactNode
 }
 
@@ -116,18 +116,20 @@ const FilterBar = ({ placeholder, term, onSearch, chips, children, trailing }: P
 						className='border-border h-9 w-full border bg-transparent pr-9 pl-9 text-sm focus:outline-hidden sm:w-[320px]'
 					/>
 
-					<DropdownMenuTrigger asChild>
-						<button
-							type='button'
-							aria-label='Filters'
-							className={cn(
-								'absolute top-2.5 right-3 z-10 opacity-50 transition-opacity duration-300 hover:opacity-100',
-								chips.length > 0 && 'opacity-100',
-							)}
-						>
-							<FilterIcon />
-						</button>
-					</DropdownMenuTrigger>
+					{children !== undefined && (
+						<DropdownMenuTrigger asChild>
+							<button
+								type='button'
+								aria-label='Filters'
+								className={cn(
+									'absolute top-2.5 right-3 z-10 opacity-50 transition-opacity duration-300 hover:opacity-100',
+									chips.length > 0 && 'opacity-100',
+								)}
+							>
+								<FilterIcon />
+							</button>
+						</DropdownMenuTrigger>
+					)}
 				</form>
 
 				{chips.map(chip => (
@@ -137,9 +139,11 @@ const FilterBar = ({ placeholder, term, onSearch, chips, children, trailing }: P
 				{trailing !== undefined && <div className='ml-auto'>{trailing}</div>}
 			</div>
 
-			<DropdownMenuContent className='w-[220px]' align='end' sideOffset={19} alignOffset={-11} side='bottom'>
-				{children}
-			</DropdownMenuContent>
+			{children !== undefined && (
+				<DropdownMenuContent className='w-[220px]' align='end' sideOffset={19} alignOffset={-11} side='bottom'>
+					{children}
+				</DropdownMenuContent>
+			)}
 		</DropdownMenu>
 	)
 }

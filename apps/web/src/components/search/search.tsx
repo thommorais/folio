@@ -107,11 +107,8 @@ export const Search = () => {
 			return
 		}
 
-		if (hit.kind === 'doc') {
-			void navigate({ to: '/$client/$domain/$slug/docs/$doc', params: { ...scope, doc: hit.slug } })
-			return
-		}
-
+		// Docs and journal entries share one route: both are entries addressed
+		// by slug.
 		void navigate({ to: '/$client/$domain/$slug/journal/$entry', params: { ...scope, entry: hit.slug } })
 	}
 

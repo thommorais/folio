@@ -1,6 +1,6 @@
 import type { Result } from '_/lib/result'
 
-export const entities = ['tickets', 'plans', 'todos', 'journal', 'docs'] as const
+export const entities = ['tickets', 'plans', 'todos', 'journal'] as const
 
 export type Entity = (typeof entities)[number]
 
@@ -23,7 +23,7 @@ export const collectCounts = (results: readonly Result<number>[]): CountsState =
 		totals.push(result.value)
 	}
 
-	const [tickets = 0, plans = 0, todos = 0, journal = 0, docs = 0] = totals
+	const [tickets = 0, plans = 0, todos = 0, journal = 0] = totals
 
-	return { status: 'ready', counts: { tickets, plans, todos, journal, docs } }
+	return { status: 'ready', counts: { tickets, plans, todos, journal } }
 }

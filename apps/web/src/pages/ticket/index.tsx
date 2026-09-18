@@ -10,8 +10,10 @@ import { useIssues } from '_/app/use-issues'
 import { Markdown } from '_/components/markdown'
 import { RecordGone } from '_/components/record/record-gone'
 import { isResolved } from '_/core/domain/cycle'
+import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
 import type { Issue, IssueStatus } from '_/core/domain/issue'
 import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
+import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels'
 import { useScope } from '_/routing/use-scope'
 import { useSlugSync } from '_/routing/use-slug-sync'
 import { MapFrontier } from './map-frontier'
@@ -89,8 +91,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	const ticketId = ticket.id
 	const plans = usePlans(project, { ticketId })
 	const todos = useIssues(project, { kind: 'todo', parentId: ticketId })
-	const journal = useEntries(project, { kind: 'journal', issueId: ticketId })
-	const docs = useEntries(project, { kind: 'doc', issueId: ticketId })
+	const journal = useEntries(project, { kinds: ADDRESSABLE_KINDS, issueId: ticketId })
 	const cycles = useCycles(project, { ticketId })
 	const workLog = useEntries(project, { kind: 'log', issueId: ticketId })
 
@@ -237,22 +238,15 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 				{journal.status === 'ready' && journal.entries.length > 0 && (
 					<ul className='border-border divide-border divide-y border'>
 						{journal.entries.map(entry => (
-							<li key={entry.id} className='px-4 py-3 text-sm'>
-								{entry.title}
-							</li>
-						))}
-					</ul>
-				)}
-			</Section>
-
-			<Section title='Docs'>
-				{docs.status === 'ready' && docs.entries.length === 0 && <Empty what='docs' />}
-				{docs.status === 'ready' && docs.entries.length > 0 && (
-					<ul className='border-border divide-border divide-y border'>
-						{docs.entries.map(doc => (
-							<li key={doc.id} className='flex items-center justify-between gap-4 px-4 py-3 text-sm'>
-								<span>{doc.title}</span>
-								<span className='text-dimmer font-mono text-xs'>{doc.slug}</span>
+							<li key={entry.id}>
+								<Link
+									to='/$client/$domain/$slug/journal/$entry'
+									params={{ client, domain, slug: project, entry: entry.slug }}
+									className='hover:bg-accent/40 flex items-center justify-between gap-4 px-4 py-3 text-sm transition-colors'
+								>
+									<span className='min-w-0 flex-1 truncate'>{entry.title}</span>
+									<Badge color='muted'>{ENTRY_KIND_LABELS[entry.kind]}</Badge>
+								</Link>
 							</li>
 						))}
 					</ul>

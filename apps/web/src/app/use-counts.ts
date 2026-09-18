@@ -1,3 +1,4 @@
+import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
 import type { Unsubscribe } from '_/core/ports/subscription'
 import type { Result } from '_/lib/result'
 import { useEffect, useEffectEvent, useState } from 'react'
@@ -14,8 +15,8 @@ export const useCounts = (project: string): CountsState => {
 			issues.count(project, { kind: 'ticket' }),
 			plans.count(project),
 			issues.count(project, { kind: 'todo' }),
-			entries.count(project, { kind: 'journal' }),
-			entries.count(project, { kind: 'doc' }),
+			// The journal lists both kinds, so its tile counts both.
+			entries.count(project, { kinds: ADDRESSABLE_KINDS }),
 		])
 
 		setState(collectCounts(results))

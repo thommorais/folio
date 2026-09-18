@@ -1,13 +1,12 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { cn } from '@thom/libs/cn'
 
+// Tickets, plans and todos keep their own pages, reached from the work view
+// and the count tiles. The nav carries only the two that are not a slice of
+// something already on it.
 const tabs = [
-	{ to: '/$client/$domain/$slug', label: 'Overview', exact: true },
-	{ to: '/$client/$domain/$slug/tickets', label: 'Tickets', exact: false },
-	{ to: '/$client/$domain/$slug/plans', label: 'Plans', exact: false },
-	{ to: '/$client/$domain/$slug/todos', label: 'Todos', exact: false },
+	{ to: '/$client/$domain/$slug/work', label: 'Work', exact: false },
 	{ to: '/$client/$domain/$slug/journal', label: 'Journal', exact: false },
-	{ to: '/$client/$domain/$slug/docs', label: 'Docs', exact: false },
 ] as const
 
 type Props = {

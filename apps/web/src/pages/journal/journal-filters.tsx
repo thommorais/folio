@@ -1,11 +1,13 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { DropdownMenuItem } from '@thom/ui/dropdown-menu'
 import { useIssues } from '_/app/use-issues'
+import { ADDRESSABLE_KINDS, type AddressableKind } from '_/core/domain/entry'
 import { ENTRY_SORT_FIELDS, type EntrySortField } from '_/core/ports/sort'
 import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
 import { SortMenu } from '_/components/list/sort-menu'
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
-import type { LogsSearch } from '_/routes/_authenticated/$client/$domain/$slug/journal'
+import type { JournalSearch } from '_/routes/_authenticated/$client/$domain/$slug/journal'
+import { ENTRY_KIND_LABELS } from './kind-labels'
 
 const SORT_LABELS: Record<EntrySortField, string> = {
 	title: 'Title',
@@ -14,17 +16,17 @@ const SORT_LABELS: Record<EntrySortField, string> = {
 	updated: 'Updated',
 }
 
-const LogsFilters = () => {
+const JournalFilters = () => {
 	const { slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/journal/' })
 	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/journal/' })
 	const navigate = useNavigate()
 	const tickets = useIssues(slug, { kind: 'ticket' })
 
-	const setFilter = (patch: Partial<LogsSearch>) => {
+	const setFilter = (patch: Partial<JournalSearch>) => {
 		void navigate({
 			from: '/$client/$domain/$slug/journal/',
 			to: '.',
-			search: (prev: LogsSearch) => ({ ...prev, ...patch }),
+			search: (prev: JournalSearch) => ({ ...prev, ...patch }),
 		})
 	}
 
@@ -33,6 +35,15 @@ const LogsFilters = () => {
 
 	const chips: ActiveFilter[] = []
 
+	if (search.kinds !== undefined) {
+		chips.push({
+			key: 'kinds',
+			label: search.kinds.map(kind => ENTRY_KIND_LABELS[kind]).join(', '),
+			onRemove: () => {
+				setFilter({ kinds: undefined })
+			},
+		})
+	}
 	if (search.ticket !== undefined) {
 		chips.push({
 			key: 'ticket',
@@ -54,7 +65,7 @@ const LogsFilters = () => {
 
 	return (
 		<FilterBar
-			placeholder='Search logs...'
+			placeholder='Search the journal...'
 			term={search.q}
 			onSearch={q => {
 				setFilter({ q })
@@ -71,7 +82,20 @@ const LogsFilters = () => {
 				/>
 			}
 		>
-			<FilterMenuItem label='Issue'>
+			<FilterMenuItem label='Type'>
+				{ADDRESSABLE_KINDS.map(kind => (
+					<FilterCheckboxItem
+						key={kind}
+						label={ENTRY_KIND_LABELS[kind]}
+						checked={search.kinds?.includes(kind) ?? false}
+						onCheckedChange={() => {
+							setFilter({ kinds: toggle<AddressableKind>(search.kinds, kind) })
+						}}
+					/>
+				))}
+			</FilterMenuItem>
+
+			<FilterMenuItem label='Ticket'>
 				<div className='max-h-[300px] overflow-y-auto'>
 					{tickets.status === 'ready' && tickets.issues.length === 0 && (
 						<DropdownMenuItem disabled>No tickets found</DropdownMenuItem>
@@ -108,4 +132,4 @@ const LogsFilters = () => {
 	)
 }
 
-export { LogsFilters }
+export { JournalFilters }

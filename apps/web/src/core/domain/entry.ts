@@ -31,4 +31,10 @@ export type Entry = {
 	readonly updatedAt: Date
 }
 
+// Journal entries and docs are addressed by slug and listed on their own.
+// A log belongs to the ticket it was written against, so it is not one of them.
+export const ADDRESSABLE_KINDS = ['journal', 'doc'] as const
+
+export type AddressableKind = (typeof ADDRESSABLE_KINDS)[number]
+
 export const isAddressable = (kind: EntryKind): boolean => kind === 'journal' || kind === 'doc'

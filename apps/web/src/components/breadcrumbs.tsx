@@ -12,7 +12,6 @@ const sectionLabels: Record<string, string> = {
 	plans: 'Plans',
 	todos: 'Todos',
 	journal: 'Journal',
-	docs: 'Docs',
 }
 
 type Crumb = {
@@ -33,7 +32,6 @@ const Separator = () => (
 // back to the slug already in the URL rather than collapsing the trail.
 const useLeafLabel = (project: string | undefined, params: LeafParams) => {
 	const ticket = useIssue(project ?? '', params.ticket ?? '')
-	const doc = useEntry(project ?? '', params.doc ?? '')
 	const entry = useEntry(project ?? '', params.entry ?? '')
 	const plan = usePlan(project ?? '', params.plan)
 
@@ -41,9 +39,6 @@ const useLeafLabel = (project: string | undefined, params: LeafParams) => {
 
 	if (params.ticket !== undefined) {
 		return ticket.status === 'ready' ? ticket.issue.title : params.ticket
-	}
-	if (params.doc !== undefined) {
-		return doc.status === 'ready' ? doc.entry.title : params.doc
 	}
 	if (params.entry !== undefined) {
 		return entry.status === 'ready' ? entry.entry.title : params.entry
@@ -59,7 +54,6 @@ const useLeafLabel = (project: string | undefined, params: LeafParams) => {
 
 type LeafParams = {
 	readonly ticket: string | undefined
-	readonly doc: string | undefined
 	readonly entry: string | undefined
 	readonly plan: string | undefined
 }
@@ -72,7 +66,6 @@ export const Breadcrumbs = () => {
 	const slug = typeof params.slug === 'string' ? params.slug : undefined
 	const leaf: LeafParams = {
 		ticket: typeof params.ticket === 'string' ? params.ticket : undefined,
-		doc: typeof params.doc === 'string' ? params.doc : undefined,
 		entry: typeof params.entry === 'string' ? params.entry : undefined,
 		plan: typeof params.plan === 'string' ? params.plan : undefined,
 	}

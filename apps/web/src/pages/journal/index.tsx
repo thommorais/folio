@@ -3,22 +3,26 @@ import { Badge } from '@thom/ui/badge'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useEntries } from '_/app/use-entries'
-import { LogsFilters } from './journal-filters'
+import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
+import { JournalFilters } from './journal-filters'
+import { ENTRY_KIND_LABELS } from './kind-labels'
 
 const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' })
 
-const Logs = () => {
+const Journal = () => {
 	const { client, domain, slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/journal/' })
 	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/journal/' })
 	const state = useEntries(slug, {
-		kind: 'journal',
+		// Without a selection the list is both kinds, never the ticket work logs.
+		kinds: search.kinds ?? ADDRESSABLE_KINDS,
 		issueId: search.ticket,
 		tags: search.tags,
 		search: search.q,
 		sort: search.sort,
 	})
 
-	const filtered = search.q !== undefined || search.tags !== undefined || search.ticket !== undefined
+	const filtered =
+		search.q !== undefined || search.kinds !== undefined || search.tags !== undefined || search.ticket !== undefined
 
 	const list = (() => {
 		if (state.status === 'loading') {
@@ -36,7 +40,7 @@ const Logs = () => {
 		}
 
 		if (state.entries.length === 0) {
-			return <p className='text-dim text-sm'>{filtered ? 'No journal entries match.' : 'No journal entries yet.'}</p>
+			return <p className='text-dim text-sm'>{filtered ? 'No entries match.' : 'No entries yet.'}</p>
 		}
 
 		return (
@@ -50,7 +54,10 @@ const Logs = () => {
 						>
 							<div className='flex items-start justify-between gap-4'>
 								<h3 className='text-sm font-medium'>{entry.title}</h3>
-								<span className='text-dimmer shrink-0 text-xs'>{dayMonth.format(entry.createdAt)}</span>
+								<span className='flex shrink-0 items-center gap-3'>
+									<Badge color='muted'>{ENTRY_KIND_LABELS[entry.kind]}</Badge>
+									<span className='text-dimmer text-xs'>{dayMonth.format(entry.createdAt)}</span>
+								</span>
 							</div>
 
 							{entry.body && <p className='text-dim line-clamp-2 text-sm'>{entry.body}</p>}
@@ -74,10 +81,10 @@ const Logs = () => {
 
 	return (
 		<div className='space-y-4'>
-			<LogsFilters />
+			<JournalFilters />
 			{list}
 		</div>
 	)
 }
 
-export { Logs }
+export { Journal }

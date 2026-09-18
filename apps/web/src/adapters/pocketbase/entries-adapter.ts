@@ -76,6 +76,7 @@ const columns = (project: string, filter: EntryFilter) =>
 	filterFor<EntryColumns>()([
 		{ field: 'project.slug', comparator: 'eq', value: project },
 		{ field: 'kind', comparator: 'eq', value: filter.kind },
+		{ field: 'kind', comparator: 'anyOf', value: filter.kinds },
 		{ field: 'issue', comparator: 'eq', value: filter.issueId },
 		{ field: 'plan', comparator: 'eq', value: filter.planId },
 		{ field: 'cycle', comparator: 'eq', value: filter.cycleId },
@@ -138,9 +139,7 @@ export const createEntriesAdapter = (): EntriesPort => {
 		},
 
 		getById: async (project, id): Promise<Result<Entry>> => {
-			const { expr, params } = filterFor<EntryColumns>()([
-				{ field: 'project.slug', comparator: 'eq', value: project },
-			])
+			const { expr, params } = filterFor<EntryColumns>()([{ field: 'project.slug', comparator: 'eq', value: project }])
 
 			const { data, error } = await tryCatch(
 				collection().getOne<EntryRecord>(id, { filter: client.filter(expr, params) }),

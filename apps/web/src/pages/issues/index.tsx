@@ -55,7 +55,15 @@ const Guides = ({ row }: { readonly row: IssueRow }) => {
 	)
 }
 
-const Row = ({ row, project }: { readonly row: IssueRow; readonly project: string }) => {
+const Row = ({
+	row,
+	project,
+	kind,
+}: {
+	readonly row: IssueRow
+	readonly project: string
+	readonly kind: IssueKind
+}) => {
 	const { issue } = row
 	const { client, domain } = useScope()
 
@@ -65,16 +73,28 @@ const Row = ({ row, project }: { readonly row: IssueRow; readonly project: strin
 
 			<div className='space-y-2' style={{ paddingLeft: row.depth * INDENT }}>
 				<div className='flex items-start justify-between gap-4'>
-					<Link
-						to='/$client/$domain/$slug/tickets/$ticket'
-						params={{ client, domain, slug: project, ticket: issue.slug }}
-						className={cn(
-							'text-sm font-medium hover:underline',
-							(isTerminal(issue.status) || row.isContext) && 'text-dim',
+					<span className='flex min-w-0 items-start gap-2'>
+						{kind === 'todo' && (
+							<span
+								className={cn(
+									'border-border mt-0.5 size-4 shrink-0 border',
+									issue.status === 'done' && 'bg-foreground border-foreground',
+								)}
+							/>
 						)}
-					>
-						{issue.title}
-					</Link>
+
+						<Link
+							to='/$client/$domain/$slug/tickets/$ticket'
+							params={{ client, domain, slug: project, ticket: issue.slug }}
+							className={cn(
+								'text-sm font-medium hover:underline',
+								(isTerminal(issue.status) || row.isContext) && 'text-dim',
+								issue.status === 'done' && kind === 'todo' && 'line-through',
+							)}
+						>
+							{issue.title}
+						</Link>
+					</span>
 
 					<span className='flex shrink-0 items-center gap-2'>
 						{issue.wayfinder && <Badge color='muted'>{issue.wayfinder}</Badge>}
@@ -85,7 +105,9 @@ const Row = ({ row, project }: { readonly row: IssueRow; readonly project: strin
 				{/* A context row is only present to place its children, so its own
 				    body and metadata would read as a false match. */}
 				{!row.isContext && (
-					<>
+					// The checkbox indents the title, so its row's body and metadata
+					// line up under the text rather than under the box.
+					<div className={cn('space-y-2', kind === 'todo' && 'pl-6')}>
 						{issue.body && <p className='text-dim line-clamp-2 text-sm'>{issue.body}</p>}
 
 						<div className='flex flex-wrap items-center gap-2 pt-1'>
@@ -97,7 +119,7 @@ const Row = ({ row, project }: { readonly row: IssueRow; readonly project: strin
 								</Badge>
 							))}
 						</div>
-					</>
+					</div>
 				)}
 			</div>
 		</article>
@@ -162,7 +184,7 @@ const Issues = ({ kind, emptyLabel }: IssuesProps) => {
 						{/* Only roots get a rule. Nested rows are already separated by
 						    their connector, and a full-width border would cut across it. */}
 						<div className={cn(index > 0 && row.depth === 0 && 'border-border border-t')}>
-							<Row row={row} project={slug} />
+							<Row row={row} project={slug} kind={kind} />
 						</div>
 					</StaggerItem>
 				))}

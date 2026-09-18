@@ -7,6 +7,7 @@ import type { Unsubscribe } from './subscription'
 export type EntryFilter = {
 	readonly sort?: Sort<EntrySortField>
 	readonly kind?: EntryKind
+	readonly kinds?: readonly EntryKind[]
 	readonly issueId?: string
 	readonly planId?: string
 	readonly cycleId?: string
