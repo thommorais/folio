@@ -9,13 +9,14 @@ import { useIssue } from '_/app/use-issue'
 import { useIssues } from '_/app/use-issues'
 import { Markdown } from '_/components/markdown'
 import { RecordGone } from '_/components/record/record-gone'
-import { isResolved } from '_/core/domain/cycle'
+import { newestFirst } from '_/core/domain/cycle-progress'
 import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
 import type { Issue, IssueStatus } from '_/core/domain/issue'
 import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
 import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels'
 import { useScope } from '_/routing/use-scope'
 import { useSlugSync } from '_/routing/use-slug-sync'
+import { CycleTimeline } from './cycle-timeline'
 import { MapFrontier } from './map-frontier'
 
 const statusLabels: Record<IssueStatus, string> = {
@@ -95,7 +96,11 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	const cycles = useCycles(project, { ticketId })
 	const workLog = useEntries(project, { kind: 'log', issueId: ticketId })
 
-	const current = cycles.status === 'ready' ? cycles.cycles.at(-1) : undefined
+	// A log stamped with a cycle is shown on that round in the timeline, so
+	// only the loose ones are left for the section below it.
+	const unstamped = workLog.status === 'ready' ? workLog.entries.filter(entry => entry.cycleId === undefined) : []
+
+	const current = cycles.status === 'ready' ? newestFirst(cycles.cycles).at(0) : undefined
 	const siblings = useIssues(project, { kind: 'ticket' })
 	const parent =
 		ticket.parentId !== undefined && siblings.status === 'ready'
@@ -149,25 +154,16 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 
 			{cycles.status === 'ready' && cycles.cycles.length > 0 && (
 				<Section title='Cycles'>
-					<ul className='border-border divide-border divide-y border'>
-						{cycles.cycles.map(cycle => (
-							<li key={cycle.id} className='space-y-1 px-4 py-3 text-sm'>
-								<div className='flex items-center gap-2'>
-									<span className='text-dimmer font-mono text-xs'>{cycle.ordinal}</span>
-									<span>{cycle.phase}</span>
-									{isResolved(cycle) ? <Badge color='muted'>resolved</Badge> : <Badge color='active'>open</Badge>}
-								</div>
-								{cycle.resolution && <p className='text-dim text-xs'>{cycle.resolution}</p>}
-							</li>
-						))}
-					</ul>
+					<CycleTimeline project={project} cycles={cycles.cycles} />
 				</Section>
 			)}
 
-			{workLog.status === 'ready' && workLog.entries.length > 0 && (
+			{/* Logs written outside a cycle have no round to sit under, so they
+			    keep a section of their own. */}
+			{unstamped.length > 0 && (
 				<Section title='Work log'>
 					<ul className='border-border divide-border divide-y border'>
-						{workLog.entries.map(entry => (
+						{unstamped.map(entry => (
 							<li key={entry.id} className='space-y-1 px-4 py-3'>
 								<p className='text-sm whitespace-pre-line'>{entry.body}</p>
 								<p className='text-dimmer text-xs'>{entry.createdAt.toLocaleString()}</p>

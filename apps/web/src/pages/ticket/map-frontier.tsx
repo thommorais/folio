@@ -50,7 +50,9 @@ const Group = ({
 }
 
 const MapFrontier = ({ project, mapId }: Props) => {
-	const children = useIssues(project, { parentId: mapId })
+	// A map's decisions are tickets. Todos filed under the same ticket are its
+	// steps, not places the work can go next, and they have their own section.
+	const children = useIssues(project, { kind: 'ticket', parentId: mapId })
 
 	if (children.status !== 'ready') return null
 
