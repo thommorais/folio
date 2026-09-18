@@ -4,10 +4,11 @@ import { useIssues } from '_/app/use-issues'
 import { partitionChildren } from '_/core/domain/frontier'
 import type { Issue } from '_/core/domain/issue'
 import { useScope } from '_/routing/use-scope'
+import { WayfinderGraph } from './wayfinder-graph'
 
 type Props = {
 	readonly project: string
-	readonly mapId: string
+	readonly map: Issue
 }
 
 const Group = ({
@@ -49,10 +50,10 @@ const Group = ({
 	)
 }
 
-const MapFrontier = ({ project, mapId }: Props) => {
+const MapFrontier = ({ project, map }: Props) => {
 	// A map's decisions are tickets. Todos filed under the same ticket are its
 	// steps, not places the work can go next, and they have their own section.
-	const children = useIssues(project, { kind: 'ticket', parentId: mapId })
+	const children = useIssues(project, { kind: 'ticket', parentId: map.id })
 
 	if (children.status !== 'ready') return null
 
@@ -65,6 +66,11 @@ const MapFrontier = ({ project, mapId }: Props) => {
 	return (
 		<section className='space-y-4'>
 			<h2 className='text-foreground text-sm font-medium'>The map</h2>
+
+			{/* The graph answers how the work hangs together; the groups below
+			    answer what to pick up next. Neither replaces the other. */}
+			<WayfinderGraph project={project} mapId={map.id} issues={[map, ...children.issues]} />
+
 			<Group title='Takeable' tickets={frontier} project={project} />
 			<Group title='Blocked' tickets={blocked} project={project} />
 			<Group title='Claimed' tickets={claimed} project={project} />

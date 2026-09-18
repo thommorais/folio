@@ -150,7 +150,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 				)}
 			</header>
 
-			{ticket.wayfinder === 'map' && <MapFrontier project={project} mapId={ticketId} />}
+			{ticket.wayfinder === 'map' && <MapFrontier project={project} map={ticket} />}
 
 			{cycles.status === 'ready' && cycles.cycles.length > 0 && (
 				<Section title='Cycles'>
