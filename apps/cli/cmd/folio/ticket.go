@@ -58,6 +58,7 @@ func ticketListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			noteIfPaged(len(tickets), filter.Limit)
 			return renderTickets(tickets)
 		},
 	}
@@ -211,7 +212,10 @@ func ticketCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create <title>",
 		Short: "Create a ticket",
-		Args:  cobra.ExactArgs(1),
+		Example: `  folio ticket create "Mobile nav" --body "No nav below md." --tags frontend,bug
+  folio ticket create "The map" --wayfinder map
+  folio ticket create "Build it" --parent $MAP_ID --depends-on $ID1,$ID2 --size 3`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			project, err := resolveProject()
 			if err != nil {

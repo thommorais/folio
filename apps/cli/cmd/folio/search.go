@@ -50,6 +50,7 @@ snippet so it is judgeable without a second call.
 			if err != nil {
 				return err
 			}
+			noteIfPaged(len(hits), query.Limit)
 			return renderHits(hits)
 		},
 	}

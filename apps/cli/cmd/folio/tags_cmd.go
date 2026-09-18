@@ -69,6 +69,12 @@ var flagUnusedTags bool
 // collectTags tallies client-side: there is no counts endpoint, and a tag
 // census is a whole-project question by nature, so the four lists are the
 // honest cost rather than four aggregate calls that do not exist.
+//
+// Each list asks for MaxPageSize explicitly. Left unset the server caps the
+// page at 50 and reports no total, which would silently undercount every tag
+// on any project past that size: a census that is quietly wrong is worse than
+// one that is slow. Past 500 of a kind the tally is still short, so it says so
+// rather than presenting a partial count as the answer.
 func collectTags(folio *client.Client, project string) ([]tagCount, error) {
 	byTag := map[string]*tagCount{}
 
@@ -84,36 +90,55 @@ func collectTags(folio *client.Client, project string) ([]tagCount, error) {
 		}
 	}
 
-	todos, err := folio.ListTodos(project, client.TodoFilter{})
+	// A full page back means there were probably more rows behind it, since
+	// no list call reports a total.
+	var capped []string
+	atCap := func(kind string, n int) {
+		if n >= client.MaxPageSize {
+			capped = append(capped, kind)
+		}
+	}
+
+	todos, err := folio.ListTodos(project, client.TodoFilter{Limit: client.MaxPageSize})
 	if err != nil {
 		return nil, err
 	}
+	atCap("todos", len(todos))
 	for _, todo := range todos {
 		add(todo.Tags, func(c *tagCount) { c.Todos++ })
 	}
 
-	plans, err := folio.ListPlans(project, client.PlanFilter{})
+	plans, err := folio.ListPlans(project, client.PlanFilter{Limit: client.MaxPageSize})
 	if err != nil {
 		return nil, err
 	}
+	atCap("plans", len(plans))
 	for _, plan := range plans {
 		add(plan.Tags, func(c *tagCount) { c.Plans++ })
 	}
 
-	logs, err := folio.ListJournal(project, client.JournalFilter{})
+	logs, err := folio.ListJournal(project, client.JournalFilter{Limit: client.MaxPageSize})
 	if err != nil {
 		return nil, err
 	}
+	atCap("journal", len(logs))
 	for _, entry := range logs {
 		add(entry.Tags, func(c *tagCount) { c.Journal++ })
 	}
 
-	docs, err := folio.ListDocs(project, client.DocFilter{})
+	docs, err := folio.ListDocs(project, client.DocFilter{Limit: client.MaxPageSize})
 	if err != nil {
 		return nil, err
 	}
+	atCap("docs", len(docs))
 	for _, doc := range docs {
 		add(doc.Tags, func(c *tagCount) { c.Docs++ })
+	}
+
+	if len(capped) > 0 {
+		fmt.Fprintf(os.Stderr,
+			"folio: %s hit the %d row page limit, so these counts are a floor, not a total\n",
+			strings.Join(capped, " and "), client.MaxPageSize)
 	}
 
 	if flagUnusedTags {

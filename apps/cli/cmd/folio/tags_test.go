@@ -1,8 +1,13 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
+
+	"folio/cli/internal/client"
 )
 
 func TestParseTagsAcceptsKnownTags(t *testing.T) {
@@ -81,6 +86,39 @@ func TestCompleteTagsSkipsTagsAlreadyChosen(t *testing.T) {
 	for _, suggestion := range suggestions {
 		if suggestion == "bug,bug" {
 			t.Fatal("suggested a tag already in the list")
+		}
+	}
+}
+
+// A census that silently stops at the server's default page reports tallies
+// that are wrong rather than partial, which is the one thing this command
+// exists to get right.
+func TestTagCensusAsksForTheFullPage(t *testing.T) {
+	var queries []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		queries = append(queries, r.URL.Query().Get("limit"))
+		_, _ = w.Write([]byte(`{"issues":[],"plans":[],"entries":[]}`))
+	}))
+	t.Cleanup(server.Close)
+
+	t.Setenv("FOLIO_URL", server.URL)
+	t.Setenv("FOLIO_TOKEN", "tok")
+
+	folio, err := api()
+	if err != nil {
+		t.Fatalf("api: %v", err)
+	}
+	if _, err := collectTags(folio, "p1"); err != nil {
+		t.Fatalf("collectTags: %v", err)
+	}
+
+	if len(queries) != 4 {
+		t.Fatalf("requests = %d, want 4 (todos, plans, journal, docs)", len(queries))
+	}
+	want := strconv.Itoa(client.MaxPageSize)
+	for i, limit := range queries {
+		if limit != want {
+			t.Errorf("request %d limit = %q, want %q", i, limit, want)
 		}
 	}
 }

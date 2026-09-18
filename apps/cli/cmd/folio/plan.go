@@ -49,6 +49,7 @@ func planListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			noteIfPaged(len(plans), filter.Limit)
 			return renderPlans(plans)
 		},
 	}

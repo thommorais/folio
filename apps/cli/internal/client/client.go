@@ -27,6 +27,11 @@ func New(baseURL, token string) *Client {
 	}
 }
 
+// MaxPageSize mirrors the server's clamp (services/issue_scope.go:14). A list
+// call with no limit is capped at 50 rows and says nothing about it, so a
+// caller that needs the whole set rather than a page has to ask for this.
+const MaxPageSize = 500
+
 type apiError struct {
 	status  int
 	Message string `json:"message"`

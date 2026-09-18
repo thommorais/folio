@@ -51,6 +51,7 @@ func docListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			noteIfPaged(len(docs), filter.Limit)
 			return renderDocs(docs)
 		},
 	}
