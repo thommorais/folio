@@ -6,7 +6,8 @@ import { NODE } from './graph-geometry'
 // the graph still reads in either theme and without colour vision. Status is
 // the fill on top of it.
 const SHAPES: Record<WayfinderType | 'none', (w: number, h: number) => string> = {
-	// A diamond: the map everything else hangs off.
+	// A diamond: the map everything else hangs off, and the only shape with no
+	// flat side, so it reads as different in kind rather than in degree.
 	map: (w, h) => `M ${w / 2} 0 L ${w} ${h / 2} L ${w / 2} ${h} L 0 ${h / 2} Z`,
 	// A hexagon, like a question with two sides.
 	grilling: (w, h) =>
@@ -20,18 +21,22 @@ const SHAPES: Record<WayfinderType | 'none', (w: number, h: number) => string> =
 	none: (w, h) => `M 0 0 L ${w} 0 L ${w} ${h} L 0 ${h} Z`,
 }
 
-// How much of the box the outline actually leaves for text at mid height. A
-// diamond pinches hardest, so it gives up the most.
-const TEXT_INSET: Record<WayfinderType | 'none', number> = {
-	map: NODE.width - 56,
-	grilling: NODE.width - 44,
-	research: NODE.width - 36,
-	prototype: NODE.width - 32,
-	task: NODE.width - 20,
-	none: NODE.width - 20,
+// A tapering outline is drawn wider than the box so that the part of it level
+// with the text is still the box's width. Fitting the text to the shape
+// instead would leave a diamond a few characters across, since the text block
+// is nearly as tall as the node.
+const OVERHANG: Record<WayfinderType | 'none', number> = {
+	// A diamond loses half its width at the text's height, so it takes a full
+	// half-node each side to keep the title inside the outline.
+	map: NODE.width / 2,
+	grilling: NODE.height / 2,
+	research: NODE.height / 2,
+	prototype: 0,
+	task: 0,
+	none: 0,
 }
 
-const textWidth = (wayfinder: WayfinderType | undefined): number => TEXT_INSET[wayfinder ?? 'none']
+const overhangOf = (wayfinder: WayfinderType | undefined): number => OVERHANG[wayfinder ?? 'none']
 
 // Status is the fill, so a glance says how far along the row is without
 // reading it: outline open, hatched blocked, solid done.
@@ -52,7 +57,8 @@ type Props = {
 }
 
 const GraphNode = ({ issue, x, y, dimmed, onFocus }: Props) => {
-	const shape = SHAPES[issue.wayfinder ?? 'none'](NODE.width, NODE.height)
+	const overhang = overhangOf(issue.wayfinder)
+	const shape = SHAPES[issue.wayfinder ?? 'none'](NODE.width + overhang * 2, NODE.height)
 	const terminal = issue.status === 'done' || issue.status === 'cancelled'
 
 	return (
@@ -62,22 +68,17 @@ const GraphNode = ({ issue, x, y, dimmed, onFocus }: Props) => {
 			onMouseEnter={() => onFocus(issue.id)}
 			onMouseLeave={() => onFocus(undefined)}
 		>
+			{/* Drawn from behind the box's left edge, so the widened outline stays
+			    centred on the node the layout placed. */}
 			<path
 				d={shape}
+				transform={`translate(${-overhang} 0)`}
 				className={cn('stroke-border stroke-1', fillFor(issue.status, issue.blocked))}
 				// A cancelled node keeps its outline but loses its weight.
 				strokeDasharray={issue.status === 'cancelled' ? '3 3' : undefined}
 			/>
 
-			{/* A diamond and a hexagon taper, so text laid out to the full box
-			    would run past the outline. Each shape declares how much of its
-			    width actually holds text. */}
-			<foreignObject
-				x={(NODE.width - textWidth(issue.wayfinder)) / 2}
-				y={8}
-				width={textWidth(issue.wayfinder)}
-				height={NODE.height - 16}
-			>
+			<foreignObject x={10} y={8} width={NODE.width - 20} height={NODE.height - 16}>
 				<div className='flex h-full flex-col justify-center gap-0.5 overflow-hidden'>
 					<span
 						className={cn(
