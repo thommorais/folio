@@ -80,8 +80,9 @@ func TestTicketsAndTodosShareOneCollection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(all) != 2 {
-		t.Fatalf("listed %d issues, want 2", len(all))
+	// The fixture seeds one ticket of its own.
+	if len(all) != 3 {
+		t.Fatalf("listed %d issues, want 3", len(all))
 	}
 
 	todos, err := repo.List(t.Context(), domain.ProjectID(s.project.Id), domain.IssueFilter{Kind: domain.IssueTodo})

@@ -17,7 +17,6 @@ type SearchableRecord = {
 	slug?: string
 	title: string
 	body?: string
-	details?: string
 	goal?: string
 	tags?: string[]
 	created: string
@@ -27,14 +26,13 @@ type SearchableRecord = {
 type SearchColumns = {
 	title: string
 	body: string
-	details: string
 	goal: string
 }
 
-const sources: Record<SearchKind, { collection: string; text: keyof SearchColumns }> = {
-	log: { collection: Collections.JournJournal, text: 'body' },
-	doc: { collection: Collections.JournDocs, text: 'body' },
-	todo: { collection: Collections.JournTodos, text: 'details' },
+const sources: Record<SearchKind, { collection: string; text: keyof SearchColumns; kind?: string }> = {
+	log: { collection: Collections.JournEntries, text: 'body', kind: 'journal' },
+	doc: { collection: Collections.JournEntries, text: 'body', kind: 'doc' },
+	todo: { collection: Collections.JournIssues, text: 'body', kind: 'todo' },
 	plan: { collection: Collections.JournPlans, text: 'goal' },
 }
 
@@ -74,15 +72,19 @@ export const createSearchAdapter = (): SearchPort => {
 			const { data, error } = await tryCatch(
 				Promise.all(
 					wanted.map(async kind => {
-						const { collection, text: textField } = sources[kind]
+						const { collection, text: textField, kind: rowKind } = sources[kind]
 						const { expr, params } = filterFor<SearchColumns>()([
 							{ field: 'title', comparator: 'contains', value: term },
 							{ field: textField, comparator: 'contains', value: term },
 						])
 
 						// Both clauses target the same term, so OR them rather than AND.
+						const matches = `(${expr.replace(' && ', ' || ')})`
+						// Issues and entries each hold several kinds in one collection.
+						const scoped = rowKind === undefined ? matches : `${matches} && kind = {:kind}`
+
 						const { items } = await client.collection(collection).getList<SearchableRecord>(1, limit, {
-							filter: client.filter(expr.replace(' && ', ' || '), params),
+							filter: client.filter(scoped, { ...params, kind: rowKind }),
 							expand: 'project',
 							sort: '-created',
 						})

@@ -132,15 +132,9 @@ func ensurePlans(app core.App) error {
 		return err
 	}
 
-	tickets, err := app.FindCollectionByNameOrId(ColTickets)
-	if err != nil {
-		return err
-	}
-
 	c := core.NewBaseCollection(ColPlans)
 	c.Fields.Add(
 		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
-		ticketField(tickets),
 		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
 		&core.TextField{Name: "goal", Max: 2000},
 		&core.SelectField{Name: "status", Required: true, MaxSelect: 1, Values: []string{"draft", "active", "done", "abandoned"}},
@@ -153,53 +147,7 @@ func ensurePlans(app core.App) error {
 	return app.Save(c)
 }
 
-func ensureTickets(app core.App) error {
-	if _, ok := find(app, ColTickets); ok {
-		return nil
-	}
-	projects, err := app.FindCollectionByNameOrId(ColProjects)
-	if err != nil {
-		return err
-	}
-	users, err := app.FindCollectionByNameOrId(ColUsers)
-	if err != nil {
-		return err
-	}
-
-	c := core.NewBaseCollection(ColTickets)
-	c.Fields.Add(
-		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
-		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
-		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
-		&core.EditorField{Name: "body", MaxSize: 500000},
-		&core.SelectField{Name: "status", Required: true, MaxSelect: 1, Values: []string{"open", "in_progress", "blocked", "closed", "cancelled"}},
-		&core.SelectField{Name: "priority", Required: true, MaxSelect: 1, Values: []string{"low", "medium", "high"}},
-		// The assignee is not cascade-deleted: losing the account should not
-		// take the ticket with it.
-		&core.RelationField{Name: "assignee", CollectionId: users.Id, CascadeDelete: false, MaxSelect: 1},
-		&core.JSONField{Name: "tags", MaxSize: 4000},
-		&core.TextField{Name: "external_ref", Max: 200},
-		&core.JSONField{Name: "depends_on", MaxSize: 4000},
-		&core.SelectField{Name: "wayfinder", MaxSelect: 1, Values: wayfinderValues},
-		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
-	)
-	c.Fields.Add(autodates()...)
-	// Slugs address a ticket within its project, so uniqueness is per project.
-	c.AddIndex("idx_journ_tickets_slug", true, "project, slug", "")
-	c.AddIndex("idx_journ_tickets_status", false, "project, status", "")
-	c.AddIndex("idx_journ_tickets_assignee", false, "assignee", "")
-
-	return app.Save(c)
-}
-
 var wayfinderValues = []string{"map", "research", "prototype", "grilling", "task"}
-
-// ticketField is the nullable back-reference every child collection carries.
-// Deleting a ticket detaches its children rather than destroying them, so the
-// relation must not cascade.
-func ticketField(tickets *core.Collection) *core.RelationField {
-	return &core.RelationField{Name: "ticket", CollectionId: tickets.Id, CascadeDelete: false, MaxSelect: 1}
-}
 
 func ensureIssues(app core.App) error {
 	if _, ok := find(app, ColIssues); ok {
@@ -277,107 +225,6 @@ func ensureIssueLinks(app core.App) error {
 	c.Fields.Add(autodates()...)
 	c.AddIndex("idx_journ_links_unique", true, "[[from]], [[to]], kind", "")
 	c.AddIndex("idx_journ_links_to", false, "[[to]], kind", "")
-
-	return app.Save(c)
-}
-
-func ensureTodos(app core.App) error {
-	if _, ok := find(app, ColTodos); ok {
-		return nil
-	}
-	projects, err := app.FindCollectionByNameOrId(ColProjects)
-	if err != nil {
-		return err
-	}
-	plans, err := app.FindCollectionByNameOrId(ColPlans)
-	if err != nil {
-		return err
-	}
-	users, err := app.FindCollectionByNameOrId(ColUsers)
-	if err != nil {
-		return err
-	}
-
-	tickets, err := app.FindCollectionByNameOrId(ColTickets)
-	if err != nil {
-		return err
-	}
-
-	c := core.NewBaseCollection(ColTodos)
-	c.Fields.Add(
-		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
-		ticketField(tickets),
-		// Deleting a plan detaches its todos rather than destroying them, so
-		// this relation must not cascade.
-		&core.RelationField{Name: "plan", CollectionId: plans.Id, CascadeDelete: false, MaxSelect: 1},
-		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
-		&core.TextField{Name: "details", Max: 2000},
-		&core.SelectField{Name: "status", Required: true, MaxSelect: 1, Values: []string{"pending", "in_progress", "done", "blocked", "cancelled"}},
-		&core.SelectField{Name: "priority", Required: true, MaxSelect: 1, Values: []string{"low", "medium", "high"}},
-		&core.JSONField{Name: "tags", MaxSize: 4000},
-		&core.NumberField{Name: "position"},
-		&core.JSONField{Name: "depends_on", MaxSize: 4000},
-		&core.DateField{Name: "due_date"},
-		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
-	)
-	c.Fields.Add(autodates()...)
-	c.AddIndex("idx_journ_todos_project", false, "project", "")
-	c.AddIndex("idx_journ_todos_plan", false, "plan", "")
-	c.AddIndex("idx_journ_todos_status", false, "project, status", "")
-
-	return app.Save(c)
-}
-
-func ensureJournal(app core.App) error {
-	if _, ok := find(app, ColJournal); ok {
-		return nil
-	}
-	projects, err := app.FindCollectionByNameOrId(ColProjects)
-	if err != nil {
-		return err
-	}
-	plans, err := app.FindCollectionByNameOrId(ColPlans)
-	if err != nil {
-		return err
-	}
-	todos, err := app.FindCollectionByNameOrId(ColTodos)
-	if err != nil {
-		return err
-	}
-	users, err := app.FindCollectionByNameOrId(ColUsers)
-	if err != nil {
-		return err
-	}
-
-	tickets, err := app.FindCollectionByNameOrId(ColTickets)
-	if err != nil {
-		return err
-	}
-
-	c := core.NewBaseCollection(ColJournal)
-	c.Fields.Add(
-		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
-		ticketField(tickets),
-		&core.RelationField{Name: "plan", CollectionId: plans.Id, CascadeDelete: false, MaxSelect: 1},
-		&core.RelationField{Name: "todo", CollectionId: todos.Id, CascadeDelete: false, MaxSelect: 1},
-		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
-		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
-		&core.EditorField{Name: "body", MaxSize: 500000},
-		&core.TextField{Name: "branch", Max: 200},
-		&core.TextField{Name: "pr", Max: 200},
-		&core.TextField{Name: "external_ref", Max: 200},
-		&core.JSONField{Name: "meta", MaxSize: 100000},
-		&core.JSONField{Name: "tags", MaxSize: 4000},
-		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
-	)
-	c.Fields.Add(autodates()...)
-	c.AddIndex("idx_journ_journal_project_created", false, "project, created", "")
-	c.AddIndex("idx_journ_journal_plan", false, "plan", "")
-	c.AddIndex("idx_journ_journal_todo", false, "todo", "")
-	c.AddIndex("idx_journ_journal_branch", false, "branch", "")
-	c.AddIndex("idx_journ_journal_ticket", false, "ticket", "")
-	c.AddIndex("idx_journ_journal_external_ref", false, "external_ref", "")
-	c.AddIndex("idx_journ_journal_slug", true, "project, slug", "")
 
 	return app.Save(c)
 }
@@ -520,7 +367,7 @@ func ensureCycles(app core.App) error {
 	if err != nil {
 		return err
 	}
-	tickets, err := app.FindCollectionByNameOrId(ColTickets)
+	issues, err := app.FindCollectionByNameOrId(ColIssues)
 	if err != nil {
 		return err
 	}
@@ -528,7 +375,7 @@ func ensureCycles(app core.App) error {
 	c := core.NewBaseCollection(ColCycles)
 	c.Fields.Add(
 		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
-		&core.RelationField{Name: "ticket", Required: true, CollectionId: tickets.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.RelationField{Name: "issue", Required: true, CollectionId: issues.Id, CascadeDelete: true, MaxSelect: 1},
 		&core.NumberField{Name: "ordinal", Required: true},
 		&core.SelectField{Name: "phase", Required: true, MaxSelect: 1, Values: []string{"plan", "do", "check", "act"}},
 		&core.TextField{Name: "resolution", Max: 2000},
@@ -536,128 +383,7 @@ func ensureCycles(app core.App) error {
 		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
 	)
 	c.Fields.Add(autodates()...)
-	c.AddIndex("idx_journ_cycles_ticket", false, "ticket, ordinal", "")
-
-	return app.Save(c)
-}
-
-func ensureWorkLogs(app core.App) error {
-	projects, err := app.FindCollectionByNameOrId(ColProjects)
-	if err != nil {
-		return err
-	}
-	users, err := app.FindCollectionByNameOrId(ColUsers)
-	if err != nil {
-		return err
-	}
-	tickets, err := app.FindCollectionByNameOrId(ColTickets)
-	if err != nil {
-		return err
-	}
-	plans, err := app.FindCollectionByNameOrId(ColPlans)
-	if err != nil {
-		return err
-	}
-	todos, err := app.FindCollectionByNameOrId(ColTodos)
-	if err != nil {
-		return err
-	}
-	cycles, err := app.FindCollectionByNameOrId(ColCycles)
-	if err != nil {
-		return err
-	}
-
-	projectField := func() *core.RelationField {
-		return &core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1}
-	}
-	bodyField := func() *core.EditorField {
-		return &core.EditorField{Name: "body", MaxSize: 500000}
-	}
-	authorField := func() *core.RelationField {
-		return &core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1}
-	}
-
-	if _, ok := find(app, ColTicketLogs); !ok {
-		c := core.NewBaseCollection(ColTicketLogs)
-		c.Fields.Add(
-			projectField(),
-			&core.RelationField{Name: "ticket", Required: true, CollectionId: tickets.Id, CascadeDelete: true, MaxSelect: 1},
-			&core.RelationField{Name: "cycle", CollectionId: cycles.Id, CascadeDelete: false, MaxSelect: 1},
-			bodyField(),
-			authorField(),
-		)
-		c.Fields.Add(autodates()...)
-		c.AddIndex("idx_journ_ticket_logs_ticket", false, "ticket, created", "")
-		c.AddIndex("idx_journ_ticket_logs_cycle", false, "cycle", "")
-		if err := app.Save(c); err != nil {
-			return err
-		}
-	}
-
-	if _, ok := find(app, ColPlanLogs); !ok {
-		c := core.NewBaseCollection(ColPlanLogs)
-		c.Fields.Add(
-			projectField(),
-			&core.RelationField{Name: "plan", Required: true, CollectionId: plans.Id, CascadeDelete: true, MaxSelect: 1},
-			bodyField(),
-			authorField(),
-		)
-		c.Fields.Add(autodates()...)
-		c.AddIndex("idx_journ_plan_logs_plan", false, "plan, created", "")
-		if err := app.Save(c); err != nil {
-			return err
-		}
-	}
-
-	if _, ok := find(app, ColTodoLogs); !ok {
-		c := core.NewBaseCollection(ColTodoLogs)
-		c.Fields.Add(
-			projectField(),
-			&core.RelationField{Name: "todo", Required: true, CollectionId: todos.Id, CascadeDelete: true, MaxSelect: 1},
-			bodyField(),
-			authorField(),
-		)
-		c.Fields.Add(autodates()...)
-		c.AddIndex("idx_journ_todo_logs_todo", false, "todo, created", "")
-		if err := app.Save(c); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func ensureDocs(app core.App) error {
-	if _, ok := find(app, ColDocs); ok {
-		return nil
-	}
-	projects, err := app.FindCollectionByNameOrId(ColProjects)
-	if err != nil {
-		return err
-	}
-	users, err := app.FindCollectionByNameOrId(ColUsers)
-	if err != nil {
-		return err
-	}
-
-	tickets, err := app.FindCollectionByNameOrId(ColTickets)
-	if err != nil {
-		return err
-	}
-
-	c := core.NewBaseCollection(ColDocs)
-	c.Fields.Add(
-		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
-		ticketField(tickets),
-		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
-		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
-		&core.EditorField{Name: "body", MaxSize: 500000},
-		&core.JSONField{Name: "tags", MaxSize: 4000},
-		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
-	)
-	c.Fields.Add(autodates()...)
-	// Slugs address a doc within its project, so uniqueness is per project.
-	c.AddIndex("idx_journ_docs_slug", true, "project, slug", "")
+	c.AddIndex("idx_journ_cycles_issue", false, "issue, ordinal", "")
 
 	return app.Save(c)
 }
@@ -769,7 +495,7 @@ func applyRules(app core.App) error {
 		return err
 	}
 
-	for _, name := range []string{ColTickets, ColPlans, ColTodos, ColDocs, ColJournal, ColIssues, ColEntries, ColCycles, ColTicketLogs, ColPlanLogs, ColTodoLogs} {
+	for _, name := range []string{ColPlans, ColIssues, ColEntries, ColCycles} {
 		c, err := app.FindCollectionByNameOrId(name)
 		if err != nil {
 			return err

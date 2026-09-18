@@ -109,12 +109,13 @@ func setup(t *testing.T) scenario {
 		})
 	}
 
-	s.ticket = newRecord(t, app, pb.ColTickets, map[string]any{
-		"project": s.project.Id, "slug": "auth", "title": "Auth",
-		"status": "open", "priority": "high",
+	s.ticket = newRecord(t, app, pb.ColIssues, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "ticket",
+		"slug": "auth", "title": "Auth", "status": "open", "priority": "high",
 	})
-	s.entry = newRecord(t, app, pb.ColJournal, map[string]any{
-		"project": s.project.Id, "slug": "note", "title": "Note",
+	s.entry = newRecord(t, app, pb.ColEntries, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "journal",
+		"slug": "note", "title": "Note",
 	})
 
 	return s
@@ -145,8 +146,8 @@ func TestMemberCanReadProjectContent(t *testing.T) {
 		record *core.Record
 	}{
 		{"project", s.project},
-		{"ticket", s.ticket},
-		{"journal", s.entry},
+		{"issue", s.ticket},
+		{"entry", s.entry},
 		{"domain", s.domain},
 		{"client", s.client},
 	} {
