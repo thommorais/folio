@@ -4,10 +4,7 @@ import type { Issue, IssueId, LinkKind } from '_/core/domain/issue'
 export const NODE = {
 	width: 200,
 	height: 56,
-	// Wide enough to clear the tapering outlines, which are drawn past the
-	// box's edge so their middle is still full width. The widest of those on a
-	// shared rank overhangs by half the node height each side.
-	gapX: 64,
+	gapX: 32,
 	gapY: 52,
 } as const
 

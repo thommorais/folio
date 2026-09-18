@@ -14,9 +14,6 @@ type Props = {
 	readonly issues: readonly Issue[]
 }
 
-// The most a shape is drawn past its box, which is a diamond's half width.
-const OUTLINE_MARGIN = NODE.width / 2
-
 // An edge bends once, halfway down the gap between the ranks, so a run of them
 // reads as a set of tracks rather than a fan of diagonals.
 const pathOf = (line: Line): string => {
@@ -59,11 +56,9 @@ const WayfinderGraph = ({ project, mapId, issues }: Props) => {
 
 	return (
 		<div className='-mx-1 overflow-x-auto px-1 pb-2'>
-			{/* The widened outlines are drawn past their boxes, so the canvas is
-			    opened up on both sides or the outermost ones would be cut off. */}
 			<svg
-				viewBox={`${-OUTLINE_MARGIN} 0 ${width + OUTLINE_MARGIN * 2} ${height}`}
-				width={width + OUTLINE_MARGIN * 2}
+				viewBox={`0 0 ${width} ${height}`}
+				width={width}
 				height={height}
 				className='text-foreground max-w-none'
 				role='img'
@@ -115,8 +110,8 @@ const WayfinderGraph = ({ project, mapId, issues }: Props) => {
 			</svg>
 
 			<p className='text-dimmer mt-2 text-xs'>
-				Shape is the wayfinder type, fill is the status. An arrow points from a blocker to what it holds up; a dotted
-				line is a relation. Hover a node to see only what it touches.
+				Fill is the status: hatched is blocked, dashed is cancelled. An arrow points from a blocker to what it holds up;
+				a dotted line is a relation. Hover a node to see only what it touches.
 			</p>
 		</div>
 	)
