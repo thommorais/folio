@@ -9,6 +9,7 @@ import { tryCatch } from '_/lib/try-catch'
 import { Collections, type JournCyclesResponse } from '_/pocketbase-types'
 import type { ActionEvent } from '_/types'
 import { getPocketBaseClient } from './client'
+import { keyed } from './request-key'
 import { filterFor } from './filter-builder'
 import { paginate } from './paginate'
 
@@ -49,10 +50,14 @@ export const createCyclesAdapter = (): CyclesPort => {
 			const { expr, params } = columns(project, filter)
 
 			const { data, error } = await tryCatch(
-				paginate<CycleRecord>(collection, filter, {
-					filter: client.filter(expr, params),
-					sort: 'ordinal',
-				}),
+				paginate<CycleRecord>(
+					collection,
+					filter,
+					keyed('cycles.list', {
+						filter: client.filter(expr, params),
+						sort: 'ordinal',
+					}),
+				),
 			)
 
 			return error ? err(new Error(`Failed to list cycles: ${error.message}`, { cause: error })) : ok(data.map(toCycle))

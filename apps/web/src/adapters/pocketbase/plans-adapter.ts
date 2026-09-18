@@ -10,6 +10,7 @@ import { tryCatch } from '_/lib/try-catch'
 import { Collections, type JournPlansResponse } from '_/pocketbase-types'
 import type { ActionEvent } from '_/types'
 import { getPocketBaseClient } from './client'
+import { keyed } from './request-key'
 import { subscribeToRecord as subscribe } from './subscribe-to-record'
 import { filterFor } from './filter-builder'
 import { countRows } from './count-rows'
@@ -61,7 +62,9 @@ export const createPlansAdapter = (): PlansPort => {
 		count: async (project, filter = {}): Promise<Result<number>> => {
 			const { expr, params } = columns(project, filter)
 
-			const { data, error } = await tryCatch(countRows(collection, { filter: client.filter(expr, params) }))
+			const { data, error } = await tryCatch(
+				countRows(collection, keyed('plans.count', { filter: client.filter(expr, params) })),
+			)
 
 			return error ? err(new Error(`Failed to count plans: ${error.message}`, { cause: error })) : ok(data)
 		},
@@ -72,7 +75,9 @@ export const createPlansAdapter = (): PlansPort => {
 				{ field: 'id', comparator: 'eq', value: id },
 			])
 
-			const { data, error } = await tryCatch(collection.getFirstListItem<PlanRecord>(client.filter(expr, params)))
+			const { data, error } = await tryCatch(
+				collection.getFirstListItem<PlanRecord>(client.filter(expr, params), keyed('plans.get', {})),
+			)
 
 			return error ? err(new Error(`Failed to load plan ${id}: ${error.message}`, { cause: error })) : ok(toPlan(data))
 		},
@@ -81,10 +86,14 @@ export const createPlansAdapter = (): PlansPort => {
 			const { expr, params } = columns(project, filter)
 
 			const { data, error } = await tryCatch(
-				paginate<PlanRecord>(collection, filter, {
-					filter: client.filter(expr, params),
-					sort: sortExpr(filter.sort, '-created'),
-				}),
+				paginate<PlanRecord>(
+					collection,
+					filter,
+					keyed('plans.list', {
+						filter: client.filter(expr, params),
+						sort: sortExpr(filter.sort, '-created'),
+					}),
+				),
 			)
 
 			return error ? err(new Error(`Failed to list plans: ${error.message}`, { cause: error })) : ok(data.map(toPlan))

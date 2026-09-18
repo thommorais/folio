@@ -15,6 +15,7 @@ import {
 	type UsersResponse,
 } from '_/pocketbase-types'
 import { getPocketBaseClient } from './client'
+import { keyed } from './request-key'
 import { filterFor } from './filter-builder'
 import { paginate } from './paginate'
 
@@ -70,11 +71,15 @@ export const createDomainsAdapter = (): DomainsPort => {
 			const { expr, params } = columns(filter)
 
 			const { data, error } = await tryCatch(
-				paginate<DomainRecord>(domains(), filter, {
-					filter: client.filter(expr, params),
-					expand: MEMBER_EXPAND,
-					sort: 'name',
-				}),
+				paginate<DomainRecord>(
+					domains(),
+					filter,
+					keyed('domains.list', {
+						filter: client.filter(expr, params),
+						expand: MEMBER_EXPAND,
+						sort: 'name',
+					}),
+				),
 			)
 
 			return error
@@ -89,7 +94,10 @@ export const createDomainsAdapter = (): DomainsPort => {
 			])
 
 			const { data, error } = await tryCatch(
-				domains().getFirstListItem<DomainRecord>(client.filter(expr, params), { expand: MEMBER_EXPAND }),
+				domains().getFirstListItem<DomainRecord>(
+					client.filter(expr, params),
+					keyed('domains.get', { expand: MEMBER_EXPAND }),
+				),
 			)
 
 			return error

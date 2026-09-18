@@ -7,6 +7,7 @@ import { err, ok, type Result } from '_/lib/result'
 import { tryCatch } from '_/lib/try-catch'
 import { Collections, type JournClientsResponse } from '_/pocketbase-types'
 import { getPocketBaseClient } from './client'
+import { keyed } from './request-key'
 import { filterFor } from './filter-builder'
 import { paginate } from './paginate'
 
@@ -42,10 +43,14 @@ export const createClientsAdapter = (): ClientsPort => {
 			const { expr, params } = columns(filter)
 
 			const { data, error } = await tryCatch(
-				paginate<JournClientsResponse>(clients(), filter, {
-					filter: client.filter(expr, params),
-					sort: 'name',
-				}),
+				paginate<JournClientsResponse>(
+					clients(),
+					filter,
+					keyed('clients.list', {
+						filter: client.filter(expr, params),
+						sort: 'name',
+					}),
+				),
 			)
 
 			return error
@@ -57,7 +62,7 @@ export const createClientsAdapter = (): ClientsPort => {
 			const { expr, params } = filterFor<ClientColumns>()([{ field: 'slug', comparator: 'eq', value: ref }])
 
 			const { data, error } = await tryCatch(
-				clients().getFirstListItem<JournClientsResponse>(client.filter(expr, params)),
+				clients().getFirstListItem<JournClientsResponse>(client.filter(expr, params), keyed('clients.get', {})),
 			)
 
 			return error

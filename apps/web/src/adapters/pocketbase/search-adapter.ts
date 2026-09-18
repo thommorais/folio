@@ -10,6 +10,7 @@ import {
 	type JournProjectsResponse,
 } from '_/pocketbase-types'
 import { getPocketBaseClient } from './client'
+import { keyed } from './request-key'
 import { filterFor } from './filter-builder'
 
 const DEFAULT_LIMIT = 20
@@ -94,11 +95,15 @@ export const createSearchAdapter = (): SearchPort => {
 						// Issues and entries each hold several kinds in one collection.
 						const scoped = rowKind === undefined ? matches : `${matches} && kind = {:kind}`
 
-						const { items } = await client.collection(collection).getList<SearchableRecord>(1, limit, {
-							filter: client.filter(scoped, { ...params, kind: rowKind }),
-							expand: 'project.domain.client',
-							sort: '-created',
-						})
+						const { items } = await client.collection(collection).getList<SearchableRecord>(
+							1,
+							limit,
+							keyed(`search.${kind}`, {
+								filter: client.filter(scoped, { ...params, kind: rowKind }),
+								expand: 'project.domain.client',
+								sort: '-created',
+							}),
+						)
 
 						return items.map(record => toHit(kind, textField, record))
 					}),

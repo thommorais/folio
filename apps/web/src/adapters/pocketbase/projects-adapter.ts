@@ -8,6 +8,7 @@ import { err, ok, type Result } from '_/lib/result'
 import { tryCatch } from '_/lib/try-catch'
 import { Collections, type JournProjectsResponse } from '_/pocketbase-types'
 import { getPocketBaseClient } from './client'
+import { keyed } from './request-key'
 import { filterFor } from './filter-builder'
 import { paginate } from './paginate'
 
@@ -52,10 +53,14 @@ export const createProjectsAdapter = (): ProjectsPort => {
 			const { expr, params } = columns(filter)
 
 			const { data, error } = await tryCatch(
-				paginate<ProjectRecord>(projects(), filter, {
-					filter: client.filter(expr, params),
-					sort: 'name',
-				}),
+				paginate<ProjectRecord>(
+					projects(),
+					filter,
+					keyed('projects.list', {
+						filter: client.filter(expr, params),
+						sort: 'name',
+					}),
+				),
 			)
 
 			return error
@@ -66,7 +71,9 @@ export const createProjectsAdapter = (): ProjectsPort => {
 		get: async (ref: string): Promise<Result<Project>> => {
 			const { expr, params } = filterFor<ProjectColumns>()([{ field: 'slug', comparator: 'eq', value: ref }])
 
-			const { data, error } = await tryCatch(projects().getFirstListItem<ProjectRecord>(client.filter(expr, params)))
+			const { data, error } = await tryCatch(
+				projects().getFirstListItem<ProjectRecord>(client.filter(expr, params), keyed('projects.get', {})),
+			)
 
 			return error
 				? err(new Error(`Failed to load project ${ref}: ${error.message}`, { cause: error }))

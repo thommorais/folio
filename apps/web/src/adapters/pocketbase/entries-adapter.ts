@@ -12,6 +12,7 @@ import { tryCatch } from '_/lib/try-catch'
 import { Collections, type JournEntriesResponse } from '_/pocketbase-types'
 import type { ActionEvent } from '_/types'
 import { getPocketBaseClient } from './client'
+import { keyed } from './request-key'
 import { subscribeToRecord as subscribe } from './subscribe-to-record'
 import { countRows } from './count-rows'
 import { filterFor } from './filter-builder'
@@ -99,7 +100,9 @@ export const createEntriesAdapter = (): EntriesPort => {
 		count: async (project, filter = {}): Promise<Result<number>> => {
 			const { expr, params } = columns(project, filter)
 
-			const { data, error } = await tryCatch(countRows(collection(), { filter: client.filter(expr, params) }))
+			const { data, error } = await tryCatch(
+				countRows(collection(), keyed('entries.count', { filter: client.filter(expr, params) })),
+			)
 
 			return error ? err(new Error(`Failed to count entries: ${error.message}`, { cause: error })) : ok(data)
 		},
@@ -108,10 +111,14 @@ export const createEntriesAdapter = (): EntriesPort => {
 			const { expr, params } = columns(project, filter)
 
 			const { data, error } = await tryCatch(
-				paginate<EntryRecord>(collection(), filter, {
-					filter: client.filter(expr, params),
-					sort: sortExpr(filter.sort, '-created'),
-				}),
+				paginate<EntryRecord>(
+					collection(),
+					filter,
+					keyed('entries.list', {
+						filter: client.filter(expr, params),
+						sort: sortExpr(filter.sort, '-created'),
+					}),
+				),
 			)
 			if (error) return err(new Error(`Failed to list entries: ${error.message}`, { cause: error }))
 
@@ -129,7 +136,9 @@ export const createEntriesAdapter = (): EntriesPort => {
 				{ field: 'slug', comparator: 'eq', value: slug },
 			])
 
-			const { data, error } = await tryCatch(collection().getFirstListItem<EntryRecord>(client.filter(expr, params)))
+			const { data, error } = await tryCatch(
+				collection().getFirstListItem<EntryRecord>(client.filter(expr, params), keyed('entries.get', {})),
+			)
 			if (error) return err(new Error(`Failed to load entry ${slug}: ${error.message}`, { cause: error }))
 
 			const hydrated = await tryCatch(withTagsOne(toEntry(data)))
@@ -142,7 +151,7 @@ export const createEntriesAdapter = (): EntriesPort => {
 			const { expr, params } = filterFor<EntryColumns>()([{ field: 'project.slug', comparator: 'eq', value: project }])
 
 			const { data, error } = await tryCatch(
-				collection().getOne<EntryRecord>(id, { filter: client.filter(expr, params) }),
+				collection().getOne<EntryRecord>(id, keyed(`entries.getById.${id}`, { filter: client.filter(expr, params) })),
 			)
 			if (error) return err(new Error(`Failed to load entry ${id}: ${error.message}`, { cause: error }))
 
