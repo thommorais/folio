@@ -58,6 +58,9 @@ func workLogListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List the work log of one ticket, plan or todo",
+		Example: `  folio worklog list --ticket $ID
+  folio worklog list --ticket $ID --cycle $CYCLE_ID
+  folio worklog list --plan $ID --json`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			kind, id, err := target.resolve()
 			if err != nil {
@@ -114,11 +117,18 @@ func workLogWriteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "write <body>",
 		Short: "Add an entry, with - to read from stdin",
-		Args:  cobra.MaximumNArgs(1),
+		Example: `  folio worklog write "Mapbox rejects feature-state in a filter" --ticket $ID
+  folio worklog write - --plan $ID <<'EOF'
+  Longer note from stdin.
+  EOF`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			kind, id, err := target.resolve()
 			if err != nil {
 				return err
+			}
+			if len(args) == 1 && body != "" {
+				return errors.New("pass the body as an argument or with --body, not both")
 			}
 			text := body
 			if len(args) == 1 {
@@ -168,10 +178,11 @@ func workLogWriteCommand() *cobra.Command {
 	return cmd
 }
 
+// The entry id identifies the entry on its own, so this takes none of the
+// target flags the other subcommands need: offering them would advertise a
+// filter that the delete does not apply.
 func workLogDeleteCommand() *cobra.Command {
-	var target workLogTarget
-
-	cmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "delete <id>",
 		Short: "Delete a work log entry",
 		Args:  cobra.ExactArgs(1),
@@ -180,13 +191,15 @@ func workLogDeleteCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return folio.DeleteWorkLog(args[0])
+			if err := folio.DeleteWorkLog(args[0]); err != nil {
+				return err
+			}
+			if !flagJSON {
+				fmt.Println("deleted " + args[0])
+			}
+			return nil
 		},
 	}
-
-	target.register(cmd)
-
-	return cmd
 }
 
 func firstLine(body string) string {

@@ -118,7 +118,9 @@ func todoCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create <title>",
 		Short: "Create a todo",
-		Args:  cobra.ExactArgs(1),
+		Example: `  folio todo create "Add the hamburger" --ticket $ID --tags frontend,bug
+  folio todo create "Backfill the index" --plan $ID --size 2 --tags db,chore`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			project, err := resolveProject()
 			if err != nil {
