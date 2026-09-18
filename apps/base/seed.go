@@ -57,6 +57,7 @@ func newSeedCommand(app *pocketbase.PocketBase) *cobra.Command {
 				Plans:    useCases.Plans,
 				Issues:   useCases.Issues,
 				Entries:  useCases.Entries,
+				Cycles:   useCases.Cycles,
 			}, ports.Actor{UserID: domain.UserID(user.Id), Email: user.Email()})
 			if err != nil {
 				return err

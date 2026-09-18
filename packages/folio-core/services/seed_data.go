@@ -15,6 +15,42 @@ type seedSpec struct {
 	// done advances the first todos of plan i to the given statuses, so the
 	// demo shows plans in progress rather than every one at 0%.
 	done [][]domain.IssueStatus
+	// wayfinder is a map ticket and the decisions under it. Parents and
+	// blockers are named by key rather than id, since ids only exist once the
+	// seed has written the records.
+	wayfinder *wayfinderSpec
+}
+
+// wayfinderSpec describes a map and its children as a graph. Keys are local to
+// the spec and resolve to issue ids as each node is written, so a child can
+// name a blocker declared above it.
+type wayfinderSpec struct {
+	root  wayfinderNode
+	nodes []wayfinderNode
+}
+
+type wayfinderNode struct {
+	key       string
+	parent    string
+	dependsOn []string
+	relatedTo []string
+	issue     ports.CreateIssueInput
+	// cycles are PDCA rounds on this ticket, oldest first. Every cycle but the
+	// last must carry a resolution, since a new one cannot open over an
+	// unresolved round.
+	cycles []cycleSpec
+	// todos are steps filed directly under this ticket rather than under a
+	// plan, which is how work on a map ticket usually accumulates.
+	todos []ports.CreateIssueInput
+}
+
+type cycleSpec struct {
+	// phase is where the round stopped; the seed advances one step at a time
+	// to reach it, the way the API requires.
+	phase      domain.Phase
+	resolution string
+	// logs are work log entries stamped with this cycle.
+	logs []ports.WriteEntryInput
 }
 
 // seedProjects is the demo dataset: two projects mid-flight, written the way
@@ -161,6 +197,213 @@ the decisions behind it, and where the work currently stands. So:
 
 Dates stay server-assigned: a log is only useful read chronologically if
 the timestamps are trustworthy.`,
+				},
+			},
+			wayfinder: &wayfinderSpec{
+				root: wayfinderNode{
+					key: "map",
+					issue: ports.CreateIssueInput{
+						Slug:      "make-the-work-legible",
+						Title:     "Make the work legible",
+						Status:    domain.IssueInProgress,
+						Priority:  domain.PriorityHigh,
+						Wayfinder: domain.WayfinderMap,
+						Tags:      []string{"design", "web"},
+						Body: `Tickets carry a wayfinder type, a parent, blockers and PDCA cycles, and
+none of it shows anywhere. The lists render a flat badge, so the shape of
+the work and what is actually takeable right now are invisible.
+
+This map holds the decisions that get us to a view worth looking at.`,
+					},
+					todos: []ports.CreateIssueInput{
+						{
+							Title:    "Rank the graph by longest path",
+							Status:   domain.IssueDone,
+							Priority: domain.PriorityHigh,
+							Size:     3,
+							Tags:     []string{"web", "frontend"},
+							Body:     `Parent and blocker links both push a node down, so an edge always points downwards.`,
+						},
+						{
+							Title:    "Order each rank by barycentre",
+							Status:   domain.IssueDone,
+							Priority: domain.PriorityMedium,
+							Size:     2,
+							Tags:     []string{"web", "frontend"},
+							Body:     `Without it the edges weave and the picture is unreadable past a dozen nodes.`,
+						},
+						{
+							Title:    "Give each wayfinder type its own node shape",
+							Status:   domain.IssueInProgress,
+							Priority: domain.PriorityHigh,
+							Size:     3,
+							Tags:     []string{"design", "frontend"},
+							Body: `Shape rather than colour, so the picture survives dark mode and
+colourblindness. Status is the fill.`,
+						},
+						{
+							Title:    "Dim everything off the hovered node's path",
+							Status:   domain.IssueOpen,
+							Priority: domain.PriorityMedium,
+							Size:     2,
+							Tags:     []string{"design", "frontend"},
+							Body:     `The one interaction that makes a dense graph answer "why can I not start this".`,
+						},
+						{
+							Title:    "Keep the grouped list as the fallback",
+							Status:   domain.IssueOpen,
+							Priority: domain.PriorityLow,
+							Size:     1,
+							Tags:     []string{"web", "chore"},
+							Body:     `A map with no blockers is a list, and a list reads better than a column of boxes.`,
+						},
+						{
+							Title:    "Make the graph keyboard navigable",
+							Status:   domain.IssueBlocked,
+							Priority: domain.PriorityMedium,
+							Size:     5,
+							Tags:     []string{"design", "frontend"},
+							Body:     `Blocked on the shapes landing: the focus ring has to follow the node outline.`,
+						},
+					},
+					cycles: []cycleSpec{
+						{
+							phase:      domain.PhaseAct,
+							resolution: "Shipped the flat list. Useful, but it hides the graph.",
+							logs: []ports.WriteEntryInput{
+								{Body: `First pass grouped the children by takeable / blocked / claimed / done.
+Better than nothing and it answers "what now", but it says nothing about
+why a thing is blocked or what it unblocks.`},
+								{Body: `Closing this round. The grouping stays as a fallback; the next round is
+about drawing the relations rather than listing them.`},
+							},
+						},
+						{
+							phase: domain.PhaseDo,
+							logs: []ports.WriteEntryInput{
+								{Body: `Ranking, edges and the subtree walk are pure functions in the domain now,
+tested without a renderer. Layout is longest-path over parent and blocker
+links, so an edge always points downwards.`},
+								{Body: `Kept the node shape carrying the wayfinder type rather than colour, so the
+picture survives dark mode and colourblindness. Status is the fill.`},
+							},
+						},
+					},
+				},
+				nodes: []wayfinderNode{
+					{
+						key:    "shape",
+						parent: "map",
+						issue: ports.CreateIssueInput{
+							Slug:      "decide-what-the-view-shows",
+							Title:     "Decide what the view shows",
+							Status:    domain.IssueDone,
+							Priority:  domain.PriorityHigh,
+							Wayfinder: domain.WayfinderGrilling,
+							Tags:      []string{"design", "decision"},
+							Body: `A tree, a board and a graph all fit the data. Pick one before anything
+gets drawn, because the layout code differs completely.`,
+						},
+						cycles: []cycleSpec{
+							{
+								phase:      domain.PhaseAct,
+								resolution: "A graph. The tree hides blockers, the board hides depth.",
+								logs: []ports.WriteEntryInput{
+									{Body: `Grilled the three options against one question: can you see, without
+clicking, why the thing you want to work on is not startable?
+
+Tree: no, a blocker is a sibling somewhere else. Board: no, depth is gone.
+Graph: yes, that is exactly what an edge is.`},
+								},
+							},
+						},
+					},
+					{
+						key:    "parser",
+						parent: "map",
+						issue: ports.CreateIssueInput{
+							Slug:      "how-dense-does-the-graph-get",
+							Title:     "How dense does the graph get",
+							Status:    domain.IssueInProgress,
+							Priority:  domain.PriorityMedium,
+							Wayfinder: domain.WayfinderResearch,
+							Tags:      []string{"design", "spike"},
+							Body: `A hand-rolled layout is fine for a map with a dozen children and useless
+at two hundred. Find where it stops being readable before committing to
+no layout library.`,
+						},
+						cycles: []cycleSpec{
+							{
+								phase: domain.PhaseCheck,
+								logs: []ports.WriteEntryInput{
+									{Body: `Generated maps at 10, 50 and 200 children. Up to ~40 the barycentre pass
+keeps edges nearly vertical. Past that the crossings win and it wants a
+proper Sugiyama ordering sweep.`},
+									{Body: `Real maps in this workspace top out around 12 children, so ~40 is headroom
+enough. Revisit only if someone builds a map that big.`},
+								},
+							},
+						},
+					},
+					{
+						key:       "rail",
+						parent:    "map",
+						dependsOn: []string{"shape"},
+						issue: ports.CreateIssueInput{
+							Slug:      "prototype-the-cycle-rail",
+							Title:     "Prototype the cycle rail",
+							Status:    domain.IssueOpen,
+							Priority:  domain.PriorityMedium,
+							Wayfinder: domain.WayfinderPrototype,
+							Tags:      []string{"design", "web"},
+							Body: `Four phases, several rounds, work logs hanging off each. Try it as a
+vertical rail before building it properly.`,
+						},
+					},
+					{
+						key:       "edges",
+						parent:    "map",
+						dependsOn: []string{"parser"},
+						relatedTo: []string{"rail"},
+						issue: ports.CreateIssueInput{
+							Slug:      "draw-the-edges",
+							Title:     "Draw the edges",
+							Status:    domain.IssueOpen,
+							Priority:  domain.PriorityHigh,
+							Wayfinder: domain.WayfinderTask,
+							Tags:      []string{"web", "frontend"},
+							Body: `Orthogonal SVG paths: parent solid, blocks arrowed, relates dotted.
+Hovering a node dims everything off its dependency path.`,
+						},
+					},
+					{
+						key:       "ship",
+						parent:    "map",
+						dependsOn: []string{"rail", "edges"},
+						issue: ports.CreateIssueInput{
+							Slug:      "ship-the-wayfinder-view",
+							Title:     "Ship the wayfinder view",
+							Status:    domain.IssueOpen,
+							Priority:  domain.PriorityMedium,
+							Wayfinder: domain.WayfinderTask,
+							Tags:      []string{"web", "release"},
+							Body: `Route, link from the ticket header, and keep the grouped list as the
+fallback for a map with no relations worth drawing.`,
+						},
+					},
+					{
+						key:    "abandoned",
+						parent: "map",
+						issue: ports.CreateIssueInput{
+							Slug:      "embed-a-graph-library",
+							Title:     "Embed a graph library",
+							Status:    domain.IssueCancelled,
+							Priority:  domain.PriorityLow,
+							Wayfinder: domain.WayfinderTask,
+							Tags:      []string{"web", "chore"},
+							Body:      `Dropped: the spike put the ceiling well above any map we actually build.`,
+						},
+					},
 				},
 			},
 			docs: []ports.WriteEntryInput{
