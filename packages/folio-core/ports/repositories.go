@@ -106,3 +106,14 @@ type ShareRepository interface {
 	Delete(ctx context.Context, id domain.ShareID) error
 	Touch(ctx context.Context, id domain.ShareID, at time.Time) error
 }
+
+// KnowledgeRepository stores notes that are not scoped to a project, so a
+// lookup by slug needs no project to disambiguate: the namespace is global.
+type KnowledgeRepository interface {
+	List(ctx context.Context, f domain.KnowledgeFilter) ([]domain.Knowledge, error)
+	GetByID(ctx context.Context, id domain.KnowledgeID) (domain.Knowledge, error)
+	GetBySlug(ctx context.Context, slug string) (domain.Knowledge, error)
+	Create(ctx context.Context, k domain.Knowledge) (domain.Knowledge, error)
+	Update(ctx context.Context, k domain.Knowledge) (domain.Knowledge, error)
+	Delete(ctx context.Context, id domain.KnowledgeID) error
+}

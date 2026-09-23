@@ -15,28 +15,31 @@ import (
 // Handler wires the folio use cases onto PocketBase's router. It depends only
 // on ports, so the same handler works against any adapter set.
 type Handler struct {
-	projects ports.ProjectUseCase
-	plans    ports.PlanUseCase
-	issues   ports.IssueUseCase
-	entries  ports.EntryUseCase
-	cycles   ports.CycleUseCase
-	search   ports.SearchUseCase
-	shares   ports.ShareUseCase
+	projects  ports.ProjectUseCase
+	plans     ports.PlanUseCase
+	issues    ports.IssueUseCase
+	entries   ports.EntryUseCase
+	cycles    ports.CycleUseCase
+	search    ports.SearchUseCase
+	knowledge ports.KnowledgeUseCase
+	shares    ports.ShareUseCase
 }
 
 type Deps struct {
-	Projects ports.ProjectUseCase
-	Plans    ports.PlanUseCase
-	Issues   ports.IssueUseCase
-	Entries  ports.EntryUseCase
-	Cycles   ports.CycleUseCase
-	Search   ports.SearchUseCase
-	Shares   ports.ShareUseCase
+	Projects  ports.ProjectUseCase
+	Plans     ports.PlanUseCase
+	Issues    ports.IssueUseCase
+	Entries   ports.EntryUseCase
+	Cycles    ports.CycleUseCase
+	Knowledge ports.KnowledgeUseCase
+	Search    ports.SearchUseCase
+	Shares    ports.ShareUseCase
 }
 
 func New(d Deps) *Handler {
 	return &Handler{
-		projects: d.Projects, plans: d.Plans, issues: d.Issues, entries: d.Entries, cycles: d.Cycles, search: d.Search, shares: d.Shares,
+		projects: d.Projects, plans: d.Plans, issues: d.Issues, entries: d.Entries, cycles: d.Cycles, search: d.Search,
+		knowledge: d.Knowledge, shares: d.Shares,
 	}
 }
 
@@ -96,6 +99,13 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.PATCH("/entries/{entry}", h.updateEntry)
 	g.POST("/entries/{entry}/append", h.appendEntry)
 	g.DELETE("/entries/{entry}", h.deleteEntry)
+
+	// No project segment: knowledge is not scoped to one.
+	g.GET("/knowledge", h.listKnowledge)
+	g.POST("/knowledge", h.createKnowledge)
+	g.GET("/knowledge/{knowledge}", h.getKnowledge)
+	g.PATCH("/knowledge/{knowledge}", h.updateKnowledge)
+	g.DELETE("/knowledge/{knowledge}", h.deleteKnowledge)
 
 	g.GET("/projects/{project}/search", h.searchProject)
 	g.GET("/search", h.searchAll)

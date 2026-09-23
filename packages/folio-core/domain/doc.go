@@ -39,6 +39,9 @@ const (
 	SearchKindTicket  SearchKind = "ticket"
 	SearchKindWorkLog SearchKind = "worklog"
 	SearchKindCycle   SearchKind = "resolution"
+	// SearchKindKnowledge is the one kind not fenced by a project: a note
+	// answers any caller's search.
+	SearchKindKnowledge SearchKind = "knowledge"
 )
 
 // SearchHit is one result of a cross-collection search, flattened so a client

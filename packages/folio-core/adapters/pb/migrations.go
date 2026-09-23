@@ -55,6 +55,9 @@ func Register(app core.App) error {
 	if err := ensureEntries(app); err != nil {
 		return fmt.Errorf("entries: %w", err)
 	}
+	if err := ensureKnowledge(app); err != nil {
+		return fmt.Errorf("knowledge: %w", err)
+	}
 	if err := ensureTags(app); err != nil {
 		return fmt.Errorf("tags: %w", err)
 	}

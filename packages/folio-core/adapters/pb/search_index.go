@@ -30,6 +30,7 @@ const indexColumns = `(
 	rec_id UNINDEXED,
 	slug UNINDEXED,
 	project UNINDEXED,
+	scope UNINDEXED,
 	tags UNINDEXED,
 	created UNINDEXED,
 	title,
@@ -59,6 +60,13 @@ type indexed struct {
 	// Where is an extra predicate, in the same `{a}` form, that a row must
 	// satisfy to be indexed at all.
 	Where string
+	// Scope is 'project' when a row is only visible to the project's members
+	// and 'global' when it is visible to every signed-in user. It is what
+	// lets one index serve both, since knowledge has no roster to check.
+	Scope string
+	// Project is the SQL for the row's project, which knowledge leaves
+	// optional and therefore may produce an empty string.
+	Project string
 	// TagTarget names which join table carries this collection's tags, when
 	// one does. Tags are written after the record itself and never touch its
 	// row, so the record's own triggers cannot see them: the join table needs
@@ -92,6 +100,23 @@ func (s indexed) tagsExpr() string {
 	return noTags
 }
 
+// scopeExpr defaults a source to project scope, which is what every
+// collection but knowledge is.
+func (s indexed) scopeExpr() string {
+	if s.Scope != "" {
+		return "'" + s.Scope + "'"
+	}
+	return "'" + scopeProject + "'"
+}
+
+// projectExpr defaults to the row's own project column.
+func (s indexed) projectExpr() string {
+	if s.Project != "" {
+		return s.Project
+	}
+	return "{a}.project"
+}
+
 // expand resolves the `{a}` alias in a fragment.
 func expand(fragment, alias string) string {
 	return strings.ReplaceAll(fragment, "{a}", alias)
@@ -100,6 +125,11 @@ func expand(fragment, alias string) string {
 const (
 	noSlug = "''"
 	noTags = "'[]'"
+
+	// scopeProject is fenced by membership; scopeGlobal is readable by every
+	// signed-in user and therefore ignores the project filter entirely.
+	scopeProject = "project"
+	scopeGlobal  = "global"
 )
 
 // sources is the whole searchable surface. Adding a kind here gives it an
@@ -144,6 +174,20 @@ var sources = []indexed{
 		Tags:  noTags,
 		// A cycle is only searchable once it has closed with a resolution.
 		Where: `{a}.resolution != ''`,
+	},
+	{
+		Collection: ColKnowledge,
+		Kind:       `'knowledge'`,
+		Title:      `{a}.title`,
+		Body:       `{a}.body`,
+		Slug:       `{a}.slug`,
+		// The one global source: a note is readable by every signed-in user,
+		// so it must answer a search whether or not it names a project, and
+		// whichever project the caller happens to be scoped to.
+		Scope: scopeGlobal,
+		// Written by the knowledge repository, unlike the same-named column
+		// on entries and issues, so the index can read it directly.
+		Tags: `COALESCE({a}.tags, '[]')`,
 	},
 }
 
@@ -193,16 +237,17 @@ func ensureSearchIndex(app core.App) error {
 
 // indexColumnList is the insert target, shared by the triggers and the
 // backfill so the two cannot drift apart.
-const indexColumnList = "source, kind, rec_id, slug, project, tags, created, title, body"
+const indexColumnList = "source, kind, rec_id, slug, project, scope, tags, created, title, body"
 
 // selectFor builds the SELECT that produces one index row from a source row.
 func (s indexed) selectFor(alias string) string {
-	return fmt.Sprintf(`SELECT '%s', %s, %s.id, %s, %s.project, %s, %s.created, %s, %s`,
+	return fmt.Sprintf(`SELECT '%s', %s, %s.id, %s, %s, %s, %s, %s.created, %s, %s`,
 		s.Collection,
 		expand(s.Kind, alias),
 		alias,
 		expand(s.Slug, alias),
-		alias,
+		expand(s.projectExpr(), alias),
+		s.scopeExpr(),
 		expand(s.tagsExpr(), alias),
 		alias,
 		expand(s.Title, alias),

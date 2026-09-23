@@ -585,5 +585,65 @@ func applyRules(app core.App) error {
 		}
 	}
 
+	// Knowledge is the deliberate exception to every rule above: signed in is
+	// the whole test. The rest of folio hides a record from a non-member, and
+	// hides even its existence; a knowledge note is meant to be found by
+	// anyone who might need it, so it is not scoped to a roster at all.
+	knowledge, err := app.FindCollectionByNameOrId(ColKnowledge)
+	if err != nil {
+		return err
+	}
+	signedIn := "@request.auth.id != ''"
+	knowledge.ListRule = strPtr(signedIn)
+	knowledge.ViewRule = strPtr(signedIn)
+	knowledge.CreateRule = strPtr(signedIn)
+	knowledge.UpdateRule = strPtr(signedIn)
+	knowledge.DeleteRule = strPtr(signedIn)
+	if err := app.Save(knowledge); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// ensureKnowledge creates the knowledge base. It is the one collection with no
+// domain: a note here is readable and writable by every authenticated user, so
+// there is no roster to hang it off.
+//
+// Tags are a JSON column rather than rows in journ_tags, because a tag there
+// belongs to a domain and knowledge belongs to none. The column is written by
+// the knowledge repository, which is what makes it safe for the search index
+// to read, unlike the identically named dead column on journ_entries.
+func ensureKnowledge(app core.App) error {
+	if _, ok := find(app, ColKnowledge); ok {
+		return nil
+	}
+	projects, err := app.FindCollectionByNameOrId(ColProjects)
+	if err != nil {
+		return err
+	}
+	users, err := app.FindCollectionByNameOrId(ColUsers)
+	if err != nil {
+		return err
+	}
+
+	c := core.NewBaseCollection(ColKnowledge)
+	c.Fields.Add(
+		// Optional, and deliberately not cascading: a note outlives the
+		// project it was learned on, so deleting one detaches rather than
+		// destroys, the way deleting a ticket detaches its contents.
+		&core.RelationField{Name: "project", CollectionId: projects.Id, CascadeDelete: false, MaxSelect: 1},
+		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
+		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
+		&core.EditorField{Name: "body", MaxSize: 500000},
+		&core.JSONField{Name: "tags", MaxSize: 4000},
+		&core.RelationField{Name: "created_by", Required: true, CollectionId: users.Id, MaxSelect: 1},
+	)
+	c.Fields.Add(autodates()...)
+	// The slug namespace is global, not per project: there is no project to
+	// scope it by, and `folio kb get <slug>` has to resolve without one.
+	c.AddIndex("idx_journ_knowledge_slug", true, "slug", "")
+	c.AddIndex("idx_journ_knowledge_project", false, "project", "")
+
+	return app.Save(c)
 }

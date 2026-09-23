@@ -14,23 +14,23 @@ import (
 func searchCommand() *cobra.Command {
 	var query client.SearchQuery
 	var kinds, tags string
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "search [term]",
-		Short: "Search a project's journal, docs, todos and plans",
-		Long: `Search across all four kinds at once, newest first, each hit carrying a
-snippet so it is judgeable without a second call.
+		Short: "Search tickets, todos, plans, docs, journal, work logs and knowledge",
+		Long: `Search every kind at once, ranked by relevance, each hit carrying a snippet
+so it is judgeable without a second call.
+
+Knowledge is not scoped to a project, so it answers from wherever you are.
 
   folio search fts5
   folio search rules --kind journal,doc
+  folio search railway --kind knowledge
   folio search --tags decision
-  folio search "index strategy" --limit 5 --json`,
+  folio search "index strategy" --all --limit 5 --json`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
-			project, err := resolveProject()
-			if err != nil {
-				return err
-			}
 			if len(args) == 1 {
 				query.Text = args[0]
 			}
@@ -46,7 +46,21 @@ snippet so it is judgeable without a second call.
 				return err
 			}
 
-			hits, err := folio.Search(project, query)
+			// --all ranks one result set over every project the caller can
+			// read; per-project queries could not be compared, since bm25
+			// scores are only meaningful within a single query.
+			search := func() ([]client.SearchHit, error) {
+				if all {
+					return folio.SearchAll(query)
+				}
+				project, err := resolveProject()
+				if err != nil {
+					return nil, err
+				}
+				return folio.Search(project, query)
+			}
+
+			hits, err := search()
 			if err != nil {
 				return err
 			}
@@ -56,7 +70,8 @@ snippet so it is judgeable without a second call.
 	}
 
 	cmd.PersistentFlags().StringVarP(&flagProject, "project", "p", "", "project id or slug")
-	cmd.Flags().StringVar(&kinds, "kind", "", "comma separated: journal,doc,todo,plan")
+	cmd.Flags().BoolVar(&all, "all", false, "search every project you can read, not just the current one")
+	cmd.Flags().StringVar(&kinds, "kind", "", "comma separated: ticket,todo,plan,doc,journal,worklog,resolution,knowledge")
 	cmd.Flags().StringVar(&tags, "tags", "", "comma separated tags")
 	registerTagCompletion(cmd)
 	cmd.Flags().IntVar(&query.Limit, "limit", 0, "maximum hits")
@@ -76,8 +91,30 @@ func renderHits(hits []client.SearchHit) error {
 	}
 
 	out := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
-	fmt.Fprintln(out, "KIND\tID\tTITLE")
+	// The project column earns its place only when a result can span more
+	// than one, which is what --all does.
+	spansProjects := false
 	for _, hit := range hits {
+		if hit.ProjectSlug != hits[0].ProjectSlug {
+			spansProjects = true
+			break
+		}
+	}
+
+	if spansProjects {
+		fmt.Fprintln(out, "KIND\tPROJECT\tID\tTITLE")
+	} else {
+		fmt.Fprintln(out, "KIND\tID\tTITLE")
+	}
+	for _, hit := range hits {
+		if spansProjects {
+			project := hit.ProjectSlug
+			if project == "" {
+				project = "-"
+			}
+			fmt.Fprintf(out, "%s\t%s\t%s\t%s\n", hit.Kind, project, hit.ID, oneLine(hit.Title))
+			continue
+		}
 		fmt.Fprintf(out, "%s\t%s\t%s\n", hit.Kind, hit.ID, oneLine(hit.Title))
 	}
 	if err := out.Flush(); err != nil {

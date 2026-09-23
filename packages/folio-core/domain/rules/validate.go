@@ -162,3 +162,20 @@ func Slugify(title string) string {
 	}
 	return s
 }
+
+// ValidateKnowledge checks a knowledge note. There is no project check: the
+// relation is optional, and an absent one is the normal case.
+func ValidateKnowledge(k domain.Knowledge) error {
+	if err := ValidateSlug("slug", k.Slug); err != nil {
+		return err
+	}
+	if err := required("title", k.Title, TitleMaxLen); err != nil {
+		return err
+	}
+	// Nothing filters on the author, but a shared record with no author is a
+	// note nobody can be asked about.
+	if k.CreatedBy == "" {
+		return domain.Invalid("created_by", "is required")
+	}
+	return optional("body", k.Body, BodyMaxLen)
+}

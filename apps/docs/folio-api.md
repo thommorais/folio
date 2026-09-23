@@ -212,14 +212,54 @@ Editing an entry moves `updated_at` and leaves `created_at` alone.
 Filters: `ticket_id`, `tags`, `q`, `limit`, `offset`. The slug is derived from
 the title when omitted, and is unique per project.
 
+## Knowledge
+
+| Method | Path | Role |
+| --- | --- | --- |
+| GET | `/knowledge` | any signed-in user |
+| POST | `/knowledge` | any signed-in user |
+| GET | `/knowledge/{id-or-slug}` | any signed-in user |
+| PATCH | `/knowledge/{knowledge}` | any signed-in user |
+| DELETE | `/knowledge/{knowledge}` | any signed-in user |
+
+Knowledge is durable, reusable notes: a tip, a snippet, a fix worth keeping.
+It is the one resource with no project segment and no role, because it is not
+scoped to a project at all. Every signed-in user reads and writes all of it.
+
+Filters: `project`, `unattached`, `tags`, `q`, `limit`, `offset`.
+
+`project_id` is optional and records where a note was learned; it does not
+restrict who may read it, and deleting a project detaches its notes rather
+than destroying them. `created_by` is always set and never moves on edit, but
+nothing filters by it. The slug namespace is global, so `/knowledge/{slug}`
+resolves without a project. Tags are free-form strings on the record, not the
+per-domain tag vocabulary the other resources use.
+
 ## Search
 
 `GET /projects/{project}/search?q=FTS5&kind=doc,log&tags=&limit=&offset=`
+`GET /search?q=FTS5&kind=&tags=&limit=&offset=`
 
-Spans `log`, `doc`, `todo`, `plan` and `ticket`; omit `kind` for all five. Log hits
-match on title and body, so a decision recorded weeks ago is findable by a
-phrase from it. Results are newest first, each with a `snippet`. A query with
-neither `q` nor `tags` is rejected: it would scan the project.
+Spans `log`, `doc`, `todo`, `plan`, `ticket`, `resolution` and `knowledge`;
+omit `kind` for all of them. Hits match on title and body, so a decision
+recorded weeks ago is findable by a phrase from it.
+
+Results are ranked by relevance, with a title match weighted well above a body
+match, each hit carrying a `snippet`, a `project_slug` and a `slug` where it
+has one. A query with neither `q` nor `tags` is rejected: it would scan the
+project. Without `q` there is nothing to rank, so those results are newest
+first.
+
+`/search` without a project spans every project the caller can read, ranked as
+one result set. Knowledge answers both routes regardless of the project in
+scope, since it belongs to none.
+
+Matching is SQLite FTS5 over an index kept current by triggers. Query text is
+never read as FTS5 syntax: every term is quoted and the terms are ANDed, so a
+pasted error message full of quotes and parentheses comes back as results
+rather than a parse error. The last term carries a prefix `*`, which is what
+makes search-as-you-type work. The cost is that FTS5 operators (`OR`, `NEAR`,
+globs) are literal terms instead.
 
 ## Shares
 

@@ -34,9 +34,9 @@ var _ ports.SearchRepository = (*SearchRepository)(nil)
 const snippetLen = 200
 
 // bm25Weights scores title far above body, because a query that names a record
-// is almost always looking for that record. The seven leading zeros are the
+// is almost always looking for that record. The eight leading zeros are the
 // UNINDEXED columns, which contribute nothing but still occupy a position.
-const bm25Weights = "0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0"
+const bm25Weights = "0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0"
 
 type searchRow struct {
 	Kind        string `db:"kind"`
@@ -66,7 +66,11 @@ func (r *SearchRepository) SearchAcross(ctx context.Context, projects []domain.P
 
 func (r *SearchRepository) search(ctx context.Context, projects []domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
 	params := dbx.Params{}
-	where := []string{SearchIndex + ".project IN (" + bindAll(params, "project", toStrings(projects)) + ")"}
+	// Knowledge is indexed as global and answers every search regardless of
+	// the project in scope; everything else is fenced by the project list.
+	where := []string{fmt.Sprintf("(%[1]s.scope = {:global} OR %[1]s.project IN (%[2]s))",
+		SearchIndex, bindAll(params, "project", toStrings(projects)))}
+	params["global"] = scopeGlobal
 
 	if match := rules.FTSQuery(q.Text); match != "" {
 		where = append(where, SearchIndex+" MATCH {:match}")

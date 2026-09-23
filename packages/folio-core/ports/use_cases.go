@@ -41,7 +41,7 @@ type PlanUseCase interface {
 
 type CreatePlanInput struct {
 	ProjectID domain.ProjectID
-	IssueID  domain.IssueID
+	IssueID   domain.IssueID
 	Title     string
 	Goal      string
 	Status    domain.PlanStatus
@@ -51,10 +51,10 @@ type CreatePlanInput struct {
 
 type UpdatePlanInput struct {
 	IssueID *domain.IssueID
-	Title    *string
-	Goal     *string
-	Status   *domain.PlanStatus
-	Tags     *[]string
+	Title   *string
+	Goal    *string
+	Status  *domain.PlanStatus
+	Tags    *[]string
 }
 
 type IssueUseCase interface {
@@ -188,4 +188,38 @@ type ShareUseCase interface {
 	ListShares(ctx context.Context, actor Actor, project domain.ProjectID) ([]domain.Share, error)
 	RevokeShare(ctx context.Context, actor Actor, id domain.ShareID) error
 	OpenShare(ctx context.Context, token string) (domain.SharedItem, error)
+}
+
+// KnowledgeUseCase is deliberately the one surface with no project in its
+// signatures: a note is readable and writable by any authenticated user, and
+// the optional project on it is a label rather than a permission.
+type KnowledgeUseCase interface {
+	ListKnowledge(ctx context.Context, actor Actor, f domain.KnowledgeFilter) ([]domain.Knowledge, error)
+	GetKnowledge(ctx context.Context, actor Actor, id domain.KnowledgeID) (domain.Knowledge, error)
+	GetKnowledgeBySlug(ctx context.Context, actor Actor, slug string) (domain.Knowledge, error)
+	WriteKnowledge(ctx context.Context, actor Actor, in WriteKnowledgeInput) (domain.Knowledge, error)
+	UpdateKnowledge(ctx context.Context, actor Actor, id domain.KnowledgeID, in UpdateKnowledgeInput) (domain.Knowledge, error)
+	DeleteKnowledge(ctx context.Context, actor Actor, id domain.KnowledgeID) error
+}
+
+type WriteKnowledgeInput struct {
+	// ProjectID is optional. When set it is checked against the actor's
+	// membership, so naming a project is not a way to learn one exists.
+	ProjectID domain.ProjectID
+	// Slug is derived from the title when empty, and a clash is resolved with
+	// a suffix; an explicitly requested one that is taken is a conflict.
+	Slug  string
+	Title string
+	Body  string
+	Tags  []string
+}
+
+// UpdateKnowledgeInput leaves a nil field alone, so a caller can change one
+// field without reading the record first.
+type UpdateKnowledgeInput struct {
+	ProjectID *domain.ProjectID
+	Slug      *string
+	Title     *string
+	Body      *string
+	Tags      *[]string
 }

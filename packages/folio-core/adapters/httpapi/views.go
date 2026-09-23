@@ -279,3 +279,26 @@ func toEntryView(e domain.Entry) entryView {
 		CreatedAt: rfc3339(e.CreatedAt), UpdatedAt: rfc3339(e.UpdatedAt),
 	}
 }
+
+type knowledgeView struct {
+	ID    string `json:"id"`
+	Slug  string `json:"slug"`
+	Title string `json:"title"`
+	Body  string `json:"body,omitempty"`
+	// ProjectID is omitted when the note belongs to no project, which is the
+	// common case rather than an error.
+	ProjectID string   `json:"project_id,omitempty"`
+	Tags      []string `json:"tags"`
+	CreatedBy string   `json:"created_by"`
+	CreatedAt string   `json:"created_at"`
+	UpdatedAt string   `json:"updated_at"`
+}
+
+func toKnowledgeView(k domain.Knowledge) knowledgeView {
+	return knowledgeView{
+		ID: string(k.ID), Slug: k.Slug, Title: k.Title, Body: k.Body,
+		ProjectID: string(k.ProjectID), Tags: orEmpty(k.Tags),
+		CreatedBy: string(k.CreatedBy),
+		CreatedAt: rfc3339(k.CreatedAt), UpdatedAt: rfc3339(k.UpdatedAt),
+	}
+}
