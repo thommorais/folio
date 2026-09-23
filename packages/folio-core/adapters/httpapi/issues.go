@@ -65,7 +65,7 @@ func (h *Handler) getIssueBySlug(e *core.RequestEvent) error {
 }
 
 func (h *Handler) getIssueBrief(e *core.RequestEvent) error {
-	in := ports.BriefOptions{RecentJournal: queryInt(e, "journal")}
+	in := ports.BriefOptions{RecentJournal: queryInt(e, "recent_journal")}
 	brief, err := h.issues.GetIssueBrief(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("issue")), in)
 	if err != nil {
 		return fail(e, err)
@@ -78,7 +78,7 @@ func (h *Handler) getIssueBriefBySlug(e *core.RequestEvent) error {
 	if err != nil {
 		return fail(e, err)
 	}
-	in := ports.BriefOptions{RecentJournal: queryInt(e, "journal")}
+	in := ports.BriefOptions{RecentJournal: queryInt(e, "recent_journal")}
 	brief, err := h.issues.GetIssueBriefBySlug(e.Request.Context(), actorOf(e), project, e.Request.PathValue("slug"), in)
 	if err != nil {
 		return fail(e, err)
