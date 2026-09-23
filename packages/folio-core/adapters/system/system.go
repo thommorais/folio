@@ -37,6 +37,29 @@ func (IDGenerator) NewID() string {
 	return string(b)
 }
 
+// TokenGenerator produces 43 alphanumerics, about 256 bits. Unlike
+// IDGenerator it has no fallback: a token guessable from the clock would be
+// worse than a failed request, and crypto/rand does not return errors.
+type TokenGenerator struct{}
+
+const tokenAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func (TokenGenerator) NewToken() string {
+	out := make([]byte, 0, 43)
+	buf := make([]byte, 64)
+	for len(out) < 43 {
+		rand.Read(buf)
+		for _, v := range buf {
+			// Bytes past the last whole multiple of 62 are dropped so every
+			// character is equally likely.
+			if v < 248 && len(out) < 43 {
+				out = append(out, tokenAlphabet[v%62])
+			}
+		}
+	}
+	return string(out)
+}
+
 // Logger adapts log/slog to ports.Logger.
 type Logger struct{ l *slog.Logger }
 

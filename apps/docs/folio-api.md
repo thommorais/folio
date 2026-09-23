@@ -220,3 +220,30 @@ Spans `log`, `doc`, `todo`, `plan` and `ticket`; omit `kind` for all five. Log h
 match on title and body, so a decision recorded weeks ago is findable by a
 phrase from it. Results are newest first, each with a `snippet`. A query with
 neither `q` nor `tags` is rejected: it would scan the project.
+
+## Shares
+
+A share is a read-only link to one ticket or plan for someone without an
+account. It never expires; revoking deletes it.
+
+| Method | Path | Role |
+| --- | --- | --- |
+| GET | `/projects/{project}/shares` | member |
+| POST | `/issues/{issue}/shares` | editor |
+| POST | `/plans/{plan}/shares` | editor |
+| DELETE | `/shares/{share}` | editor |
+
+The POST body is `{"label": "..."}`, naming who the link is for. The response
+carries the `token`.
+
+The link itself is `GET /api/share/{token}`, outside `/api/folio` and with no
+`Authorization` header. It answers `kind` (`issue` or `plan`), `label`, and
+either `brief` (the ticket brief) or `plan` plus `todos`. Account and project
+IDs are blanked. An unknown and a revoked token both get 404.
+
+```bash
+curl -X POST localhost:8090/api/folio/issues/$ISSUE/shares \
+  -H "Authorization: $TOKEN" -d '{"label":"vendor"}'   # -> {"token": "..."}
+
+curl localhost:8090/api/share/$SHARE_TOKEN
+```

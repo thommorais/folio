@@ -17,6 +17,7 @@ type ticketFixture struct {
 	planSvc    *services.PlanService
 	entrySvc   *services.EntryService
 	cycleSvc   *services.CycleService
+	guard      *services.ProjectGuard
 	owner      ports.Actor
 	viewer     ports.Actor
 	outside    ports.Actor
@@ -50,6 +51,7 @@ func newTicketFixture(t *testing.T) *ticketFixture {
 	return &ticketFixture{
 		issues: issues, plans: plans, entries: entries, cycles: cycles,
 		issueSvc: issueSvc,
+		guard:    guard,
 		planSvc:  services.NewPlanService(plans, issues, issueSvc, guard, clock, &seqIDs{prefix: "pl"}, nopLogger{}),
 		entrySvc: services.NewEntryService(entries, issues, plans, guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),
 		cycleSvc: services.NewCycleService(cycles, issues, guard, clock, &seqIDs{prefix: "cy"}, nopLogger{}),

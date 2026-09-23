@@ -24,6 +24,7 @@ type App struct {
 	Entries  ports.EntryUseCase
 	Cycles   ports.CycleUseCase
 	Search   ports.SearchUseCase
+	Shares   ports.ShareUseCase
 }
 
 // New builds the use cases against a PocketBase app running in-process.
@@ -38,17 +39,20 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 	entryRepo := pb.NewEntryRepository(app)
 	cycleRepo := pb.NewCycleRepository(app)
 	searchRepo := pb.NewSearchRepository(app)
+	shareRepo := pb.NewShareRepository(app)
 
 	guard := services.NewProjectGuard(projectRepo)
 	issues := services.NewIssueService(issueRepo, planRepo, entryRepo, cycleRepo, guard, clock, ids, log)
+	plans := services.NewPlanService(planRepo, issueRepo, issues, guard, clock, ids, log)
 
 	return &App{
 		Projects: services.NewProjectService(projectRepo, guard, clock, ids, log),
-		Plans:    services.NewPlanService(planRepo, issueRepo, issues, guard, clock, ids, log),
+		Plans:    plans,
 		Issues:   issues,
 		Entries:  services.NewEntryService(entryRepo, issueRepo, planRepo, guard, clock, ids, log),
 		Cycles:   services.NewCycleService(cycleRepo, issueRepo, guard, clock, ids, log),
 		Search:   services.NewSearchService(searchRepo, guard),
+		Shares:   services.NewShareService(shareRepo, issueRepo, planRepo, issues, plans, guard, clock, ids, system.TokenGenerator{}, log),
 	}
 }
 
@@ -60,6 +64,7 @@ func (a *App) Deps() httpapi.Deps {
 		Entries:  a.Entries,
 		Cycles:   a.Cycles,
 		Search:   a.Search,
+		Shares:   a.Shares,
 	}
 }
 

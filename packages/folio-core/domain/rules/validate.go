@@ -100,6 +100,16 @@ var wayfinderTypes = map[domain.WayfinderType]bool{
 	domain.WayfinderGrilling: true, domain.WayfinderTask: true,
 }
 
+func ValidateShare(s domain.Share) error {
+	if s.ProjectID == "" {
+		return domain.Invalid("project", "is required")
+	}
+	if (s.IssueID == "") == (s.PlanID == "") {
+		return domain.Invalid("target", "must be exactly one issue or plan")
+	}
+	return required("label", s.Label, NameMaxLen)
+}
+
 func ValidateDoc(d domain.Doc) error {
 	if d.ProjectID == "" {
 		return domain.Invalid("project", "is required")

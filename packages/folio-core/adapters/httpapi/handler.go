@@ -21,6 +21,7 @@ type Handler struct {
 	entries  ports.EntryUseCase
 	cycles   ports.CycleUseCase
 	search   ports.SearchUseCase
+	shares   ports.ShareUseCase
 }
 
 type Deps struct {
@@ -30,11 +31,12 @@ type Deps struct {
 	Entries  ports.EntryUseCase
 	Cycles   ports.CycleUseCase
 	Search   ports.SearchUseCase
+	Shares   ports.ShareUseCase
 }
 
 func New(d Deps) *Handler {
 	return &Handler{
-		projects: d.Projects, plans: d.Plans, issues: d.Issues, entries: d.Entries, cycles: d.Cycles, search: d.Search,
+		projects: d.Projects, plans: d.Plans, issues: d.Issues, entries: d.Entries, cycles: d.Cycles, search: d.Search, shares: d.Shares,
 	}
 }
 
@@ -42,10 +44,16 @@ func New(d Deps) *Handler {
 // rest of its own surface, so folio takes its own namespace.
 const BasePath = "/api/folio"
 
+// SharePath is outside BasePath because BasePath requires auth, and whoever
+// holds a share link has no account.
+const SharePath = "/api/share"
+
 // Mount registers every route. Auth is PocketBase's: RequireAuth rejects
 // anonymous callers before a handler runs, and actorOf reads the record it
 // attached to the request.
 func (h *Handler) Mount(e *core.ServeEvent) {
+	e.Router.GET(SharePath+"/{token}", h.openShare)
+
 	g := e.Router.Group(BasePath)
 	g.Bind(apis.RequireAuth())
 
@@ -95,6 +103,11 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.DELETE("/entries/{entry}", h.deleteEntry)
 
 	g.GET("/projects/{project}/search", h.searchProject)
+
+	g.GET("/projects/{project}/shares", h.listShares)
+	g.POST("/issues/{issue}/shares", h.shareIssue)
+	g.POST("/plans/{plan}/shares", h.sharePlan)
+	g.DELETE("/shares/{share}", h.revokeShare)
 }
 
 // actorOf builds the domain actor from the record PocketBase authenticated.

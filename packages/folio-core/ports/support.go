@@ -20,6 +20,12 @@ type IDGenerator interface {
 	NewID() string
 }
 
+// TokenGenerator produces share-link secrets. It is separate from IDGenerator
+// because a record ID is not secret and is far too short to be one.
+type TokenGenerator interface {
+	NewToken() string
+}
+
 type Logger interface {
 	Debug(msg string, fields map[string]any)
 	Info(msg string, fields map[string]any)

@@ -6,6 +6,7 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	"folio/folio-core/domain"
 )
@@ -91,4 +92,13 @@ type CycleRepository interface {
 
 type SearchRepository interface {
 	Search(ctx context.Context, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error)
+}
+
+type ShareRepository interface {
+	List(ctx context.Context, project domain.ProjectID) ([]domain.Share, error)
+	GetByID(ctx context.Context, id domain.ShareID) (domain.Share, error)
+	GetByToken(ctx context.Context, token string) (domain.Share, error)
+	Create(ctx context.Context, s domain.Share) (domain.Share, error)
+	Delete(ctx context.Context, id domain.ShareID) error
+	Touch(ctx context.Context, id domain.ShareID, at time.Time) error
 }

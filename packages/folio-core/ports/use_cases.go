@@ -179,3 +179,13 @@ type BatchError struct {
 type SearchUseCase interface {
 	Search(ctx context.Context, actor Actor, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error)
 }
+
+// ShareUseCase manages read-only links. Every method but OpenShare takes an
+// actor; OpenShare is authorised by the token alone.
+type ShareUseCase interface {
+	ShareIssue(ctx context.Context, actor Actor, issue domain.IssueID, label string) (domain.Share, error)
+	SharePlan(ctx context.Context, actor Actor, plan domain.PlanID, label string) (domain.Share, error)
+	ListShares(ctx context.Context, actor Actor, project domain.ProjectID) ([]domain.Share, error)
+	RevokeShare(ctx context.Context, actor Actor, id domain.ShareID) error
+	OpenShare(ctx context.Context, token string) (domain.SharedItem, error)
+}

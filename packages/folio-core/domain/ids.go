@@ -14,6 +14,7 @@ type (
 	TicketID  string
 	TodoID    string
 	CycleID   string
+	ShareID   string
 
 	TicketLogID string
 	PlanLogID   string
