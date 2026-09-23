@@ -194,6 +194,9 @@ importers:
       happy-dom:
         specifier: ^20.14.0
         version: 20.14.3
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2

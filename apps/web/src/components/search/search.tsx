@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { BookText, FolderKanban, ListTodo, NotebookPen, Search as SearchIcon } from 'lucide-react'
+import { BookText, FolderKanban, Lightbulb, ListTodo, NotebookPen, Search as SearchIcon, Ticket } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
@@ -16,20 +16,24 @@ type Shortcut = {
 }
 
 const kindIcons: Record<SearchKind, typeof BookText> = {
-	log: BookText,
-	doc: NotebookPen,
+	knowledge: Lightbulb,
+	ticket: Ticket,
 	todo: ListTodo,
 	plan: FolderKanban,
+	doc: NotebookPen,
+	journal: BookText,
 }
 
-// Keyed by SearchKind, which calls a journal entry "log". A key that misses
-// leaves the group with no heading at all.
+// A key that misses leaves the group with no heading at all, so this covers
+// every kind the palette asks for.
 const groupLabels: Record<SearchKind | 'shortcut', string> = {
 	shortcut: 'Shortcuts',
-	log: 'Journal',
-	doc: 'Docs',
+	knowledge: 'Knowledge',
+	ticket: 'Tickets',
 	todo: 'Todos',
 	plan: 'Plans',
+	doc: 'Docs',
+	journal: 'Journal',
 }
 
 const HitRow = ({ hit, index }: { hit: SearchHit; index: number }) => {
@@ -37,11 +41,13 @@ const HitRow = ({ hit, index }: { hit: SearchHit; index: number }) => {
 	const reduced = useReducedMotion()
 
 	const content = (
-		<div className='flex w-full items-center gap-2'>
+		<div className='flex w-full items-center gap-3'>
 			<Icon className='text-dim size-4 shrink-0' />
-			<span className='truncate'>{hit.title}</span>
-			{hit.snippet && <span className='text-dim hidden truncate text-xs md:block'>{hit.snippet}</span>}
-			<span className='text-dimmer ml-auto shrink-0 text-xs'>{hit.projectSlug}</span>
+			{/* The title identifies the hit, so it keeps its share of the row
+			    rather than being squeezed out by a long snippet. */}
+			<span className='max-w-[45%] shrink-0 truncate'>{hit.title}</span>
+			{hit.snippet && <span className='text-dim hidden min-w-0 flex-1 truncate text-xs md:block'>{hit.snippet}</span>}
+			<span className='text-dimmer ml-auto shrink-0 pl-2 text-xs'>{hit.projectSlug}</span>
 		</div>
 	)
 
@@ -97,6 +103,13 @@ export const Search = () => {
 	const openHit = (hit: SearchHit) => {
 		setOpen(false)
 
+		// Knowledge belongs to no project, so it has none of the path the
+		// other kinds route by and lives at the top level instead.
+		if (hit.kind === 'knowledge') {
+			void navigate({ to: '/knowledge/$note', params: { note: hit.slug } })
+			return
+		}
+
 		if (hit.kind === 'todo') {
 			openPreview({ kind: 'todo', project: hit.projectSlug, id: hit.id })
 			return
@@ -106,6 +119,11 @@ export const Search = () => {
 
 		if (hit.kind === 'plan') {
 			void navigate({ to: '/$client/$domain/$slug/plans/$plan', params: { ...scope, plan: hit.id } })
+			return
+		}
+
+		if (hit.kind === 'ticket') {
+			void navigate({ to: '/$client/$domain/$slug/tickets/$ticket', params: { ...scope, ticket: hit.slug } })
 			return
 		}
 

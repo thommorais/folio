@@ -51,8 +51,12 @@ type SearchHit struct {
 	ID        string
 	ProjectID ProjectID
 	// ProjectSlug names the hit's project, which a global search needs and a
-	// project-scoped one already knows.
+	// project-scoped one already knows. ClientSlug and DomainSlug complete the
+	// path a web client routes by; all three are empty for a hit that belongs
+	// to no project, which only knowledge can be.
 	ProjectSlug string
+	ClientSlug  string
+	DomainSlug  string
 	// Slug addresses the record in its own routes. Empty for kinds that have
 	// none, such as todos and plans.
 	Slug      string

@@ -58,6 +58,7 @@
 		"@vitejs/plugin-react": "catalog:",
 		"babel-plugin-react-compiler": "^1.0.0",
 		"happy-dom": "^20.14.0",
+		"tailwindcss": "catalog:",
 		"typescript": "catalog:",
 		"vite": "catalog:",
 		"vite-intlayer": "^8.9.8",

@@ -1,7 +1,13 @@
 import type { Result } from '_/lib/result'
 import type { ProjectId } from '../domain/project'
 
-export const SEARCH_KINDS = ['log', 'doc', 'todo', 'plan'] as const
+// The display order in the palette, and the set a query asks for. The names
+// match the API's kinds, so a hit needs no translation.
+//
+// The API also answers 'worklog' and 'resolution'. Neither is addressable in
+// this app, so the palette does not ask for them rather than offering a row
+// that cannot be opened.
+export const SEARCH_KINDS = ['knowledge', 'ticket', 'todo', 'plan', 'doc', 'journal'] as const
 
 export type SearchKind = (typeof SEARCH_KINDS)[number]
 
@@ -9,6 +15,7 @@ export type SearchHit = {
 	readonly kind: SearchKind
 	readonly id: string
 	readonly projectId: ProjectId
+	// Empty for a hit that belongs to no project, which only knowledge can be.
 	readonly projectSlug: string
 	readonly clientSlug: string
 	readonly domainSlug: string

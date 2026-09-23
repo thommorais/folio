@@ -57,6 +57,43 @@ func TestKnowledgeAnswersASearchFromAnyProject(t *testing.T) {
 	}
 }
 
+// A client routes by client/domain/project, so a hit has to carry the whole
+// path rather than just the project it names.
+func TestHitsCarryTheWholePathAndKnowledgeCarriesNone(t *testing.T) {
+	s := setup(t)
+
+	doc := newRecord(t, s.app, pb.ColEntries, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "doc",
+		"slug": "routing", "title": "Routing", "body": "breadcrumbs everywhere",
+	})
+	note := newKnowledge(t, s.app, domain.Knowledge{
+		ID: "know00000000006", Slug: "loose-note", Title: "Loose note",
+		Body: "breadcrumbs nowhere", CreatedBy: domain.UserID(s.owner.Id),
+	})
+
+	hits := search(t, s.app, s.project.Id, domain.SearchQuery{Text: "breadcrumbs"})
+
+	projectHit, ok := find(hits, doc.Id)
+	if !ok {
+		t.Fatalf("the doc is missing: %v", ids(hits))
+	}
+	if projectHit.ProjectSlug != "redesign" || projectHit.DomainSlug != "web" || projectHit.ClientSlug != "acme" {
+		t.Errorf("path = %s/%s/%s, want acme/web/redesign",
+			projectHit.ClientSlug, projectHit.DomainSlug, projectHit.ProjectSlug)
+	}
+
+	// Knowledge belongs to no project, so there is no path to carry and the
+	// client has to route it some other way.
+	noteHit, ok := find(hits, string(note.ID))
+	if !ok {
+		t.Fatalf("the note is missing: %v", ids(hits))
+	}
+	if noteHit.ProjectSlug != "" || noteHit.DomainSlug != "" || noteHit.ClientSlug != "" {
+		t.Errorf("an unattached note carries a path: %q/%q/%q",
+			noteHit.ClientSlug, noteHit.DomainSlug, noteHit.ProjectSlug)
+	}
+}
+
 // Attaching a note to a project records where it came from. It must not turn
 // into a fence: the note stays visible from everywhere.
 func TestAttachedKnowledgeIsStillGlobal(t *testing.T) {

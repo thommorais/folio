@@ -107,6 +107,8 @@ type searchHitView struct {
 	ID          string   `json:"id"`
 	ProjectID   string   `json:"project_id"`
 	ProjectSlug string   `json:"project_slug"`
+	DomainSlug  string   `json:"domain_slug"`
+	ClientSlug  string   `json:"client_slug"`
 	Slug        string   `json:"slug,omitempty"`
 	Title       string   `json:"title"`
 	Snippet     string   `json:"snippet,omitempty"`
@@ -117,7 +119,7 @@ type searchHitView struct {
 func toSearchHitView(h domain.SearchHit) searchHitView {
 	return searchHitView{
 		Kind: string(h.Kind), ID: h.ID, ProjectID: string(h.ProjectID),
-		ProjectSlug: h.ProjectSlug, Slug: h.Slug,
+		ProjectSlug: h.ProjectSlug, DomainSlug: h.DomainSlug, ClientSlug: h.ClientSlug, Slug: h.Slug,
 		Title: h.Title, Snippet: h.Snippet, Tags: orEmpty(h.Tags),
 		CreatedAt: rfc3339(h.CreatedAt),
 	}

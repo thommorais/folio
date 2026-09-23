@@ -44,6 +44,8 @@ type searchRow struct {
 	Slug        string `db:"slug"`
 	Project     string `db:"project"`
 	ProjectSlug string `db:"project_slug"`
+	DomainSlug  string `db:"domain_slug"`
+	ClientSlug  string `db:"client_slug"`
 	Tags        string `db:"tags"`
 	Created     string `db:"created"`
 	Title       string `db:"title"`
@@ -101,14 +103,21 @@ func (r *SearchRepository) search(ctx context.Context, projects []domain.Project
 		order = fmt.Sprintf("bm25(%s, %s) ASC, %s.created DESC", SearchIndex, bm25Weights, SearchIndex)
 	}
 
-	// The index stores the project id; the slug is what names a hit in a
-	// global result, so it is joined in rather than resolved per row later.
+	// The index stores the project id, but a client routes by the whole path,
+	// so the three slugs are joined in here rather than resolved per row
+	// later. The joins are left joins because knowledge has no project.
 	query := fmt.Sprintf(
-		`SELECT %[1]s.kind, %[1]s.rec_id, %[1]s.slug, %[1]s.project, COALESCE(p.slug, '') AS project_slug,
+		`SELECT %[1]s.kind, %[1]s.rec_id, %[1]s.slug, %[1]s.project,
+		        COALESCE(p.slug, '') AS project_slug,
+		        COALESCE(d.slug, '') AS domain_slug,
+		        COALESCE(c.slug, '') AS client_slug,
 		        %[1]s.tags, %[1]s.created, %[1]s.title, %[1]s.body
-		 FROM %[1]s LEFT JOIN %[2]s p ON p.id = %[1]s.project
+		 FROM %[1]s
+		 LEFT JOIN %[2]s p ON p.id = %[1]s.project
+		 LEFT JOIN %[5]s d ON d.id = p.domain
+		 LEFT JOIN %[6]s c ON c.id = d.client
 		 WHERE %[3]s ORDER BY %[4]s LIMIT {:limit} OFFSET {:offset}`,
-		SearchIndex, ColProjects, strings.Join(where, " AND "), order,
+		SearchIndex, ColProjects, strings.Join(where, " AND "), order, ColDomains, ColClients,
 	)
 
 	limit := q.Limit
@@ -130,6 +139,8 @@ func (r *SearchRepository) search(ctx context.Context, projects []domain.Project
 			ID:          row.RecID,
 			ProjectID:   domain.ProjectID(row.Project),
 			ProjectSlug: row.ProjectSlug,
+			DomainSlug:  row.DomainSlug,
+			ClientSlug:  row.ClientSlug,
 			Slug:        row.Slug,
 			Title:       row.Title,
 			Snippet:     rules.Snippet(row.Body, snippetLen),
