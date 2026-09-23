@@ -4,7 +4,7 @@ import { Badge } from '@thom/ui/badge';
 import { useIssues } from '_/app/use-issues';
 import { Skeleton } from '_/components/motion/skeleton';
 import { StaggerItem } from '_/components/motion/stagger';
-import { isTerminal, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
+import { isTerminal, ISSUE_KIND, ISSUE_STATUS, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
 import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree';
 import type { IssueSortField, Sort } from '_/core/ports/sort';
 import { Status } from '_/lib/async-status';
@@ -75,11 +75,11 @@ const Row = ({
 			<div className='space-y-2' style={{ paddingLeft: row.depth * INDENT }}>
 				<div className='flex items-start justify-between gap-4'>
 					<span className='flex min-w-0 items-start gap-2'>
-						{kind === 'todo' && (
+						{kind === ISSUE_KIND.TODO && (
 							<span
 								className={cn(
 									'border-border mt-0.5 size-4 shrink-0 border',
-									issue.status === 'done' && 'bg-foreground border-foreground',
+									issue.status === ISSUE_STATUS.DONE && 'bg-foreground border-foreground',
 								)}
 							/>
 						)}
@@ -90,7 +90,7 @@ const Row = ({
 							className={cn(
 								'text-sm font-medium hover:underline',
 								(isTerminal(issue.status) || row.isContext) && 'text-dim',
-								issue.status === 'done' && kind === 'todo' && 'line-through',
+								issue.status === ISSUE_STATUS.DONE && kind === ISSUE_KIND.TODO && 'line-through',
 							)}
 						>
 							{issue.title}
@@ -108,7 +108,7 @@ const Row = ({
 				{!row.isContext && (
 					// The checkbox indents the title, so its row's body and metadata
 					// line up under the text rather than under the box.
-					<div className={cn('space-y-2', kind === 'todo' && 'pl-6')}>
+					<div className={cn('space-y-2', kind === ISSUE_KIND.TODO && 'pl-6')}>
 						{issue.body && <p className='text-dim line-clamp-2 text-sm'>{issue.body}</p>}
 
 						<div className='flex flex-wrap items-center gap-2 pt-1'>

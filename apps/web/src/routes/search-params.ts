@@ -1,4 +1,4 @@
-import type { Sort, SortDirection } from '_/core/ports/sort'
+import { SORT_DIRECTION, SORT_DIRECTIONS, type Sort } from '_/core/ports/sort'
 
 export const asString = (value: unknown): string | undefined =>
 	typeof value === 'string' && value !== '' ? value : undefined
@@ -23,8 +23,6 @@ export const asStrings = (value: unknown): readonly string[] | undefined => {
 	return parsed.length > 0 ? parsed : undefined
 }
 
-const DIRECTIONS: readonly SortDirection[] = ['asc', 'desc']
-
 // One param holds both halves as `field,direction`, so the pair can never
 // arrive inconsistent. A navigate() call puts the object itself in the search
 // state before it is ever serialised, so both shapes have to parse.
@@ -40,7 +38,7 @@ export const asSort = <T extends string>(allowed: readonly T[], value: unknown):
 		return undefined
 	}
 
-	return { field, direction: asMember(DIRECTIONS, rawDirection) ?? 'desc' }
+	return { field, direction: asMember(SORT_DIRECTIONS, rawDirection) ?? SORT_DIRECTION.DESC }
 }
 
 export const sortParam = <T extends string>(sort: Sort<T> | undefined): string | undefined =>

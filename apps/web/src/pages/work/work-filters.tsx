@@ -1,10 +1,10 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { DropdownMenuItem } from '@thom/ui/dropdown-menu'
 import { useIssues } from '_/app/use-issues'
-import { ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue'
+import { ISSUE_STATUSES, PRIORITIES, ISSUE_KIND, type IssueStatus, type Priority } from '_/core/domain/issue'
 import { PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan'
 import { WORK_SORT_FIELDS, type WorkSortField } from '_/core/ports/sort'
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
+import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar'
 import { SortMenu } from '_/components/list/sort-menu'
 import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
@@ -24,7 +24,7 @@ const WorkFilters = () => {
 	const { slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/work' })
 	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/work' })
 	const navigate = useNavigate()
-	const tickets = useIssues(slug, { kind: 'ticket' })
+	const tickets = useIssues(slug, { kind: ISSUE_KIND.TICKET })
 
 	const setFilter = (patch: Partial<WorkSearch>) => {
 		void navigate({
@@ -41,7 +41,7 @@ const WorkFilters = () => {
 
 	if (search.types !== undefined) {
 		chips.push({
-			key: 'types',
+			key: FILTER_KEY.TYPES,
 			label: search.types.map(type => WORK_TYPE_LABELS[type]).join(', '),
 			onRemove: () => {
 				setFilter({ types: undefined })
@@ -50,7 +50,7 @@ const WorkFilters = () => {
 	}
 	if (search.statuses !== undefined) {
 		chips.push({
-			key: 'statuses',
+			key: FILTER_KEY.STATUSES,
 			label: search.statuses.map(status => ISSUE_STATUS_LABELS[status]).join(', '),
 			onRemove: () => {
 				setFilter({ statuses: undefined })
@@ -59,7 +59,7 @@ const WorkFilters = () => {
 	}
 	if (search.planStatuses !== undefined) {
 		chips.push({
-			key: 'planStatuses',
+			key: FILTER_KEY.PLAN_STATUSES,
 			label: search.planStatuses.map(status => PLAN_STATUS_LABELS[status]).join(', '),
 			onRemove: () => {
 				setFilter({ planStatuses: undefined })
@@ -68,7 +68,7 @@ const WorkFilters = () => {
 	}
 	if (search.priority !== undefined) {
 		chips.push({
-			key: 'priority',
+			key: FILTER_KEY.PRIORITY,
 			label: search.priority,
 			onRemove: () => {
 				setFilter({ priority: undefined })
@@ -77,7 +77,7 @@ const WorkFilters = () => {
 	}
 	if (search.tags !== undefined) {
 		chips.push({
-			key: 'tags',
+			key: FILTER_KEY.TAGS,
 			label: search.tags.join(', '),
 			onRemove: () => {
 				setFilter({ tags: undefined })
@@ -86,7 +86,7 @@ const WorkFilters = () => {
 	}
 	if (search.ticket !== undefined) {
 		chips.push({
-			key: 'ticket',
+			key: FILTER_KEY.TICKET,
 			label: ticketTitle(search.ticket),
 			onRemove: () => {
 				setFilter({ ticket: undefined })

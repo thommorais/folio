@@ -13,6 +13,16 @@ import {
 import { useState } from 'react'
 import { ClearIcon, FilterIcon, SearchIcon } from './icons'
 
+const FILTER_KEY = {
+	STATUSES: 'statuses',
+	PLAN_STATUSES: 'planStatuses',
+	PRIORITY: 'priority',
+	TAGS: 'tags',
+	KINDS: 'kinds',
+	TYPES: 'types',
+	TICKET: 'ticket',
+} as const
+
 const FilterMenuItem = ({ label, children }: { readonly label: string; readonly children: React.ReactNode }) => (
 	<DropdownMenuGroup>
 		<DropdownMenuSub>
@@ -148,4 +158,4 @@ const FilterBar = ({ placeholder, term, onSearch, chips, children, trailing }: P
 	)
 }
 
-export { FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, type ActiveFilter }
+export { FILTER_KEY, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, type ActiveFilter }

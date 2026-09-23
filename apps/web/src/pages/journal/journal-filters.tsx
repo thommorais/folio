@@ -1,14 +1,15 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { DropdownMenuItem } from '@thom/ui/dropdown-menu';
 import { useIssues } from '_/app/use-issues';
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar';
+import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar';
 import { SortMenu } from '_/components/list/sort-menu';
-import { ADDRESSABLE_KINDS, KIND, type AddressableKind } from '_/core/domain/entry';
+import { ADDRESSABLE_KINDS, type AddressableKind } from '_/core/domain/entry';
 import { ENTRY_SORT_FIELDS, type EntrySortField } from '_/core/ports/sort';
 import { Status } from '_/lib/async-status';
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary';
 import type { JournalSearch } from '_/routes/_authenticated/$client/$domain/$slug/journal';
 import { ENTRY_KIND_LABELS } from './kind-labels';
+import { ISSUE_KIND } from '_/core/domain/issue';
 
 const SORT_LABELS: Record<EntrySortField, string> = {
 	title: 'Title',
@@ -21,7 +22,7 @@ const JournalFilters = () => {
 	const { slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/journal/' })
 	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/journal/' })
 	const navigate = useNavigate()
-	const tickets = useIssues(slug, { kind: KIND.TICKET })
+	const tickets = useIssues(slug, { kind: ISSUE_KIND.TICKET })
 
 	const setFilter = (patch: Partial<JournalSearch>) => {
 		void navigate({
@@ -38,7 +39,7 @@ const JournalFilters = () => {
 
 	if (search.kinds !== undefined) {
 		chips.push({
-			key: 'kinds',
+			key: FILTER_KEY.KINDS,
 			label: search.kinds.map(kind => ENTRY_KIND_LABELS[kind]).join(', '),
 			onRemove: () => {
 				setFilter({ kinds: undefined })
@@ -47,7 +48,7 @@ const JournalFilters = () => {
 	}
 	if (search.ticket !== undefined) {
 		chips.push({
-			key: KIND.TICKET,
+			key: FILTER_KEY.TICKET,
 			label: ticketTitle(search.ticket),
 			onRemove: () => {
 				setFilter({ ticket: undefined })
@@ -56,7 +57,7 @@ const JournalFilters = () => {
 	}
 	if (search.tags !== undefined) {
 		chips.push({
-			key: KIND.TAGS,
+			key: FILTER_KEY.TAGS,
 			label: search.tags.join(', '),
 			onRemove: () => {
 				setFilter({ tags: undefined })

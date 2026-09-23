@@ -1,4 +1,11 @@
-export type SortDirection = 'asc' | 'desc'
+export const SORT_DIRECTION = {
+	ASC: 'asc',
+	DESC: 'desc',
+} as const
+
+export const SORT_DIRECTIONS = [SORT_DIRECTION.ASC, SORT_DIRECTION.DESC] as const
+
+export type SortDirection = (typeof SORT_DIRECTIONS)[number]
 
 export type Sort<TField extends string> = {
 	readonly field: TField

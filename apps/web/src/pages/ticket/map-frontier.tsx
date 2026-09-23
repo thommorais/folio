@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
 import { useIssues } from '_/app/use-issues'
 import { partitionChildren } from '_/core/domain/frontier'
-import type { Issue } from '_/core/domain/issue'
+import { ISSUE_KIND, type Issue } from '_/core/domain/issue'
 import { useScope } from '_/routing/use-scope'
 import { WayfinderGraph } from './wayfinder-graph'
 import { Status } from '_/lib/async-status'
@@ -54,7 +54,7 @@ const Group = ({
 const MapFrontier = ({ project, map }: Props) => {
 	// A map's decisions are tickets. Todos filed under the same ticket are its
 	// steps, not places the work can go next, and they have their own section.
-	const children = useIssues(project, { kind: 'ticket', parentId: map.id })
+	const children = useIssues(project, { kind: ISSUE_KIND.TICKET, parentId: map.id })
 
 	if (children.status !== Status.Ready) return null
 

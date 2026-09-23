@@ -6,7 +6,13 @@ export type DomainId = Branded<string, 'DomainId'>
 
 export const domainId = (value: string): DomainId => value as DomainId
 
-export const ROLES = ['owner', 'editor', 'viewer'] as const
+export const ROLE = {
+	OWNER: 'owner',
+	EDITOR: 'editor',
+	VIEWER: 'viewer',
+} as const
+
+export const ROLES = [ROLE.OWNER, ROLE.EDITOR, ROLE.VIEWER] as const
 
 export type Role = (typeof ROLES)[number]
 
@@ -30,11 +36,11 @@ export type Domain = {
 	readonly updatedAt: Date
 }
 
-export const canWrite = (role: Role): boolean => role === 'owner' || role === 'editor'
+export const canWrite = (role: Role): boolean => role === ROLE.OWNER || role === ROLE.EDITOR
 
-export const canAdmin = (role: Role): boolean => role === 'owner'
+export const canAdmin = (role: Role): boolean => role === ROLE.OWNER
 
 export const roleOf = (domain: Domain, user: UserId): Role | undefined =>
 	domain.members.find(member => member.userId === user)?.role
 
-export const ownersOf = (domain: Domain): readonly Member[] => domain.members.filter(member => member.role === 'owner')
+export const ownersOf = (domain: Domain): readonly Member[] => domain.members.filter(member => member.role === ROLE.OWNER)

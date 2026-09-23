@@ -1,5 +1,5 @@
 import type { Edge, Graph } from '_/core/domain/graph'
-import type { Issue, IssueId, LinkKind } from '_/core/domain/issue'
+import { LINK_KIND, type Issue, type IssueId, type LinkKind } from '_/core/domain/issue'
 
 export const NODE = {
 	width: 200,
@@ -52,7 +52,7 @@ const sideways = (from: Box, to: Box): readonly [Point, Point] => {
 }
 
 const endpoints = (edge: Edge, from: Box, to: Box): readonly [Point, Point] => {
-	if (edge.kind === 'relates') return sideways(from, to)
+	if (edge.kind === LINK_KIND.RELATES) return sideways(from, to)
 
 	return from.y <= to.y ? [exit(from), entry(to)] : [entry(from), exit(to)]
 }

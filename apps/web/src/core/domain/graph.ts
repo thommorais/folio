@@ -1,4 +1,4 @@
-import type { Issue, IssueId, LinkKind } from './issue'
+import { LINK_KIND, type Issue, type IssueId, type LinkKind } from './issue'
 
 export type Edge = {
 	readonly from: IssueId
@@ -65,11 +65,11 @@ const edgesOf = (issues: readonly Issue[]): readonly Edge[] => {
 
 	for (const issue of issues) {
 		if (issue.parentId !== undefined && present.has(issue.parentId)) {
-			edges.push({ from: issue.parentId, to: issue.id, kind: 'parent' })
+			edges.push({ from: issue.parentId, to: issue.id, kind: LINK_KIND.PARENT })
 		}
 
 		for (const blocker of issue.dependsOn) {
-			if (present.has(blocker)) edges.push({ from: blocker, to: issue.id, kind: 'blocks' })
+			if (present.has(blocker)) edges.push({ from: blocker, to: issue.id, kind: LINK_KIND.BLOCKS })
 		}
 
 		for (const other of issue.relatedTo) {
@@ -80,7 +80,7 @@ const edgesOf = (issues: readonly Issue[]): readonly Edge[] => {
 			if (drawn.has(key)) continue
 
 			drawn.add(key)
-			edges.push({ from: issue.id, to: other, kind: 'relates' })
+			edges.push({ from: issue.id, to: other, kind: LINK_KIND.RELATES })
 		}
 	}
 
@@ -95,7 +95,7 @@ const ranksOf = (issues: readonly Issue[], edges: readonly Edge[]): ReadonlyMap<
 	const incoming = new Map<IssueId, IssueId[]>()
 
 	for (const edge of edges) {
-		if (edge.kind === 'relates') continue
+		if (edge.kind === LINK_KIND.RELATES) continue
 
 		const bucket = incoming.get(edge.to)
 
@@ -156,7 +156,7 @@ export const layout = (issues: readonly Issue[]): Graph => {
 	// Ordering by the mean position of a node's parents keeps an edge as close
 	// to vertical as it can be, which is what stops the picture looking woven.
 	const barycentre = (issue: Issue): number => {
-		const above = edges.filter(edge => edge.to === issue.id && edge.kind !== 'relates')
+		const above = edges.filter(edge => edge.to === issue.id && edge.kind !== LINK_KIND.RELATES)
 
 		if (above.length === 0) return position.get(issue.id) ?? 0
 

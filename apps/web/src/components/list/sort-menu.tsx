@@ -4,16 +4,16 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 } from '@thom/ui/dropdown-menu'
-import type { Sort, SortDirection } from '_/core/ports/sort'
+import { SORT_DIRECTION, type Sort, type SortDirection } from '_/core/ports/sort'
 import { SortIcon } from './icons'
 
 // Clicking the active field flips direction; clicking another switches to it
 // descending, which is what a date or priority column is usually wanted in.
 const next = <TField extends string>(current: Sort<TField> | undefined, field: TField): Sort<TField> => {
 	if (current?.field !== field) {
-		return { field, direction: 'desc' }
+		return { field, direction: SORT_DIRECTION.DESC }
 	}
-	return { field, direction: current.direction === 'desc' ? 'asc' : 'desc' }
+	return { field, direction: current.direction === SORT_DIRECTION.DESC ? SORT_DIRECTION.ASC : SORT_DIRECTION.DESC }
 }
 
 const ARROW: Record<SortDirection, string> = { asc: '↑', desc: '↓' }

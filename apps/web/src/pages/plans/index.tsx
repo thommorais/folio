@@ -4,7 +4,7 @@ import { Badge } from '@thom/ui/badge'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { usePlans } from '_/app/use-plans'
-import { DEFAULT_PLAN_STATUSES, type Plan } from '_/core/domain/plan'
+import { DEFAULT_PLAN_STATUSES, PLAN_STATUS, type Plan } from '_/core/domain/plan'
 import { PlanFilters } from './plan-filters'
 import { PLAN_STATUS_LABELS } from './status-labels'
 import { useScope } from '_/routing/use-scope'
@@ -20,7 +20,7 @@ const Row = ({ plan, project }: { readonly plan: Plan; readonly project: string 
 			className='hover:bg-accent/40 block space-y-2 px-4 py-4 transition-colors'
 		>
 			<div className='flex items-start justify-between gap-4'>
-				<h3 className={cn('text-sm font-medium', plan.status === 'done' && 'text-dim line-through')}>{plan.title}</h3>
+				<h3 className={cn('text-sm font-medium', plan.status === PLAN_STATUS.DONE && 'text-dim line-through')}>{plan.title}</h3>
 				<span className='text-dim shrink-0 text-xs'>{PLAN_STATUS_LABELS[plan.status]}</span>
 			</div>
 

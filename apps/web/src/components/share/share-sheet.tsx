@@ -5,7 +5,7 @@ import { Input } from '@thom/ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@thom/ui/sheet'
 import { toast } from '@thom/ui/toast'
 import { useShareLinks } from '_/app/use-share-links'
-import { SHARE_LABEL_MAX, shareUrl, type ShareLink, type ShareTarget } from '_/core/domain/share'
+import { SHARE_LABEL_MAX, shareUrl, SHARE_KIND, type ShareLink, type ShareTarget } from '_/core/domain/share'
 import { Status } from '_/lib/async-status'
 
 const formatDate = (date: Date): string =>
@@ -105,7 +105,7 @@ const SharePanel = ({ target }: { readonly target: ShareTarget }) => {
 	const [error, setError] = useState<string>()
 	const [creating, setCreating] = useState(false)
 
-	const what = target.kind === 'issue' ? 'ticket, with its todos, plans, docs and journal,' : 'plan and its todos'
+	const what = target.kind === SHARE_KIND.ISSUE ? 'ticket, with its todos, plans, docs and journal,' : 'plan and its todos'
 
 	const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault()

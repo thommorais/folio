@@ -11,8 +11,8 @@ import { Markdown } from '_/components/markdown';
 import { RecordGone } from '_/components/record/record-gone';
 import { ShareSheet } from '_/components/share/share-sheet';
 import { newestFirst } from '_/core/domain/cycle-progress';
-import { ADDRESSABLE_KINDS, KIND } from '_/core/domain/entry';
-import type { Issue, IssueStatus } from '_/core/domain/issue';
+import { ADDRESSABLE_KINDS, ENTRY_KIND } from '_/core/domain/entry';
+import { ISSUE_KIND, ISSUE_STATUS, type Issue, type IssueStatus } from '_/core/domain/issue';
 import { Status } from '_/lib/async-status';
 import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels';
 import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels';
@@ -20,6 +20,7 @@ import { useScope } from '_/routing/use-scope';
 import { useSlugSync } from '_/routing/use-slug-sync';
 import { CycleTimeline } from './cycle-timeline';
 import { MapFrontier } from './map-frontier';
+import { SHARE_KIND } from '_/core/domain/share';
 
 const statusLabels: Record<IssueStatus, string> = {
 	open: 'Open',
@@ -93,17 +94,17 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	const { client, domain } = useScope()
 	const ticketId = ticket.id
 	const plans = usePlans(project, { ticketId })
-	const todos = useIssues(project, { kind: KIND.TODO, parentId: ticketId })
+	const todos = useIssues(project, { kind: ISSUE_KIND.TODO, parentId: ticketId })
 	const journal = useEntries(project, { kinds: ADDRESSABLE_KINDS, issueId: ticketId })
 	const cycles = useCycles(project, { ticketId })
-	const workLog = useEntries(project, { kind: KIND.LOG, issueId: ticketId })
+	const workLog = useEntries(project, { kind: ENTRY_KIND.LOG, issueId: ticketId })
 
 	// A log stamped with a cycle is shown on that round in the timeline, so
 	// only the loose ones are left for the section below it.
 	const unstamped = workLog.status === Status.Ready ? workLog.entries.filter(entry => entry.cycleId === undefined) : []
 
 	const current = cycles.status === Status.Ready ? newestFirst(cycles.cycles).at(0) : undefined
-	const siblings = useIssues(project, { kind: KIND.TICKET})
+	const siblings = useIssues(project, { kind: ISSUE_KIND.TICKET })
 	const parent =
 		ticket.parentId !== undefined && siblings.status === Status.Ready
 			? siblings.issues.find(candidate => candidate.id === ticket.parentId)
@@ -114,7 +115,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 			<header className='space-y-3'>
 				<div className='flex items-start justify-between gap-4'>
 					<Heading>{ticket.title}</Heading>
-					<ShareSheet target={{ kind: 'issue', id: ticket.id, projectId: ticket.projectId }} />
+					<ShareSheet target={{ kind: SHARE_KIND.ISSUE, id: ticket.id, projectId: ticket.projectId }} />
 				</div>
 
 				<div className='flex flex-wrap items-center gap-2'>
@@ -207,15 +208,15 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 									<span
 										className={cn(
 											'border-border size-4 shrink-0 border',
-											todo.status === 'done' && 'bg-foreground border-foreground',
+											todo.status === ISSUE_STATUS.DONE && 'bg-foreground border-foreground',
 										)}
 									/>
 
-									<span className={cn('flex-1 truncate text-sm', todo.status === 'done' && 'text-dim line-through')}>
+									<span className={cn('flex-1 truncate text-sm', todo.status === ISSUE_STATUS.DONE && 'text-dim line-through')}>
 										{todo.title}
 									</span>
 
-									{todo.status === 'blocked' && <Badge color='destructive'>Blocked</Badge>}
+									{todo.status === ISSUE_STATUS.BLOCKED && <Badge color='destructive'>Blocked</Badge>}
 
 									<span className='hidden shrink-0 items-center gap-3 sm:flex'>
 										{todo.tags.map(tag => (

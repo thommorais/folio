@@ -4,6 +4,7 @@ import type { Cycle } from '_/core/domain/cycle'
 import { isResolved } from '_/core/domain/cycle'
 import { cycleProgress, newestFirst } from '_/core/domain/cycle-progress'
 import { Status } from '_/lib/async-status'
+import { ENTRY_KIND } from '_/core/domain/entry'
 
 type Props = {
 	readonly project: string
@@ -34,7 +35,7 @@ const PhaseRail = ({ cycle }: { readonly cycle: Cycle }) => (
 // Work logs are stamped with the cycle that was open when they landed, so each
 // round loads its own rather than the ticket's whole log being split up here.
 const CycleBlock = ({ project, cycle }: { readonly project: string; readonly cycle: Cycle }) => {
-	const logs = useEntries(project, { kind: 'log', cycleId: cycle.id })
+	const logs = useEntries(project, { kind: ENTRY_KIND.LOG, cycleId: cycle.id })
 	const resolved = isResolved(cycle)
 
 	return (

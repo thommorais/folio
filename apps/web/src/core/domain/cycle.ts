@@ -6,7 +6,14 @@ export type CycleId = Branded<string, 'CycleId'>
 
 export const cycleId = (value: string): CycleId => value as CycleId
 
-export const PHASES = ['plan', 'do', 'check', 'act'] as const
+export const PHASE = {
+	PLAN: 'plan',
+	DO: 'do',
+	CHECK: 'check',
+	ACT: 'act',
+} as const
+
+export const PHASES = [PHASE.PLAN, PHASE.DO, PHASE.CHECK, PHASE.ACT] as const
 
 export type Phase = (typeof PHASES)[number]
 

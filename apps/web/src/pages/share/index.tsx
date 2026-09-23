@@ -5,10 +5,12 @@ import { Heading } from '@thom/ui/heading'
 import { useShared } from '_/app/use-shared'
 import { Markdown } from '_/components/markdown'
 import { Skeleton } from '_/components/motion/skeleton'
-import type { SharedCycle, SharedEntry, SharedIssue, SharedItem, SharedPlan } from '_/core/domain/share'
+import { SHARE_KIND, type SharedCycle, type SharedEntry, type SharedIssue, type SharedItem, type SharedPlan } from '_/core/domain/share'
 import { Status } from '_/lib/async-status'
 import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels'
+import { ISSUE_STATUS } from '_/core/domain/issue'
+import { PLAN_STATUS } from '_/core/domain/plan'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
@@ -32,12 +34,12 @@ const TodoList = ({ todos }: { readonly todos: readonly (SharedIssue & { readonl
 		{todos.map(todo => (
 			<li key={todo.id} className='flex items-center gap-3 px-4 py-3'>
 				<span
-					className={cn('border-border size-4 shrink-0 border', todo.status === 'done' && 'bg-foreground border-foreground')}
+					className={cn('border-border size-4 shrink-0 border', todo.status === ISSUE_STATUS.DONE && 'bg-foreground border-foreground')}
 				/>
-				<span className={cn('flex-1 truncate text-sm', todo.status === 'done' && 'text-dim line-through')}>
+				<span className={cn('flex-1 truncate text-sm', todo.status === ISSUE_STATUS.DONE && 'text-dim line-through')}>
 					{todo.title}
 				</span>
-				{todo.status === 'blocked' && <Badge color='destructive'>Blocked</Badge>}
+				{todo.status === ISSUE_STATUS.BLOCKED && <Badge color='destructive'>Blocked</Badge>}
 				<span className='text-dim w-24 shrink-0 text-right text-xs'>{ISSUE_STATUS_LABELS[todo.status]}</span>
 			</li>
 		))}
@@ -73,7 +75,7 @@ const CycleList = ({ cycles }: { readonly cycles: readonly SharedCycle[] }) => (
 const planProgress = (plan: SharedPlan): string =>
 	plan.progress.total === 0 ? 'no todos' : `${plan.progress.done} of ${plan.progress.total} done`
 
-const IssueView = ({ item }: { readonly item: Extract<SharedItem, { kind: 'issue' }> }) => {
+const IssueView = ({ item }: { readonly item: Extract<SharedItem, { kind: typeof SHARE_KIND.ISSUE }> }) => {
 	const { issue } = item
 
 	return (
@@ -129,13 +131,13 @@ const IssueView = ({ item }: { readonly item: Extract<SharedItem, { kind: 'issue
 	)
 }
 
-const PlanView = ({ item }: { readonly item: Extract<SharedItem, { kind: 'plan' }> }) => {
+const PlanView = ({ item }: { readonly item: Extract<SharedItem, { kind: typeof SHARE_KIND.PLAN }> }) => {
 	const { plan } = item
 
 	return (
 		<>
 			<header className='space-y-3'>
-				<Heading className={cn(plan.status === 'done' && 'text-dim line-through')}>{plan.title}</Heading>
+				<Heading className={cn(plan.status === PLAN_STATUS.DONE && 'text-dim line-through')}>{plan.title}</Heading>
 				<div className='text-dimmer flex flex-wrap items-center gap-3 text-xs'>
 					<Badge color='neutral'>{PLAN_STATUS_LABELS[plan.status]}</Badge>
 					<span>{planProgress(plan)}</span>
@@ -203,7 +205,7 @@ const SharedPage = () => {
 
 	return (
 		<Frame label={state.item.label}>
-			{state.item.kind === 'issue' ? <IssueView item={state.item} /> : <PlanView item={state.item} />}
+			{state.item.kind === SHARE_KIND.ISSUE ? <IssueView item={state.item} /> : <PlanView item={state.item} />}
 		</Frame>
 	)
 }

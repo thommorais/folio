@@ -5,6 +5,13 @@ import type { Phase } from './cycle'
 import type { PlanStatus } from './plan'
 import type { ProjectId } from './project'
 
+export const SHARE_KIND = {
+	ISSUE: 'issue',
+	PLAN: 'plan',
+} as const
+
+export type ShareKind = (typeof SHARE_KIND)[keyof typeof SHARE_KIND]
+
 export type SharedIssue = {
 	readonly kind: IssueKind
 	readonly title: string
@@ -43,7 +50,7 @@ export type SharedCycle = {
 
 export type SharedItem =
 	| {
-			readonly kind: 'issue'
+			readonly kind: typeof SHARE_KIND.ISSUE
 			readonly label: string
 			readonly issue: SharedIssue
 			readonly todos: readonly (SharedIssue & { readonly id: string })[]
@@ -53,7 +60,7 @@ export type SharedItem =
 			readonly cycles: readonly SharedCycle[]
 	  }
 	| {
-			readonly kind: 'plan'
+			readonly kind: typeof SHARE_KIND.PLAN
 			readonly label: string
 			readonly plan: SharedPlan
 			readonly todos: readonly (SharedIssue & { readonly id: string })[]
@@ -64,7 +71,7 @@ export type ShareId = Branded<string, 'ShareId'>
 export const shareId = (value: string): ShareId => value as ShareId
 
 export type ShareTarget = {
-	readonly kind: 'issue' | 'plan'
+	readonly kind: ShareKind
 	readonly id: string
 	readonly projectId: ProjectId
 }

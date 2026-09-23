@@ -1,8 +1,14 @@
-export const THEMES = ['light', 'dark', 'system'] as const
+export const THEME = {
+	LIGHT: 'light',
+	DARK: 'dark',
+	SYSTEM: 'system',
+} as const
+
+export const THEMES = [THEME.LIGHT, THEME.DARK, THEME.SYSTEM] as const
 
 export type Theme = (typeof THEMES)[number]
 
-export type Appearance = 'light' | 'dark'
+export type Appearance = typeof THEME.LIGHT | typeof THEME.DARK
 
 export type ThemePort = {
 	readonly current: () => Theme

@@ -7,7 +7,23 @@ import type { ProjectId } from '../domain/project'
 // The API also answers 'worklog' and 'resolution'. Neither is addressable in
 // this app, so the palette does not ask for them rather than offering a row
 // that cannot be opened.
-export const SEARCH_KINDS = ['knowledge', 'ticket', 'todo', 'plan', 'doc', 'journal'] as const
+export const SEARCH_KIND = {
+	KNOWLEDGE: 'knowledge',
+	TICKET: 'ticket',
+	TODO: 'todo',
+	PLAN: 'plan',
+	DOC: 'doc',
+	JOURNAL: 'journal',
+} as const
+
+export const SEARCH_KINDS = [
+	SEARCH_KIND.KNOWLEDGE,
+	SEARCH_KIND.TICKET,
+	SEARCH_KIND.TODO,
+	SEARCH_KIND.PLAN,
+	SEARCH_KIND.DOC,
+	SEARCH_KIND.JOURNAL,
+] as const
 
 export type SearchKind = (typeof SEARCH_KINDS)[number]
 

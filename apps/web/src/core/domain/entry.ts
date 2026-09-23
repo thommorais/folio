@@ -8,7 +8,13 @@ export type EntryId = Branded<string, 'EntryId'>
 
 export const entryId = (value: string): EntryId => value as EntryId
 
-export const ENTRY_KINDS = ['journal', 'doc', 'log'] as const
+export const ENTRY_KIND = {
+	JOURNAL: 'journal',
+	DOC: 'doc',
+	LOG: 'log',
+} as const
+
+export const ENTRY_KINDS = [ENTRY_KIND.JOURNAL, ENTRY_KIND.DOC, ENTRY_KIND.LOG] as const
 
 export type EntryKind = (typeof ENTRY_KINDS)[number]
 
@@ -33,15 +39,8 @@ export type Entry = {
 
 // Journal entries and docs are addressed by slug and listed on their own.
 // A log belongs to the ticket it was written against, so it is not one of them.
-export const ADDRESSABLE_KINDS = ['journal', 'doc'] as const
+export const ADDRESSABLE_KINDS = [ENTRY_KIND.JOURNAL, ENTRY_KIND.DOC] as const
 
 export type AddressableKind = (typeof ADDRESSABLE_KINDS)[number]
 
-export const isAddressable = (kind: EntryKind): boolean => kind === 'journal' || kind === 'doc'
-
-export const KIND = {
-	TICKET: 'ticket',
-	TAGS: 'tags',
-	TODO: 'todo',
-	LOG: 'log'
-} as const
+export const isAddressable = (kind: EntryKind): boolean => kind === ENTRY_KIND.JOURNAL || kind === ENTRY_KIND.DOC

@@ -1,7 +1,8 @@
 import { create } from '_/lib/store'
+import { ISSUE_KIND } from '_/core/domain/issue'
 
 type Preview = {
-	readonly kind: 'todo'
+	readonly kind: typeof ISSUE_KIND.TODO
 	readonly project: string
 	readonly id: string
 }

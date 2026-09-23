@@ -1,8 +1,8 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar';
+import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar';
 import { SortMenu } from '_/components/list/sort-menu';
 import { ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue';
-import { ISSUE_SORT_FIELDS, type IssueSortField } from '_/core/ports/sort';
+import { ISSUE_SORT_FIELDS, type IssueSortField, type SortDirection } from '_/core/ports/sort';
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary';
 import { ISSUE_STATUS_LABELS } from './status-labels';
 
@@ -21,7 +21,7 @@ type IssuesSearch = {
 	readonly priority?: Priority
 	readonly tags?: readonly string[]
 	readonly q?: string
-	readonly sort?: { readonly field: IssueSortField; readonly direction: 'asc' | 'desc' }
+	readonly sort?: { readonly field: IssueSortField; readonly direction: SortDirection }
 }
 
 const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly IssueStatus[] }) => {
@@ -37,7 +37,7 @@ const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly
 
 	if (search.statuses !== undefined) {
 		chips.push({
-			key: 'statuses',
+			key: FILTER_KEY.STATUSES,
 			label: search.statuses.map(status => ISSUE_STATUS_LABELS[status]).join(', '),
 			onRemove: () => {
 				setFilter({ statuses: undefined })
@@ -46,7 +46,7 @@ const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly
 	}
 	if (search.priority !== undefined) {
 		chips.push({
-			key: 'priority',
+			key: FILTER_KEY.PRIORITY,
 			label: search.priority,
 			onRemove: () => {
 				setFilter({ priority: undefined })
@@ -55,7 +55,7 @@ const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly
 	}
 	if (search.tags !== undefined) {
 		chips.push({
-			key: 'tags',
+			key: FILTER_KEY.TAGS,
 			label: search.tags.join(', '),
 			onRemove: () => {
 				setFilter({ tags: undefined })

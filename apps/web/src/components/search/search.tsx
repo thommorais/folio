@@ -4,10 +4,11 @@ import { motion, useReducedMotion } from 'motion/react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@thom/ui/command'
-import { SEARCH_KINDS, type SearchHit, type SearchKind } from '_/core/ports/search'
+import { SEARCH_KIND, SEARCH_KINDS, type SearchHit, type SearchKind } from '_/core/ports/search'
 import { useSearch } from '_/app/use-search'
 import { usePreviewStore } from '_/app/preview-store'
 import { useSearchStore } from '_/app/search-store'
+import { ISSUE_KIND } from '_/core/domain/issue'
 
 type Shortcut = {
 	readonly id: string
@@ -105,24 +106,24 @@ export const Search = () => {
 
 		// Knowledge belongs to no project, so it has none of the path the
 		// other kinds route by and lives at the top level instead.
-		if (hit.kind === 'knowledge') {
+		if (hit.kind === SEARCH_KIND.KNOWLEDGE) {
 			void navigate({ to: '/knowledge/$note', params: { note: hit.slug } })
 			return
 		}
 
-		if (hit.kind === 'todo') {
-			openPreview({ kind: 'todo', project: hit.projectSlug, id: hit.id })
+		if (hit.kind === SEARCH_KIND.TODO) {
+			openPreview({ kind: ISSUE_KIND.TODO, project: hit.projectSlug, id: hit.id })
 			return
 		}
 
 		const scope = { client: hit.clientSlug, domain: hit.domainSlug, slug: hit.projectSlug }
 
-		if (hit.kind === 'plan') {
+		if (hit.kind === SEARCH_KIND.PLAN) {
 			void navigate({ to: '/$client/$domain/$slug/plans/$plan', params: { ...scope, plan: hit.id } })
 			return
 		}
 
-		if (hit.kind === 'ticket') {
+		if (hit.kind === SEARCH_KIND.TICKET) {
 			void navigate({ to: '/$client/$domain/$slug/tickets/$ticket', params: { ...scope, ticket: hit.slug } })
 			return
 		}

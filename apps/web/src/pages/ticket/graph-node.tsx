@@ -1,5 +1,5 @@
 import { cn } from '@thom/libs/cn'
-import type { Issue, IssueStatus } from '_/core/domain/issue'
+import { ISSUE_STATUS, isTerminal, type Issue, type IssueStatus } from '_/core/domain/issue'
 import { NODE } from './graph-geometry'
 
 // Status is the fill, so a glance says how far along the row is without
@@ -8,10 +8,10 @@ import { NODE } from './graph-geometry'
 // than it earned: the tapering ones had to be drawn far wider than their box
 // just to hold a title.
 const fillFor = (status: IssueStatus, blocked: boolean): string => {
-	if (status === 'done') return 'fill-foreground/15'
-	if (status === 'cancelled') return 'fill-transparent'
-	if (blocked || status === 'blocked') return 'fill-[url(#blocked-hatch)]'
-	if (status === 'in_progress') return 'fill-foreground/8'
+	if (status === ISSUE_STATUS.DONE) return 'fill-foreground/15'
+	if (status === ISSUE_STATUS.CANCELLED) return 'fill-transparent'
+	if (blocked || status === ISSUE_STATUS.BLOCKED) return 'fill-[url(#blocked-hatch)]'
+	if (status === ISSUE_STATUS.IN_PROGRESS) return 'fill-foreground/8'
 	return 'fill-background'
 }
 
@@ -24,7 +24,7 @@ type Props = {
 }
 
 const GraphNode = ({ issue, x, y, dimmed, onFocus }: Props) => {
-	const terminal = issue.status === 'done' || issue.status === 'cancelled'
+	const terminal = isTerminal(issue.status)
 
 	return (
 		<g
@@ -38,7 +38,7 @@ const GraphNode = ({ issue, x, y, dimmed, onFocus }: Props) => {
 				height={NODE.height}
 				className={cn('stroke-border stroke-1', fillFor(issue.status, issue.blocked))}
 				// A cancelled node keeps its outline but loses its weight.
-				strokeDasharray={issue.status === 'cancelled' ? '3 3' : undefined}
+				strokeDasharray={issue.status === ISSUE_STATUS.CANCELLED ? '3 3' : undefined}
 			/>
 
 			<foreignObject x={10} y={8} width={NODE.width - 20} height={NODE.height - 16}>
@@ -47,7 +47,7 @@ const GraphNode = ({ issue, x, y, dimmed, onFocus }: Props) => {
 						className={cn(
 							'truncate text-xs leading-tight',
 							terminal ? 'text-dim' : 'text-foreground',
-							issue.status === 'cancelled' && 'line-through',
+							issue.status === ISSUE_STATUS.CANCELLED && 'line-through',
 						)}
 					>
 						{issue.title}

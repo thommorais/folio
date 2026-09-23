@@ -6,17 +6,42 @@ export type IssueId = Branded<string, 'IssueId'>
 
 export const issueId = (value: string): IssueId => value as IssueId
 
-export const ISSUE_KINDS = ['ticket', 'todo'] as const
+export const ISSUE_KIND = {
+	TICKET: 'ticket',
+	TODO: 'todo',
+} as const
+
+export const ISSUE_KINDS = [ISSUE_KIND.TICKET, ISSUE_KIND.TODO] as const
 
 export type IssueKind = (typeof ISSUE_KINDS)[number]
 
-export const ISSUE_STATUSES = ['open', 'in_progress', 'blocked', 'done', 'cancelled'] as const
+export const ISSUE_STATUS = {
+	OPEN: 'open',
+	IN_PROGRESS: 'in_progress',
+	BLOCKED: 'blocked',
+	DONE: 'done',
+	CANCELLED: 'cancelled',
+} as const
+
+export const ISSUE_STATUSES = [
+	ISSUE_STATUS.OPEN,
+	ISSUE_STATUS.IN_PROGRESS,
+	ISSUE_STATUS.BLOCKED,
+	ISSUE_STATUS.DONE,
+	ISSUE_STATUS.CANCELLED,
+] as const
 
 export type IssueStatus = (typeof ISSUE_STATUSES)[number]
 
-export const DEFAULT_TICKET_STATUSES: readonly IssueStatus[] = ISSUE_STATUSES.filter(status => status !== 'done' && status !== 'cancelled')
+export const DEFAULT_TICKET_STATUSES: readonly IssueStatus[] = ISSUE_STATUSES.filter(status => status !== ISSUE_STATUS.DONE && status !== ISSUE_STATUS.CANCELLED)
 
-export const PRIORITIES = ['low', 'medium', 'high'] as const
+export const PRIORITY = {
+	LOW: 'low',
+	MEDIUM: 'medium',
+	HIGH: 'high',
+} as const
+
+export const PRIORITIES = [PRIORITY.LOW, PRIORITY.MEDIUM, PRIORITY.HIGH] as const
 
 export type Priority = (typeof PRIORITIES)[number]
 
@@ -28,7 +53,13 @@ export const WAYFINDER_TYPES = ['map', 'research', 'prototype', 'grilling', 'tas
 
 export type WayfinderType = (typeof WAYFINDER_TYPES)[number]
 
-export const LINK_KINDS = ['blocks', 'relates', 'parent'] as const
+export const LINK_KIND = {
+	BLOCKS: 'blocks',
+	RELATES: 'relates',
+	PARENT: 'parent',
+} as const
+
+export const LINK_KINDS = [LINK_KIND.BLOCKS, LINK_KIND.RELATES, LINK_KIND.PARENT] as const
 
 export type LinkKind = (typeof LINK_KINDS)[number]
 
@@ -64,7 +95,7 @@ export type Issue = {
 	readonly blocked: boolean
 }
 
-export const isTerminal = (status: IssueStatus): boolean => status === 'done' || status === 'cancelled'
+export const isTerminal = (status: IssueStatus): boolean => status === ISSUE_STATUS.DONE || status === ISSUE_STATUS.CANCELLED
 
 const PRIORITY_WEIGHT: Record<Priority, number> = { low: 1, medium: 2, high: 3 }
 

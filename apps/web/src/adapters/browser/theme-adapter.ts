@@ -1,5 +1,5 @@
 import type { Appearance, Theme, ThemePort } from '_/core/ports/theme'
-import { THEMES } from '_/core/ports/theme'
+import { THEME, THEMES } from '_/core/ports/theme'
 
 const STORAGE_KEY = 'folio.theme'
 
@@ -8,21 +8,21 @@ const isTheme = (value: unknown): value is Theme => THEMES.includes(value as The
 const read = (): Theme => {
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY)
-		return isTheme(stored) ? stored : 'system'
+		return isTheme(stored) ? stored : THEME.SYSTEM
 	} catch {
-		return 'system'
+		return THEME.SYSTEM
 	}
 }
 
 const systemQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
 
 const resolve = (theme: Theme): Appearance => {
-	if (theme !== 'system') return theme
-	return systemQuery().matches ? 'dark' : 'light'
+	if (theme !== THEME.SYSTEM) return theme
+	return systemQuery().matches ? THEME.DARK : THEME.LIGHT
 }
 
 export const applyAppearance = (appearance: Appearance): void => {
-	document.documentElement.classList.toggle('dark', appearance === 'dark')
+	document.documentElement.classList.toggle('dark', appearance === THEME.DARK)
 	document.documentElement.style.colorScheme = appearance
 }
 
@@ -60,7 +60,7 @@ export const createThemeAdapter = (): ThemePort => {
 			listeners.add(listener)
 			const media = systemQuery()
 			const onSystemChange = () => {
-				if (theme === 'system') sync()
+				if (theme === THEME.SYSTEM) sync()
 			}
 			media.addEventListener('change', onSystemChange)
 

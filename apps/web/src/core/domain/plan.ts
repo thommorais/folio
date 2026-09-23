@@ -6,18 +6,18 @@ export type PlanId = Branded<string, 'PlanId'>
 
 export const planId = (value: string): PlanId => value as PlanId
 
-const STATUS = {
-	DRAFT:  'draft',
-	ACTIVE:'active',
+export const PLAN_STATUS = {
+	DRAFT: 'draft',
+	ACTIVE: 'active',
 	DONE: 'done',
-	ABANDONED: 'abandoned'
+	ABANDONED: 'abandoned',
 } as const
 
-export const PLAN_STATUSES = [STATUS.DRAFT, STATUS.ACTIVE, STATUS.DONE, STATUS.ABANDONED] as const
+export const PLAN_STATUSES = [PLAN_STATUS.DRAFT, PLAN_STATUS.ACTIVE, PLAN_STATUS.DONE, PLAN_STATUS.ABANDONED] as const
 
 export type PlanStatus = (typeof PLAN_STATUSES)[number]
 
-export const DEFAULT_PLAN_STATUSES: readonly PlanStatus[] = PLAN_STATUSES.filter(status => status !== STATUS.DONE && status !== STATUS.ABANDONED )
+export const DEFAULT_PLAN_STATUSES: readonly PlanStatus[] = PLAN_STATUSES.filter(status => status !== PLAN_STATUS.DONE && status !== PLAN_STATUS.ABANDONED)
 
 export type Plan = {
 	readonly id: PlanId
@@ -32,4 +32,4 @@ export type Plan = {
 	readonly updatedAt: Date
 }
 
-export const isTerminal = (status: PlanStatus): boolean => status === 'done' || status === 'abandoned'
+export const isTerminal = (status: PlanStatus): boolean => status === PLAN_STATUS.DONE || status === PLAN_STATUS.ABANDONED

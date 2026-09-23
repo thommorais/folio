@@ -1,4 +1,4 @@
-import type { SharedIssue, SharedItem, SharedPlan } from '_/core/domain/share'
+import { SHARE_KIND, type SharedIssue, type SharedItem, type SharedPlan } from '_/core/domain/share'
 import type { SharesPort } from '_/core/ports/shares'
 import { ENTRY_KINDS } from '_/core/domain/entry'
 import { ISSUE_KINDS, ISSUE_STATUSES, PRIORITIES } from '_/core/domain/issue'
@@ -55,7 +55,7 @@ const cycleSchema = z.object({
 
 const responseSchema = z.discriminatedUnion('kind', [
 	z.object({
-		kind: z.literal('issue'),
+		kind: z.literal(SHARE_KIND.ISSUE),
 		label: z.string(),
 		brief: z.object({
 			issue: issueSchema,
@@ -67,7 +67,7 @@ const responseSchema = z.discriminatedUnion('kind', [
 		}),
 	}),
 	z.object({
-		kind: z.literal('plan'),
+		kind: z.literal(SHARE_KIND.PLAN),
 		label: z.string(),
 		plan: planSchema,
 		todos: z.array(issueSchema).default([]),
@@ -100,14 +100,14 @@ const toPlan = (wire: PlanWire): SharedPlan & { readonly id: string } => ({
 })
 
 const toItem = (wire: z.infer<typeof responseSchema>): SharedItem => {
-	if (wire.kind === 'plan') {
-		return { kind: 'plan', label: wire.label, plan: toPlan(wire.plan), todos: wire.todos.map(toIssue) }
+	if (wire.kind === SHARE_KIND.PLAN) {
+		return { kind: SHARE_KIND.PLAN, label: wire.label, plan: toPlan(wire.plan), todos: wire.todos.map(toIssue) }
 	}
 
 	const { brief } = wire
 
 	return {
-		kind: 'issue',
+		kind: SHARE_KIND.ISSUE,
 		label: wire.label,
 		issue: toIssue(brief.issue),
 		todos: brief.children.map(toIssue),

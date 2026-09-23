@@ -1,9 +1,8 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { DropdownMenuItem } from '@thom/ui/dropdown-menu';
 import { useIssues } from '_/app/use-issues';
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar';
+import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar';
 import { SortMenu } from '_/components/list/sort-menu';
-import { KIND } from '_/core/domain/entry';
 import { DEFAULT_PLAN_STATUSES, PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan';
 import { PLAN_SORT_FIELDS, type PlanSortField } from '_/core/ports/sort';
 import { Status } from '_/lib/async-status';
@@ -40,7 +39,7 @@ const PlanFilters = () => {
 
 	if (search.ticket !== undefined) {
 		chips.push({
-			key: KIND.TICKET,
+			key: FILTER_KEY.TICKET,
 			label: ticketTitle(search.ticket),
 			onRemove: () => {
 				setFilter({ ticket: undefined })
@@ -49,7 +48,7 @@ const PlanFilters = () => {
 	}
 	if (search.statuses !== undefined) {
 		chips.push({
-			key: 'statuses',
+			key: FILTER_KEY.STATUSES,
 			label: search.statuses.map(status => PLAN_STATUS_LABELS[status]).join(', '),
 			onRemove: () => {
 				setFilter({ statuses: undefined })
@@ -58,7 +57,7 @@ const PlanFilters = () => {
 	}
 	if (search.tags !== undefined) {
 		chips.push({
-			key: KIND.TAGS,
+			key: FILTER_KEY.TAGS,
 			label: search.tags.join(', '),
 			onRemove: () => {
 				setFilter({ tags: undefined })

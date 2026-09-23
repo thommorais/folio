@@ -1,7 +1,7 @@
 import { useParams, useSearch } from '@tanstack/react-router'
 import { useIssues } from '_/app/use-issues'
 import { usePlans } from '_/app/use-plans'
-import { isTerminal, type Issue } from '_/core/domain/issue'
+import { isTerminal, ISSUE_KIND, ISSUE_STATUS, type Issue } from '_/core/domain/issue'
 import { isTerminal as isPlanTerminal, type Plan } from '_/core/domain/plan'
 import { useScope } from '_/routing/use-scope'
 import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
@@ -34,7 +34,7 @@ const todoItem = (scope: Scope, todo: Issue): WorkItem => ({
 	title: todo.title,
 	status: ISSUE_STATUS_LABELS[todo.status],
 	muted: isTerminal(todo.status),
-	checked: todo.status === 'done',
+	checked: todo.status === ISSUE_STATUS.DONE,
 	meta: [todo.priority, ...todo.tags],
 	to: '/$client/$domain/$slug/todos',
 	params: scope,
@@ -71,7 +71,7 @@ const Work = () => {
 		search.ticket !== undefined
 
 	const tickets = useIssues(slug, {
-		kind: 'ticket',
+		kind: ISSUE_KIND.TICKET,
 		search: term,
 		status: search.statuses,
 		priority: search.priority,
@@ -79,7 +79,7 @@ const Work = () => {
 		sort: search.sort,
 	})
 	const todos = useIssues(slug, {
-		kind: 'todo',
+		kind: ISSUE_KIND.TODO,
 		search: term,
 		status: search.statuses,
 		priority: search.priority,

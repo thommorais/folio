@@ -7,6 +7,7 @@ import type {
 } from '_/pocketbase-types'
 import { getPocketBaseClient } from './client'
 import { keyed } from './request-key'
+import { LINK_KIND } from '_/core/domain/issue'
 
 type TagLink = { readonly tag: string; readonly expand?: { readonly tag?: JournTagsResponse } }
 
@@ -83,11 +84,11 @@ export const linksOf = async (ids: readonly string[]): Promise<Links> => {
 		)
 
 		for (const row of rows) {
-			if (row.kind === 'parent') {
+			if (row.kind === LINK_KIND.PARENT) {
 				parentOf.set(row.from, row.to)
 				continue
 			}
-			if (row.kind === 'blocks') {
+			if (row.kind === LINK_KIND.BLOCKS) {
 				const bucket = dependsOn.get(row.to) ?? []
 				bucket.push(row.from)
 				dependsOn.set(row.to, bucket)

@@ -4,7 +4,7 @@ import { cn } from '@thom/libs/cn'
 import { useIssueById } from '_/app/use-issue'
 import { useIssues } from '_/app/use-issues'
 import { usePlans } from '_/app/use-plans'
-import type { Issue, IssueStatus } from '_/core/domain/issue'
+import { ISSUE_KIND, ISSUE_STATUS, type Issue, type IssueStatus } from '_/core/domain/issue'
 import { ISSUE_STATUS_LABELS } from './status-labels'
 import { Status } from '_/lib/async-status'
 
@@ -40,7 +40,7 @@ const Skeleton = () => (
 const Body = ({ todo, project }: { readonly todo: Issue; readonly project: string }) => {
 	// The record stores ids; a bare id tells the reader nothing, so each is
 	// resolved to the title and falls back to the id if the lookup is not in yet.
-	const tickets = useIssues(project, { kind: 'ticket' })
+	const tickets = useIssues(project, { kind: ISSUE_KIND.TICKET })
 	const plans = usePlans(project)
 
 	const ticketTitle =
@@ -61,7 +61,7 @@ const Body = ({ todo, project }: { readonly todo: Issue; readonly project: strin
 					<span>{formatDate(todo.createdAt)}</span>
 				</div>
 
-				<h2 className={cn('mt-6 mb-3 text-lg', todo.status === 'done' && 'text-dim line-through')}>{todo.title}</h2>
+				<h2 className={cn('mt-6 mb-3 text-lg', todo.status === ISSUE_STATUS.DONE && 'text-dim line-through')}>{todo.title}</h2>
 
 				<div className='flex flex-wrap items-center gap-2'>
 					<Badge color={statusColor(todo.status)}>{ISSUE_STATUS_LABELS[todo.status]}</Badge>
@@ -94,10 +94,10 @@ const Body = ({ todo, project }: { readonly todo: Issue; readonly project: strin
 }
 
 const statusColor = (status: IssueStatus) => {
-	if (status === 'blocked') {
+	if (status === ISSUE_STATUS.BLOCKED) {
 		return 'destructive' as const
 	}
-	return status === 'done' ? ('active' as const) : ('neutral' as const)
+	return status === ISSUE_STATUS.DONE ? ('active' as const) : ('neutral' as const)
 }
 
 type Props = {

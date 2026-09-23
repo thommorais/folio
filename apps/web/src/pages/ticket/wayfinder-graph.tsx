@@ -3,7 +3,7 @@ import { cn } from '@thom/libs/cn'
 import { useState } from 'react'
 import { layout, subtreeOf } from '_/core/domain/graph'
 import { connectedTo } from '_/core/domain/graph-path'
-import type { Issue, IssueId } from '_/core/domain/issue'
+import { LINK_KIND, type Issue, type IssueId } from '_/core/domain/issue'
 import { useScope } from '_/routing/use-scope'
 import { NODE, place, type Line } from './graph-geometry'
 import { GraphNode } from './graph-node'
@@ -17,7 +17,7 @@ type Props = {
 // An edge bends once, halfway down the gap between the ranks, so a run of them
 // reads as a set of tracks rather than a fan of diagonals.
 const pathOf = (line: Line): string => {
-	if (line.kind === 'relates') {
+	if (line.kind === LINK_KIND.RELATES) {
 		const lift = Math.max(24, Math.abs(line.to.x - line.from.x) / 3)
 		return `M ${line.from.x} ${line.from.y} C ${line.from.x + lift} ${line.from.y}, ${line.to.x - lift} ${line.to.y}, ${line.to.x} ${line.to.y}`
 	}
@@ -40,11 +40,11 @@ const WayfinderGraph = ({ project, mapId, issues }: Props) => {
 	// A node reached by a blocker is already placed by that edge. Drawing the
 	// parent as well says nothing more and, on a map where everything shares
 	// one parent, is most of the ink.
-	const blocked = new Set(full.edges.filter(edge => edge.kind === 'blocks').map(edge => edge.to))
+	const blocked = new Set(full.edges.filter(edge => edge.kind === LINK_KIND.BLOCKS).map(edge => edge.to))
 
 	const graph = {
 		...full,
-		edges: full.edges.filter(edge => edge.kind !== 'parent' || !blocked.has(edge.to)),
+		edges: full.edges.filter(edge => edge.kind !== LINK_KIND.PARENT || !blocked.has(edge.to)),
 	}
 
 	const { boxes, lines, width, height } = place(graph)
@@ -82,14 +82,14 @@ const WayfinderGraph = ({ project, mapId, issues }: Props) => {
 						fill='none'
 						className={cn(
 							'transition-opacity',
-							line.kind === 'blocks' ? 'stroke-foreground' : 'stroke-border',
+							line.kind === LINK_KIND.BLOCKS ? 'stroke-foreground' : 'stroke-border',
 							(dims(line.between[0]) || dims(line.between[1])) && 'opacity-20',
 						)}
 						strokeWidth={1}
 						// A relation is a weaker claim than a dependency, so it is
 						// drawn as a hint rather than a line.
-						strokeDasharray={line.kind === 'relates' ? '2 3' : undefined}
-						markerEnd={line.kind === 'blocks' ? 'url(#blocks-arrow)' : undefined}
+						strokeDasharray={line.kind === LINK_KIND.RELATES ? '2 3' : undefined}
+						markerEnd={line.kind === LINK_KIND.BLOCKS ? 'url(#blocks-arrow)' : undefined}
 					/>
 				))}
 

@@ -1,5 +1,5 @@
 import type { Edge } from './graph'
-import type { IssueId } from './issue'
+import { LINK_KIND, type IssueId } from './issue'
 
 // Everything reachable from a node along its edges, in either direction: what
 // it waits on, what waits on it, where it sits and what it is related to.
@@ -18,7 +18,7 @@ export const connectedTo = (edges: readonly Edge[], focus: IssueId): ReadonlySet
 	}
 
 	for (const edge of edges) {
-		if (edge.kind === 'parent') {
+		if (edge.kind === LINK_KIND.PARENT) {
 			// Upwards only. A parent places a node, but walking back down it
 			// would light up every sibling, which is the bulk of a map and
 			// exactly what the highlight is meant to dim.
