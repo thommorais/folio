@@ -5,6 +5,7 @@ import { Heading } from '@thom/ui/heading'
 import { Markdown } from '_/components/markdown'
 import { Skeleton } from '_/components/motion/skeleton'
 import { RecordGone } from '_/components/record/record-gone'
+import { ShareSheet } from '_/components/share/share-sheet'
 import { usePlan } from '_/app/use-plan'
 import type { Plan, PlanStatus } from '_/core/domain/plan'
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels'
@@ -26,7 +27,10 @@ const PlanBody = ({ plan, project }: { readonly plan: Plan; readonly project: st
 	return (
 		<article className='space-y-8'>
 			<header className='space-y-3'>
-				<Heading className={cn(plan.status === 'done' && 'text-dim line-through')}>{plan.title}</Heading>
+				<div className='flex items-start justify-between gap-4'>
+					<Heading className={cn(plan.status === 'done' && 'text-dim line-through')}>{plan.title}</Heading>
+					<ShareSheet target={{ kind: 'plan', id: plan.id, projectId: plan.projectId }} />
+				</div>
 
 				<div className='text-dimmer flex flex-wrap items-center gap-3 text-xs'>
 					<Badge color={statusColor(plan.status)}>{PLAN_STATUS_LABELS[plan.status]}</Badge>

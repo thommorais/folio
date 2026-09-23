@@ -9,6 +9,7 @@ import { useIssue } from '_/app/use-issue'
 import { useIssues } from '_/app/use-issues'
 import { Markdown } from '_/components/markdown'
 import { RecordGone } from '_/components/record/record-gone'
+import { ShareSheet } from '_/components/share/share-sheet'
 import { newestFirst } from '_/core/domain/cycle-progress'
 import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
 import type { Issue, IssueStatus } from '_/core/domain/issue'
@@ -111,7 +112,10 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	return (
 		<div className='space-y-8'>
 			<header className='space-y-3'>
-				<Heading>{ticket.title}</Heading>
+				<div className='flex items-start justify-between gap-4'>
+					<Heading>{ticket.title}</Heading>
+					<ShareSheet target={{ kind: 'issue', id: ticket.id, projectId: ticket.projectId }} />
+				</div>
 
 				<div className='flex flex-wrap items-center gap-2'>
 					<span className='text-dim text-xs'>{statusLabels[ticket.status]}</span>

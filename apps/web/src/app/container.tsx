@@ -11,6 +11,7 @@ import { createIssuesAdapter } from '_/adapters/pocketbase/issues-adapter'
 import { createPlansAdapter } from '_/adapters/pocketbase/plans-adapter'
 import { createProjectsAdapter } from '_/adapters/pocketbase/projects-adapter'
 import { createSearchAdapter } from '_/adapters/pocketbase/search-adapter'
+import { createShareLinksAdapter } from '_/adapters/pocketbase/share-links-adapter'
 import type { AuthPort } from '_/core/ports/auth'
 import type { ClientsPort } from '_/core/ports/clients'
 import type { ConnectionPort } from '_/core/ports/connection'
@@ -21,6 +22,7 @@ import type { IssuesPort } from '_/core/ports/issues'
 import type { PlansPort } from '_/core/ports/plans'
 import type { ProjectsPort } from '_/core/ports/projects'
 import type { SearchPort } from '_/core/ports/search'
+import type { ShareLinksPort } from '_/core/ports/share-links'
 import type { SharesPort } from '_/core/ports/shares'
 import type { ThemePort } from '_/core/ports/theme'
 
@@ -35,6 +37,7 @@ export type Container = {
 	readonly plans: PlansPort
 	readonly projects: ProjectsPort
 	readonly search: SearchPort
+	readonly shareLinks: ShareLinksPort
 	readonly shares: SharesPort
 	readonly theme: ThemePort
 }
@@ -50,6 +53,7 @@ export const createContainer = (): Container => ({
 	plans: createPlansAdapter(),
 	projects: createProjectsAdapter(),
 	search: createSearchAdapter(),
+	shareLinks: createShareLinksAdapter(),
 	shares: createSharesAdapter(),
 	theme: createThemeAdapter(),
 })

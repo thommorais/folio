@@ -22,6 +22,7 @@ export const Collections = {
 	JournMembers: "journ_members",
 	JournPlans: "journ_plans",
 	JournProjects: "journ_projects",
+	JournShares: "journ_shares",
 	JournTags: "journ_tags",
 	Users: "users",
 } as const
@@ -305,6 +306,19 @@ export type JournProjectsRecord = {
 	updated: IsoAutoDateString
 }
 
+export type JournSharesRecord = {
+	created: IsoAutoDateString
+	created_by: RecordIdString
+	id: string
+	issue?: RecordIdString
+	label: string
+	last_accessed_at?: IsoDateString
+	plan?: RecordIdString
+	project: RecordIdString
+	token: string
+	updated: IsoAutoDateString
+}
+
 export type JournTagsRecord = {
 	created: IsoAutoDateString
 	domain: RecordIdString
@@ -344,6 +358,7 @@ export type JournIssuesResponse<Ttags = unknown, Texpand = unknown> = Required<J
 export type JournMembersResponse<Texpand = unknown> = Required<JournMembersRecord> & BaseSystemFields<Texpand>
 export type JournPlansResponse<Ttags = unknown, Texpand = unknown> = Required<JournPlansRecord<Ttags>> & BaseSystemFields<Texpand>
 export type JournProjectsResponse<Texpand = unknown> = Required<JournProjectsRecord> & BaseSystemFields<Texpand>
+export type JournSharesResponse<Texpand = unknown> = Required<JournSharesRecord> & BaseSystemFields<Texpand>
 export type JournTagsResponse<Texpand = unknown> = Required<JournTagsRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 
@@ -366,6 +381,7 @@ export type CollectionRecords = {
 	journ_members: JournMembersRecord
 	journ_plans: JournPlansRecord
 	journ_projects: JournProjectsRecord
+	journ_shares: JournSharesRecord
 	journ_tags: JournTagsRecord
 	users: UsersRecord
 }
@@ -387,6 +403,7 @@ export type CollectionResponses = {
 	journ_members: JournMembersResponse
 	journ_plans: JournPlansResponse
 	journ_projects: JournProjectsResponse
+	journ_shares: JournSharesResponse
 	journ_tags: JournTagsResponse
 	users: UsersResponse
 }

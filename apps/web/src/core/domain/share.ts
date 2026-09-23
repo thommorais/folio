@@ -1,7 +1,9 @@
+import type { Branded } from './branded'
 import type { EntryKind } from './entry'
 import type { IssueKind, IssueStatus, Priority } from './issue'
 import type { Phase } from './cycle'
 import type { PlanStatus } from './plan'
+import type { ProjectId } from './project'
 
 export type SharedIssue = {
 	readonly kind: IssueKind
@@ -56,3 +58,25 @@ export type SharedItem =
 			readonly plan: SharedPlan
 			readonly todos: readonly (SharedIssue & { readonly id: string })[]
 	  }
+
+export type ShareId = Branded<string, 'ShareId'>
+
+export const shareId = (value: string): ShareId => value as ShareId
+
+export type ShareTarget = {
+	readonly kind: 'issue' | 'plan'
+	readonly id: string
+	readonly projectId: ProjectId
+}
+
+export type ShareLink = {
+	readonly id: ShareId
+	readonly label: string
+	readonly token: string
+	readonly createdAt: Date
+	readonly lastAccessedAt: Date | undefined
+}
+
+export const SHARE_LABEL_MAX = 120
+
+export const shareUrl = (origin: string, token: string): string => `${origin}/share/${token}`
