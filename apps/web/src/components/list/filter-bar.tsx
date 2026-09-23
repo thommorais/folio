@@ -84,6 +84,20 @@ type ActiveFilter = {
 	readonly onRemove: () => void
 }
 
+const chipPerValue = <T extends string>(
+	key: string,
+	values: readonly T[] | undefined,
+	label: (value: T) => string,
+	onChange: (next: readonly T[] | undefined) => void,
+): readonly ActiveFilter[] =>
+	(values ?? []).map(value => ({
+		key: `${key}-${value}`,
+		label: label(value),
+		onRemove: () => {
+			onChange(toggle(values, value))
+		},
+	}))
+
 type Props = {
 	readonly placeholder: string
 	readonly term: string | undefined
@@ -158,4 +172,4 @@ const FilterBar = ({ placeholder, term, onSearch, chips, children, trailing }: P
 	)
 }
 
-export { FILTER_KEY, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, type ActiveFilter }
+export { chipPerValue, FILTER_KEY, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, type ActiveFilter }

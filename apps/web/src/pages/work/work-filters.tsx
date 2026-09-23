@@ -4,7 +4,7 @@ import { useIssues } from '_/app/use-issues'
 import { ISSUE_STATUSES, PRIORITIES, ISSUE_KIND, type IssueStatus, type Priority } from '_/core/domain/issue'
 import { PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan'
 import { WORK_SORT_FIELDS, type WorkSortField } from '_/core/ports/sort'
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar'
+import { chipPerValue, ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar'
 import { SortMenu } from '_/components/list/sort-menu'
 import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
@@ -48,24 +48,16 @@ const WorkFilters = () => {
 			},
 		})
 	}
-	if (search.statuses !== undefined) {
-		chips.push({
-			key: FILTER_KEY.STATUSES,
-			label: search.statuses.map(status => ISSUE_STATUS_LABELS[status]).join(', '),
-			onRemove: () => {
-				setFilter({ statuses: undefined })
-			},
-		})
-	}
-	if (search.planStatuses !== undefined) {
-		chips.push({
-			key: FILTER_KEY.PLAN_STATUSES,
-			label: search.planStatuses.map(status => PLAN_STATUS_LABELS[status]).join(', '),
-			onRemove: () => {
-				setFilter({ planStatuses: undefined })
-			},
-		})
-	}
+	chips.push(
+		...chipPerValue(FILTER_KEY.STATUSES, search.statuses, status => ISSUE_STATUS_LABELS[status], statuses => {
+			setFilter({ statuses })
+		}),
+	)
+	chips.push(
+		...chipPerValue(FILTER_KEY.PLAN_STATUSES, search.planStatuses, status => PLAN_STATUS_LABELS[status], planStatuses => {
+			setFilter({ planStatuses })
+		}),
+	)
 	if (search.priority !== undefined) {
 		chips.push({
 			key: FILTER_KEY.PRIORITY,

@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar';
+import { chipPerValue, ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar';
 import { SortMenu } from '_/components/list/sort-menu';
 import { ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue';
 import { ISSUE_SORT_FIELDS, type IssueSortField, type SortDirection } from '_/core/ports/sort';
@@ -35,15 +35,11 @@ const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly
 
 	const chips: ActiveFilter[] = []
 
-	if (search.statuses !== undefined) {
-		chips.push({
-			key: FILTER_KEY.STATUSES,
-			label: search.statuses.map(status => ISSUE_STATUS_LABELS[status]).join(', '),
-			onRemove: () => {
-				setFilter({ statuses: undefined })
-			},
-		})
-	}
+	chips.push(
+		...chipPerValue(FILTER_KEY.STATUSES, search.statuses, status => ISSUE_STATUS_LABELS[status], statuses => {
+			setFilter({ statuses })
+		}),
+	)
 	if (search.priority !== undefined) {
 		chips.push({
 			key: FILTER_KEY.PRIORITY,

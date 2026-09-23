@@ -1,7 +1,7 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { DropdownMenuItem } from '@thom/ui/dropdown-menu';
 import { useIssues } from '_/app/use-issues';
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar';
+import { chipPerValue, ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar';
 import { SortMenu } from '_/components/list/sort-menu';
 import { DEFAULT_PLAN_STATUSES, PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan';
 import { PLAN_SORT_FIELDS, type PlanSortField } from '_/core/ports/sort';
@@ -46,15 +46,11 @@ const PlanFilters = () => {
 			},
 		})
 	}
-	if (search.statuses !== undefined) {
-		chips.push({
-			key: FILTER_KEY.STATUSES,
-			label: search.statuses.map(status => PLAN_STATUS_LABELS[status]).join(', '),
-			onRemove: () => {
-				setFilter({ statuses: undefined })
-			},
-		})
-	}
+	chips.push(
+		...chipPerValue(FILTER_KEY.STATUSES, search.statuses, status => PLAN_STATUS_LABELS[status], statuses => {
+			setFilter({ statuses })
+		}),
+	)
 	if (search.tags !== undefined) {
 		chips.push({
 			key: FILTER_KEY.TAGS,
