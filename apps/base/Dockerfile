@@ -19,6 +19,10 @@ RUN corepack install && pnpm install --frozen-lockfile --filter @thom/web... --f
 # absolute base URL. Overridable for a split deployment.
 ARG VITE_API_URL=""
 ENV VITE_API_URL=${VITE_API_URL}
+# Railway exposes its provided variables to a build only when declared as ARG;
+# vite.config.ts stamps the value on <html data-commit>.
+ARG RAILWAY_GIT_COMMIT_SHA=""
+ENV COMMIT_SHA=${RAILWAY_GIT_COMMIT_SHA}
 RUN pnpm --filter @thom/web build
 
 

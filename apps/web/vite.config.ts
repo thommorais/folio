@@ -2,11 +2,34 @@ import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
 import tanstackRouter from '@tanstack/router-plugin/vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import type { Plugin } from 'vite';
 import { intlayer } from 'vite-intlayer';
 import { comlink } from 'vite-plugin-comlink';
 import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
+
+// Railway passes RAILWAY_GIT_COMMIT_SHA only on GitHub-triggered deploys, so
+// local and `railway up` builds fall back to git, and omit the attribute when
+// neither is there rather than ship a placeholder.
+const commitSha = (): string | undefined => {
+	if (process.env.COMMIT_SHA) return process.env.COMMIT_SHA
+	try {
+		return execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+	} catch {
+		return undefined
+	}
+}
+
+const commitAttribute = (): Plugin => {
+	const sha = commitSha()
+
+	return {
+		name: 'commit-attribute',
+		transformIndexHtml: html => (sha ? html.replace(/<html\b/, `<html data-commit="${sha}"`) : html),
+	}
+}
 
 // oxlint-disable-next-line import/no-default-export
 export default defineConfig({
@@ -62,6 +85,7 @@ export default defineConfig({
   }
 })] }),
 		tailwindcss(),
+		commitAttribute(),
 		intlayer(),
 		comlink(),
 		VitePWA({
