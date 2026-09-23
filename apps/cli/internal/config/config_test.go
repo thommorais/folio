@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestNormalizeURL(t *testing.T) {
 	cases := []struct {
@@ -145,8 +149,10 @@ func TestProject(t *testing.T) {
 		}
 	})
 
-	t.Run("is empty when neither is set, so callers can require it", func(t *testing.T) {
+	t.Run("is empty when nothing is set, so callers can require it", func(t *testing.T) {
 		t.Setenv(EnvProject, "")
+		t.Setenv(EnvHome, t.TempDir())
+		t.Chdir(t.TempDir())
 		if got := Project(""); got != "" {
 			t.Errorf("Project(\"\") = %q, want empty", got)
 		}
@@ -195,5 +201,93 @@ func TestResolveFallsBackToTheDefault(t *testing.T) {
 	}
 	if cfg.URL != DefaultURL {
 		t.Errorf("URL = %q, want %q", cfg.URL, DefaultURL)
+	}
+}
+
+func TestProjectFromABoundDirectory(t *testing.T) {
+	t.Setenv(EnvProject, "")
+	t.Setenv(EnvHome, t.TempDir())
+
+	root := t.TempDir()
+	nested := filepath.Join(root, "apps", "cli")
+	inner := filepath.Join(root, "vendor")
+	for _, dir := range []string{nested, inner} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := Bind(root, "folio"); err != nil {
+		t.Fatalf("Bind() error = %v", err)
+	}
+	if err := Bind(inner, "other"); err != nil {
+		t.Fatalf("Bind() error = %v", err)
+	}
+
+	t.Run("the bound directory resolves", func(t *testing.T) {
+		t.Chdir(root)
+		if got := Project(""); got != "folio" {
+			t.Errorf("Project(\"\") = %q, want folio", got)
+		}
+	})
+
+	t.Run("a subdirectory inherits the binding", func(t *testing.T) {
+		t.Chdir(nested)
+		if got := Project(""); got != "folio" {
+			t.Errorf("Project(\"\") = %q, want folio", got)
+		}
+	})
+
+	t.Run("the nearest binding wins", func(t *testing.T) {
+		t.Chdir(inner)
+		if got := Project(""); got != "other" {
+			t.Errorf("Project(\"\") = %q, want other", got)
+		}
+	})
+
+	t.Run("the environment beats the binding", func(t *testing.T) {
+		t.Chdir(root)
+		t.Setenv(EnvProject, "from-env")
+		if got := Project(""); got != "from-env" {
+			t.Errorf("Project(\"\") = %q, want from-env", got)
+		}
+	})
+
+	t.Run("an unbound directory resolves nothing", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		if got := Project(""); got != "" {
+			t.Errorf("Project(\"\") = %q, want empty", got)
+		}
+	})
+
+	t.Run("unbinding leaves the other bindings", func(t *testing.T) {
+		if err := Unbind(inner); err != nil {
+			t.Fatalf("Unbind() error = %v", err)
+		}
+		t.Chdir(inner)
+		if got := Project(""); got != "folio" {
+			t.Errorf("Project(\"\") = %q, want the parent's folio", got)
+		}
+	})
+}
+
+func TestBindDoesNotTouchCredentials(t *testing.T) {
+	t.Setenv(EnvURL, "")
+	t.Setenv(EnvToken, "")
+	t.Setenv(EnvHome, t.TempDir())
+
+	if err := Save("https://remote.example.com", "keep-me"); err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+	if err := Bind(t.TempDir(), "folio"); err != nil {
+		t.Fatalf("Bind() error = %v", err)
+	}
+
+	cfg, err := Resolve("", "")
+	if err != nil {
+		t.Fatalf("Resolve() error = %v", err)
+	}
+	if cfg.Token != "keep-me" {
+		t.Errorf("Token = %q, want the cached token untouched", cfg.Token)
 	}
 }

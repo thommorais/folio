@@ -31,12 +31,118 @@ type cached struct {
 	Token string `json:"token"`
 }
 
-// Not persisted: two shells can hold different projects.
+// Precedence: flag, environment, directory binding. Nothing global is
+// persisted, so two shells can still hold different projects.
 func Project(flag string) string {
 	if flag != "" {
 		return flag
 	}
-	return os.Getenv(EnvProject)
+	if env := os.Getenv(EnvProject); env != "" {
+		return env
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	return bound(wd)
+}
+
+// Bind maps a directory and everything below it to a project. The map lives
+// in the config dir rather than a dotfile so nothing lands in the repository.
+func Bind(dir, slug string) error {
+	key, err := canonical(dir)
+	if err != nil {
+		return err
+	}
+	bindings, _ := loadBindings()
+	if bindings == nil {
+		bindings = map[string]string{}
+	}
+	bindings[key] = slug
+	return saveBindings(bindings)
+}
+
+func Unbind(dir string) error {
+	key, err := canonical(dir)
+	if err != nil {
+		return err
+	}
+	bindings, err := loadBindings()
+	if err != nil {
+		return nil
+	}
+	delete(bindings, key)
+	return saveBindings(bindings)
+}
+
+func bound(dir string) string {
+	bindings, err := loadBindings()
+	if err != nil || len(bindings) == 0 {
+		return ""
+	}
+	current, err := canonical(dir)
+	if err != nil {
+		return ""
+	}
+	for {
+		if slug, ok := bindings[current]; ok {
+			return slug
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return ""
+		}
+		current = parent
+	}
+}
+
+// The same folder reached through a symlink (/var and /private/var on darwin)
+// has to land on the same key, or a binding silently stops matching.
+func canonical(dir string) (string, error) {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return "", err
+	}
+	return filepath.EvalSymlinks(abs)
+}
+
+func bindingsPath() (string, error) {
+	dir, err := configDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "projects.json"), nil
+}
+
+func loadBindings() (map[string]string, error) {
+	path, err := bindingsPath()
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var out map[string]string
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func saveBindings(bindings map[string]string) error {
+	path, err := bindingsPath()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(bindings, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o600)
 }
 
 func SetURL(raw string) error {
@@ -50,17 +156,25 @@ func SetURL(raw string) error {
 }
 
 func Path() (string, error) {
+	dir, err := configDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "credentials.json"), nil
+}
+
+func configDir() (string, error) {
 	// os.UserConfigDir ignores XDG_CONFIG_HOME on darwin, so tests need an
 	// override that works on every platform.
 	if dir := os.Getenv(EnvHome); dir != "" {
-		return filepath.Join(dir, "credentials.json"), nil
+		return dir, nil
 	}
 
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "folio", "credentials.json"), nil
+	return filepath.Join(dir, "folio"), nil
 }
 
 // NormalizeURL turns what someone actually types into an origin the client can

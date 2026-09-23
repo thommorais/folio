@@ -10,7 +10,7 @@ import (
 )
 
 func useCommand() *cobra.Command {
-	var clear bool
+	var clear, here bool
 
 	cmd := &cobra.Command{
 		Use:   "use [project]",
@@ -20,9 +20,28 @@ lives in the shell rather than on disk and two terminals can work on
 different projects.
 
   eval "$(folio use folio)"
-  eval "$(folio use --clear)"`,
+  eval "$(folio use --clear)"
+
+--here binds the current directory and everything below it instead, stored
+in the config dir so nothing is written to the repository. A shell export
+still wins over a binding.
+
+  folio use folio --here
+  folio use --clear --here`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
+			if clear && here {
+				wd, err := os.Getwd()
+				if err != nil {
+					return err
+				}
+				if err := config.Unbind(wd); err != nil {
+					return err
+				}
+				fmt.Fprintln(os.Stderr, "unbound "+wd)
+				return nil
+			}
+
 			if clear {
 				fmt.Printf("unset %s\n", config.EnvProject)
 				fmt.Fprintln(os.Stderr, "project cleared")
@@ -50,6 +69,21 @@ different projects.
 				return err
 			}
 
+			if here {
+				wd, err := os.Getwd()
+				if err != nil {
+					return err
+				}
+				if err := config.Bind(wd, project.Slug); err != nil {
+					return err
+				}
+				fmt.Fprintf(os.Stderr, "bound %s to %s\n", wd, project.Name)
+				if env := os.Getenv(config.EnvProject); env != "" && env != project.Slug {
+					fmt.Fprintf(os.Stderr, "%s=%s in this shell still takes precedence\n", config.EnvProject, env)
+				}
+				return nil
+			}
+
 			fmt.Printf("export %s=%s\n", config.EnvProject, project.Slug)
 			fmt.Fprintln(os.Stderr, "now working on "+project.Name)
 			return nil
@@ -57,6 +91,7 @@ different projects.
 	}
 
 	cmd.Flags().BoolVar(&clear, "clear", false, "unset the selected project")
+	cmd.Flags().BoolVar(&here, "here", false, "bind the current directory instead of printing an export")
 
 	return cmd
 }
