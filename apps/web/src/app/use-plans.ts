@@ -4,11 +4,12 @@ import type { PlanFilter } from '_/core/ports/plans'
 import { useFilterKey } from './realtime/use-filter-key'
 import { useLiveList } from './realtime/use-live-list'
 import { useContainer } from './container'
+import { Status } from '_/lib/async-status'
 
 type PlansState =
-	| { readonly status: 'loading' }
-	| { readonly status: 'ready'; readonly plans: readonly Plan[] }
-	| { readonly status: 'failed'; readonly message: string }
+	| { readonly status: typeof Status.Loading }
+	| { readonly status: typeof Status.Ready; readonly plans: readonly Plan[] }
+	| { readonly status: typeof Status.Failed; readonly message: string }
 
 export const usePlans = (project: string, filter?: PlanFilter): PlansState => {
 	const { plans, connection } = useContainer()
@@ -22,5 +23,5 @@ export const usePlans = (project: string, filter?: PlanFilter): PlansState => {
 		deps: [project, key, plans],
 	})
 
-	return state.status === 'ready' ? { status: 'ready', plans: state.data } : state
+	return state.status === Status.Ready ? { status: Status.Ready, plans: state.data } : state
 }

@@ -10,6 +10,7 @@ import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree'
 import { IssueFilters } from './issue-filters'
 import { ISSUE_STATUS_LABELS as statusLabels } from './status-labels'
 import { useScope } from '_/routing/use-scope'
+import { Status } from '_/lib/async-status'
 
 type IssuesSearch = {
 	readonly statuses?: readonly IssueStatus[]
@@ -156,7 +157,7 @@ const Issues = ({ kind, emptyLabel }: IssuesProps) => {
 	const everything = useIssues(slug, { kind, sort: search.sort })
 
 	const list = (() => {
-		if (state.status === 'loading') {
+		if (state.status === Status.Loading) {
 			return (
 				<div className='border-border divide-border divide-y border'>
 					{[0, 1].map(key => (
@@ -166,7 +167,7 @@ const Issues = ({ kind, emptyLabel }: IssuesProps) => {
 			)
 		}
 
-		if (state.status === 'failed') {
+		if (state.status === Status.Failed) {
 			return <p className='text-destructive text-sm'>{state.message}</p>
 		}
 
@@ -174,7 +175,7 @@ const Issues = ({ kind, emptyLabel }: IssuesProps) => {
 			return <p className='text-dim text-sm'>{filtered ? `No ${emptyLabel} match.` : `No ${emptyLabel} yet.`}</p>
 		}
 
-		const context = filtered && everything.status === 'ready' ? everything.issues : []
+		const context = filtered && everything.status === Status.Ready ? everything.issues : []
 		const rows = buildIssueTree(state.issues, { context })
 
 		return (

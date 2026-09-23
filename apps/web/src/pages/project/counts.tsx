@@ -5,6 +5,7 @@ import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useCounts } from '_/app/use-counts'
 import { entities, type Entity } from '_/app/counts'
+import { Status } from '_/lib/async-status'
 
 const labels: Record<Entity, string> = {
 	tickets: 'Tickets',
@@ -29,7 +30,7 @@ type Props = {
 export const ProjectCounts = ({ client, domain, slug }: Props) => {
 	const state = useCounts(slug)
 
-	if (state.status === 'failed') {
+	if (state.status === Status.Failed) {
 		return <p className='text-destructive text-sm'>{state.message}</p>
 	}
 
@@ -41,7 +42,7 @@ export const ProjectCounts = ({ client, domain, slug }: Props) => {
 						<Card interactive>
 							<CardHeader>
 								<span className='text-dim text-xs'>{labels[entity]}</span>
-								{state.status === 'loading' ? (
+								{state.status === Status.Loading ? (
 									<Skeleton className='mt-1 h-8 w-10' />
 								) : (
 									<span className='font-serif text-2xl tabular-nums'>

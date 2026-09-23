@@ -6,6 +6,7 @@ import { useIssues } from '_/app/use-issues'
 import { usePlans } from '_/app/use-plans'
 import type { Issue, IssueStatus } from '_/core/domain/issue'
 import { ISSUE_STATUS_LABELS } from './status-labels'
+import { Status } from '_/lib/async-status'
 
 const Field = ({ label, children }: { readonly label: string; readonly children: React.ReactNode }) => (
 	<div>
@@ -43,12 +44,12 @@ const Body = ({ todo, project }: { readonly todo: Issue; readonly project: strin
 	const plans = usePlans(project)
 
 	const ticketTitle =
-		todo.parentId !== undefined && tickets.status === 'ready'
+		todo.parentId !== undefined && tickets.status === Status.Ready
 			? (tickets.issues.find(candidate => candidate.id === todo.parentId)?.title ?? todo.parentId)
 			: todo.parentId
 
 	const planTitle =
-		todo.planId !== undefined && plans.status === 'ready'
+		todo.planId !== undefined && plans.status === Status.Ready
 			? (plans.plans.find(candidate => candidate.id === todo.planId)?.title ?? todo.planId)
 			: todo.planId
 
@@ -107,15 +108,15 @@ type Props = {
 const IssueDetails = ({ project, todoId }: Props) => {
 	const state = useIssueById(project, todoId ?? '')
 
-	if (state.status === 'gone') {
+	if (state.status === Status.Gone) {
 		return <RecordGone title={state.title} />
 	}
 
-	if (state.status === 'failed') {
+	if (state.status === Status.Failed) {
 		return <p className='text-destructive text-sm'>{state.message}</p>
 	}
 
-	if (state.status !== 'ready') {
+	if (state.status !== Status.Ready) {
 		return <Skeleton />
 	}
 

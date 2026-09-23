@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { err, ok, type Result } from '_/lib/result'
 import { describe, expect, it, vi } from 'vitest'
 import { useAsyncState } from './use-async-state'
+import { Status } from '_/lib/async-status'
 
 const deferred = <T>() => {
 	let resolve: (value: T) => void = () => {}
@@ -17,8 +18,8 @@ describe('useAsyncState', () => {
 
 		const { result } = renderHook(() => useAsyncState(load, []))
 
-		expect(result.current.state).toEqual({ status: 'loading' })
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: 'first' }))
+		expect(result.current.state).toEqual({ status: Status.Loading })
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: 'first' }))
 	})
 
 	it('reports a failure with its message', async () => {
@@ -26,7 +27,7 @@ describe('useAsyncState', () => {
 
 		const { result } = renderHook(() => useAsyncState(load, []))
 
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'failed', message: 'offline' }))
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Failed, message: 'offline' }))
 	})
 
 	it('refetches without flicking back to loading', async () => {
@@ -34,14 +35,14 @@ describe('useAsyncState', () => {
 		const load = vi.fn(async () => ok(value))
 
 		const { result } = renderHook(() => useAsyncState(load, []))
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: 'first' }))
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: 'first' }))
 
 		value = 'second'
 		await act(async () => {
 			await result.current.refetch()
 		})
 
-		expect(result.current.state).toEqual({ status: 'ready', data: 'second' })
+		expect(result.current.state).toEqual({ status: Status.Ready, data: 'second' })
 		expect(load).toHaveBeenCalledTimes(2)
 	})
 
@@ -51,12 +52,12 @@ describe('useAsyncState', () => {
 		const { result, rerender } = renderHook(({ id }) => useAsyncState(() => load({ id }), [id]), {
 			initialProps: { id: 'a' },
 		})
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: 'a' }))
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: 'a' }))
 
 		rerender({ id: 'b' })
 
-		expect(result.current.state).toEqual({ status: 'loading' })
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: 'b' }))
+		expect(result.current.state).toEqual({ status: Status.Loading })
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: 'b' }))
 	})
 
 	it('ignores a load that resolves after the hook unmounted', async () => {
@@ -82,21 +83,21 @@ describe('useAsyncState', () => {
 		rerender({ id: 'b' })
 
 		second.resolve(ok('newest'))
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: 'newest' }))
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: 'newest' }))
 
 		first.resolve(ok('stale'))
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: 'newest' }))
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: 'newest' }))
 	})
 
 	it('patches the loaded value in place', async () => {
 		const load = vi.fn(async () => ok(['a']))
 
 		const { result } = renderHook(() => useAsyncState(load, []))
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: ['a'] }))
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: ['a'] }))
 
 		act(() => result.current.patch(rows => [...rows, 'b']))
 
-		expect(result.current.state).toEqual({ status: 'ready', data: ['a', 'b'] })
+		expect(result.current.state).toEqual({ status: Status.Ready, data: ['a', 'b'] })
 	})
 
 	it('ignores a patch while still loading, since there is nothing to patch', async () => {
@@ -107,10 +108,10 @@ describe('useAsyncState', () => {
 
 		act(() => result.current.patch(rows => [...rows, 'b']))
 
-		expect(result.current.state).toEqual({ status: 'loading' })
+		expect(result.current.state).toEqual({ status: Status.Loading })
 
 		gate.resolve(ok(['a']))
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: ['a'] }))
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: ['a'] }))
 	})
 
 	it('does not load while skipped', async () => {
@@ -119,7 +120,7 @@ describe('useAsyncState', () => {
 		const { result } = renderHook(() => useAsyncState(load, [], true))
 
 		expect(load).not.toHaveBeenCalled()
-		expect(result.current.state).toEqual({ status: 'loading' })
+		expect(result.current.state).toEqual({ status: Status.Loading })
 	})
 
 	it('loads once it stops being skipped', async () => {
@@ -132,14 +133,14 @@ describe('useAsyncState', () => {
 
 		rerender({ skip: false })
 
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: 'value' }))
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: 'value' }))
 	})
 
 	it('hands back a stable refetch across renders', async () => {
 		const load = vi.fn(async () => ok('value'))
 
 		const { result, rerender } = renderHook(() => useAsyncState(load, []))
-		await waitFor(() => expect(result.current.state).toEqual({ status: 'ready', data: 'value' }))
+		await waitFor(() => expect(result.current.state).toEqual({ status: Status.Ready, data: 'value' }))
 
 		const before = result.current.refetch
 		rerender()

@@ -4,11 +4,12 @@ import type { DomainFilter } from '_/core/ports/domains'
 import { useFilterKey } from './realtime/use-filter-key'
 import { useLiveList } from './realtime/use-live-list'
 import { useContainer } from './container'
+import { Status } from '_/lib/async-status'
 
 type DomainsState =
-	| { readonly status: 'loading' }
-	| { readonly status: 'ready'; readonly domains: readonly Domain[] }
-	| { readonly status: 'failed'; readonly message: string }
+	| { readonly status: typeof Status.Loading }
+	| { readonly status: typeof Status.Ready; readonly domains: readonly Domain[] }
+	| { readonly status: typeof Status.Failed; readonly message: string }
 
 export const useDomains = (filter?: DomainFilter, skip = false): DomainsState => {
 	const { domains, connection } = useContainer()
@@ -23,5 +24,5 @@ export const useDomains = (filter?: DomainFilter, skip = false): DomainsState =>
 		skip,
 	})
 
-	return state.status === 'ready' ? { status: 'ready', domains: state.data } : state
+	return state.status === Status.Ready ? { status: Status.Ready, domains: state.data } : state
 }

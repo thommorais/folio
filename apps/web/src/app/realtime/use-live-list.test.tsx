@@ -6,6 +6,7 @@ import { ok } from '_/lib/result'
 import type { ActionEvent } from '_/types'
 import { describe, expect, it, vi } from 'vitest'
 import { useLiveList } from './use-live-list'
+import { Status } from '_/lib/async-status'
 
 type Row = { readonly id: string; readonly title: string }
 
@@ -58,7 +59,7 @@ describe('useLiveList', () => {
 			useLiveList({ load: io.list, subscribe: io.subscribe, fold: foldUpdates, connection: connection.port, deps: [] }),
 		)
 
-		await waitFor(() => expect(result.current).toEqual({ status: 'ready', data: [row('a'), row('b')] }))
+		await waitFor(() => expect(result.current).toEqual({ status: Status.Ready, data: [row('a'), row('b')] }))
 	})
 
 	it('folds a create into the list', async () => {
@@ -68,11 +69,11 @@ describe('useLiveList', () => {
 		const { result } = renderHook(() =>
 			useLiveList({ load: io.list, subscribe: io.subscribe, fold: foldUpdates, connection: connection.port, deps: [] }),
 		)
-		await waitFor(() => expect(result.current.status).toBe('ready'))
+		await waitFor(() => expect(result.current.status).toBe(Status.Ready))
 
 		await io.emit(row('b'), 'create')
 
-		expect(result.current).toEqual({ status: 'ready', data: [row('a'), row('b')] })
+		expect(result.current).toEqual({ status: Status.Ready, data: [row('a'), row('b')] })
 	})
 
 	it('folds an update in place', async () => {
@@ -82,11 +83,11 @@ describe('useLiveList', () => {
 		const { result } = renderHook(() =>
 			useLiveList({ load: io.list, subscribe: io.subscribe, fold: foldUpdates, connection: connection.port, deps: [] }),
 		)
-		await waitFor(() => expect(result.current.status).toBe('ready'))
+		await waitFor(() => expect(result.current.status).toBe(Status.Ready))
 
 		await io.emit(row('a', 'renamed'), 'update')
 
-		expect(result.current).toEqual({ status: 'ready', data: [row('a', 'renamed'), row('b')] })
+		expect(result.current).toEqual({ status: Status.Ready, data: [row('a', 'renamed'), row('b')] })
 	})
 
 	it('folds a delete out of the list', async () => {
@@ -96,11 +97,11 @@ describe('useLiveList', () => {
 		const { result } = renderHook(() =>
 			useLiveList({ load: io.list, subscribe: io.subscribe, fold: foldUpdates, connection: connection.port, deps: [] }),
 		)
-		await waitFor(() => expect(result.current.status).toBe('ready'))
+		await waitFor(() => expect(result.current.status).toBe(Status.Ready))
 
 		await io.emit(row('a'), 'delete')
 
-		expect(result.current).toEqual({ status: 'ready', data: [row('b')] })
+		expect(result.current).toEqual({ status: Status.Ready, data: [row('b')] })
 	})
 
 	it('refetches after the subscription opens, closing the load race', async () => {
@@ -126,7 +127,7 @@ describe('useLiveList', () => {
 		io.setServerRows([row('a'), row('c')])
 		act(() => connection.reconnect())
 
-		await waitFor(() => expect(result.current).toEqual({ status: 'ready', data: [row('a'), row('c')] }))
+		await waitFor(() => expect(result.current).toEqual({ status: Status.Ready, data: [row('a'), row('c')] }))
 	})
 
 	it('ignores an event that arrives before the list is ready', async () => {
@@ -136,11 +137,11 @@ describe('useLiveList', () => {
 		const { result } = renderHook(() =>
 			useLiveList({ load: io.list, subscribe: io.subscribe, fold: foldUpdates, connection: connection.port, deps: [] }),
 		)
-		await waitFor(() => expect(result.current.status).toBe('ready'))
+		await waitFor(() => expect(result.current.status).toBe(Status.Ready))
 
 		await io.emit(row('z'), 'update')
 
-		expect(result.current).toEqual({ status: 'ready', data: [row('a'), row('z')] })
+		expect(result.current).toEqual({ status: Status.Ready, data: [row('a'), row('z')] })
 	})
 
 	it('neither loads nor subscribes while skipped', async () => {
@@ -159,7 +160,7 @@ describe('useLiveList', () => {
 		)
 		await act(async () => {})
 
-		expect(result.current).toEqual({ status: 'loading' })
+		expect(result.current).toEqual({ status: Status.Loading })
 		expect(io.list).not.toHaveBeenCalled()
 		expect(io.subscribe).not.toHaveBeenCalled()
 	})
@@ -183,7 +184,7 @@ describe('useLiveList', () => {
 
 		rerender({ skip: false })
 
-		await waitFor(() => expect(result.current).toEqual({ status: 'ready', data: [row('a')] }))
+		await waitFor(() => expect(result.current).toEqual({ status: Status.Ready, data: [row('a')] }))
 		expect(io.subscribe).toHaveBeenCalledTimes(1)
 	})
 

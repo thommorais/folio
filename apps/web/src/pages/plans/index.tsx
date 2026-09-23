@@ -8,6 +8,7 @@ import type { Plan } from '_/core/domain/plan'
 import { PlanFilters } from './plan-filters'
 import { PLAN_STATUS_LABELS } from './status-labels'
 import { useScope } from '_/routing/use-scope'
+import { Status } from '_/lib/async-status'
 
 const Row = ({ plan, project }: { readonly plan: Plan; readonly project: string }) => {
 	const { client, domain } = useScope()
@@ -56,7 +57,7 @@ const Plans = () => {
 		<div className='space-y-4'>
 			<PlanFilters />
 
-			{state.status === 'loading' && (
+			{state.status === Status.Loading && (
 				<div className='border-border divide-border divide-y border'>
 					{[0, 1].map(key => (
 						<Skeleton key={key} className='h-20' />
@@ -64,13 +65,13 @@ const Plans = () => {
 				</div>
 			)}
 
-			{state.status === 'failed' && <p className='text-destructive text-sm'>{state.message}</p>}
+			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 
-			{state.status === 'ready' && state.plans.length === 0 && (
+			{state.status === Status.Ready && state.plans.length === 0 && (
 				<p className='text-dim text-sm'>{filtered ? 'No plans match.' : 'No plans yet.'}</p>
 			)}
 
-			{state.status === 'ready' && state.plans.length > 0 && (
+			{state.status === Status.Ready && state.plans.length > 0 && (
 				<ul className='border-border divide-border divide-y border'>
 					{state.plans.map((plan, index) => (
 						<StaggerItem key={plan.id} index={index} as='li'>

@@ -6,6 +6,7 @@ import { useEntries } from '_/app/use-entries'
 import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
 import { JournalFilters } from './journal-filters'
 import { ENTRY_KIND_LABELS } from './kind-labels'
+import { Status } from '_/lib/async-status'
 
 const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' })
 
@@ -25,7 +26,7 @@ const Journal = () => {
 		search.q !== undefined || search.kinds !== undefined || search.tags !== undefined || search.ticket !== undefined
 
 	const list = (() => {
-		if (state.status === 'loading') {
+		if (state.status === Status.Loading) {
 			return (
 				<div className='border-border divide-border divide-y border'>
 					{[0, 1, 2].map(key => (
@@ -35,7 +36,7 @@ const Journal = () => {
 			)
 		}
 
-		if (state.status === 'failed') {
+		if (state.status === Status.Failed) {
 			return <p className='text-destructive text-sm'>{state.message}</p>
 		}
 

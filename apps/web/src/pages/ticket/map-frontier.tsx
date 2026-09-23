@@ -5,6 +5,7 @@ import { partitionChildren } from '_/core/domain/frontier'
 import type { Issue } from '_/core/domain/issue'
 import { useScope } from '_/routing/use-scope'
 import { WayfinderGraph } from './wayfinder-graph'
+import { Status } from '_/lib/async-status'
 
 type Props = {
 	readonly project: string
@@ -55,7 +56,7 @@ const MapFrontier = ({ project, map }: Props) => {
 	// steps, not places the work can go next, and they have their own section.
 	const children = useIssues(project, { kind: 'ticket', parentId: map.id })
 
-	if (children.status !== 'ready') return null
+	if (children.status !== Status.Ready) return null
 
 	if (children.issues.length === 0) {
 		return <p className='text-dim text-sm'>No decision tickets on this map yet.</p>

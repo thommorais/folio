@@ -9,6 +9,7 @@ import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels'
 import { Section, type WorkItem } from './section'
 import type { WorkType } from './types'
 import { WorkFilters } from './work-filters'
+import { Status } from '_/lib/async-status'
 
 type Scope = {
 	readonly client: string
@@ -103,8 +104,8 @@ const Work = () => {
 				{shows('tickets') && (
 					<Section
 						title='Tickets'
-						items={tickets.status === 'ready' ? tickets.issues.map(issue => issueItem(scope, issue)) : undefined}
-						message={tickets.status === 'failed' ? tickets.message : undefined}
+						items={tickets.status === Status.Ready ? tickets.issues.map(issue => issueItem(scope, issue)) : undefined}
+						message={tickets.status === Status.Failed ? tickets.message : undefined}
 						emptyLabel='tickets'
 						filtered={filtered}
 						to='/$client/$domain/$slug/tickets'
@@ -115,8 +116,8 @@ const Work = () => {
 				{shows('plans') && (
 					<Section
 						title='Plans'
-						items={plans.status === 'ready' ? plans.plans.map(plan => planItem(scope, plan)) : undefined}
-						message={plans.status === 'failed' ? plans.message : undefined}
+						items={plans.status === Status.Ready ? plans.plans.map(plan => planItem(scope, plan)) : undefined}
+						message={plans.status === Status.Failed ? plans.message : undefined}
 						emptyLabel='plans'
 						filtered={filtered}
 						to='/$client/$domain/$slug/plans'
@@ -127,8 +128,8 @@ const Work = () => {
 				{shows('todos') && (
 					<Section
 						title='Todos'
-						items={todos.status === 'ready' ? todos.issues.map(todo => todoItem(scope, todo)) : undefined}
-						message={todos.status === 'failed' ? todos.message : undefined}
+						items={todos.status === Status.Ready ? todos.issues.map(todo => todoItem(scope, todo)) : undefined}
+						message={todos.status === Status.Failed ? todos.message : undefined}
 						emptyLabel='todos'
 						filtered={filtered}
 						to='/$client/$domain/$slug/todos'

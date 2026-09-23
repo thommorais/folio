@@ -4,11 +4,12 @@ import type { ClientFilter } from '_/core/ports/clients'
 import { useFilterKey } from './realtime/use-filter-key'
 import { useLiveList } from './realtime/use-live-list'
 import { useContainer } from './container'
+import { Status } from '_/lib/async-status'
 
 type ClientsState =
-	| { readonly status: 'loading' }
-	| { readonly status: 'ready'; readonly clients: readonly Client[] }
-	| { readonly status: 'failed'; readonly message: string }
+	| { readonly status: typeof Status.Loading }
+	| { readonly status: typeof Status.Ready; readonly clients: readonly Client[] }
+	| { readonly status: typeof Status.Failed; readonly message: string }
 
 export const useClients = (filter?: ClientFilter): ClientsState => {
 	const { clients, connection } = useContainer()
@@ -22,5 +23,5 @@ export const useClients = (filter?: ClientFilter): ClientsState => {
 		deps: [key, clients],
 	})
 
-	return state.status === 'ready' ? { status: 'ready', clients: state.data } : state
+	return state.status === Status.Ready ? { status: Status.Ready, clients: state.data } : state
 }

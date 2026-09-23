@@ -1,13 +1,14 @@
 import type { Plan } from '_/core/domain/plan'
 import { useLiveRecord } from './realtime/use-live-record'
 import { useContainer } from './container'
+import { Status } from '_/lib/async-status'
 
 type PlanState =
-	| { readonly status: 'idle' }
-	| { readonly status: 'loading' }
-	| { readonly status: 'ready'; readonly plan: Plan }
-	| { readonly status: 'gone'; readonly title: string }
-	| { readonly status: 'failed'; readonly message: string }
+	| { readonly status: typeof Status.Idle }
+	| { readonly status: typeof Status.Loading }
+	| { readonly status: typeof Status.Ready; readonly plan: Plan }
+	| { readonly status: typeof Status.Gone; readonly title: string }
+	| { readonly status: typeof Status.Failed; readonly message: string }
 
 export const usePlan = (project: string, id: string | undefined): PlanState => {
 	const { plans, connection } = useContainer()
@@ -20,5 +21,5 @@ export const usePlan = (project: string, id: string | undefined): PlanState => {
 		skip: !id,
 	})
 
-	return state.status === 'ready' ? { status: 'ready', plan: state.data } : state
+	return state.status === Status.Ready ? { status: Status.Ready, plan: state.data } : state
 }

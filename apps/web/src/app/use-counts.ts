@@ -5,10 +5,11 @@ import { useEffect, useEffectEvent, useState } from 'react'
 import { useSubscription } from './realtime/use-subscription'
 import { useContainer } from './container'
 import { collectCounts, type CountsState } from './counts'
+import { Status } from '_/lib/async-status'
 
 export const useCounts = (project: string): CountsState => {
 	const { entries, issues, plans, connection } = useContainer()
-	const [state, setState] = useState<CountsState>({ status: 'loading' })
+	const [state, setState] = useState<CountsState>({ status: Status.Loading })
 
 	const load = useEffectEvent(async () => {
 		const results = await Promise.all([
@@ -23,7 +24,7 @@ export const useCounts = (project: string): CountsState => {
 	})
 
 	useEffect(() => {
-		setState({ status: 'loading' })
+		setState({ status: Status.Loading })
 		void load()
 	}, [project])
 

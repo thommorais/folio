@@ -8,6 +8,7 @@ import { SortMenu } from '_/components/list/sort-menu'
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
 import type { JournalSearch } from '_/routes/_authenticated/$client/$domain/$slug/journal'
 import { ENTRY_KIND_LABELS } from './kind-labels'
+import { Status } from '_/lib/async-status'
 
 const SORT_LABELS: Record<EntrySortField, string> = {
 	title: 'Title',
@@ -31,7 +32,7 @@ const JournalFilters = () => {
 	}
 
 	const ticketTitle = (id: string): string =>
-		tickets.status === 'ready' ? (tickets.issues.find(entry => entry.id === id)?.title ?? id) : id
+		tickets.status === Status.Ready ? (tickets.issues.find(entry => entry.id === id)?.title ?? id) : id
 
 	const chips: ActiveFilter[] = []
 
@@ -97,10 +98,10 @@ const JournalFilters = () => {
 
 			<FilterMenuItem label='Ticket'>
 				<div className='max-h-[300px] overflow-y-auto'>
-					{tickets.status === 'ready' && tickets.issues.length === 0 && (
+					{tickets.status === Status.Ready && tickets.issues.length === 0 && (
 						<DropdownMenuItem disabled>No tickets found</DropdownMenuItem>
 					)}
-					{tickets.status === 'ready' &&
+					{tickets.status === Status.Ready &&
 						tickets.issues.map(ticket => (
 							<FilterCheckboxItem
 								key={ticket.id}

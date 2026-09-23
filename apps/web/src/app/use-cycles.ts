@@ -4,11 +4,12 @@ import type { CycleFilter } from '_/core/ports/cycles'
 import { useFilterKey } from './realtime/use-filter-key'
 import { useLiveList } from './realtime/use-live-list'
 import { useContainer } from './container'
+import { Status } from '_/lib/async-status'
 
 type CyclesState =
-	| { readonly status: 'loading' }
-	| { readonly status: 'ready'; readonly cycles: readonly Cycle[] }
-	| { readonly status: 'failed'; readonly message: string }
+	| { readonly status: typeof Status.Loading }
+	| { readonly status: typeof Status.Ready; readonly cycles: readonly Cycle[] }
+	| { readonly status: typeof Status.Failed; readonly message: string }
 
 export const useCycles = (project: string, filter?: CycleFilter): CyclesState => {
 	const { cycles, connection } = useContainer()
@@ -22,5 +23,5 @@ export const useCycles = (project: string, filter?: CycleFilter): CyclesState =>
 		deps: [project, key, cycles],
 	})
 
-	return state.status === 'ready' ? { status: 'ready', cycles: state.data } : state
+	return state.status === Status.Ready ? { status: Status.Ready, cycles: state.data } : state
 }

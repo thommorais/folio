@@ -4,15 +4,16 @@ import type { Result } from '_/lib/result'
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useAsyncState } from './use-async-state'
 import { useSubscription } from './use-subscription'
+import { Status } from '_/lib/async-status'
 
 type Titled = { readonly id: string; readonly title: string }
 
 export type RecordState<T> =
-	| { readonly status: 'idle' }
-	| { readonly status: 'loading' }
-	| { readonly status: 'ready'; readonly data: T }
-	| { readonly status: 'gone'; readonly title: string }
-	| { readonly status: 'failed'; readonly message: string }
+	| { readonly status: typeof Status.Idle }
+	| { readonly status: typeof Status.Loading }
+	| { readonly status: typeof Status.Ready; readonly data: T }
+	| { readonly status: typeof Status.Gone; readonly title: string }
+	| { readonly status: typeof Status.Failed; readonly message: string }
 
 type Options<T extends Titled> = {
 	readonly load: () => Promise<Result<T>>
@@ -51,7 +52,7 @@ export const useLiveRecord = <T extends Titled>({
 	}, deps)
 
 	const latest = useRef<T | undefined>(undefined)
-	if (state.status === 'ready') latest.current = state.data
+	if (state.status === Status.Ready) latest.current = state.data
 
 	const pending = useRef(new AbortController())
 
@@ -62,7 +63,7 @@ export const useLiveRecord = <T extends Titled>({
 	}, [])
 
 	const open = useEffectEvent(async () => {
-		if (skip || state.status !== 'ready') {
+		if (skip || state.status !== Status.Ready) {
 			return { success: true, value: async () => {} } as Result<Unsubscribe>
 		}
 
@@ -77,16 +78,16 @@ export const useLiveRecord = <T extends Titled>({
 		return result
 	})
 
-	useSubscription(open, [state.status === 'ready' ? state.data.id : undefined])
+	useSubscription(open, [state.status === Status.Ready ? state.data.id : undefined])
 
 	useEffect(
 		() => connection.onReconnect(() => abortableCallTimeout(refetch, TIMEOUT, pending.current.signal)()),
 		[connection, refetch],
 	)
 
-	if (skip) return { status: 'idle' }
+	if (skip) return { status: Status.Idle }
 
-	if (gone !== undefined) return { status: 'gone', title: gone }
+	if (gone !== undefined) return { status: Status.Gone, title: gone }
 
 	return state
 }

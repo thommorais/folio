@@ -4,6 +4,7 @@ import type { Unsubscribe } from '_/core/ports/subscription'
 import { err, ok, type Result } from '_/lib/result'
 import { describe, expect, it, vi } from 'vitest'
 import { useLiveRecord } from './use-live-record'
+import { Status } from '_/lib/async-status'
 
 type Row = { readonly id: string; readonly slug: string; readonly title: string }
 
@@ -56,7 +57,7 @@ describe('useLiveRecord', () => {
 			useLiveRecord({ load: io.load, subscribe: io.subscribe, connection: connection.port, deps: ['a'] }),
 		)
 
-		await waitFor(() => expect(result.current).toEqual({ status: 'ready', data: row('a') }))
+		await waitFor(() => expect(result.current).toEqual({ status: Status.Ready, data: row('a') }))
 	})
 
 	it('subscribes by the id the load returned, not by what it was asked for', async () => {
@@ -78,11 +79,11 @@ describe('useLiveRecord', () => {
 		const { result } = renderHook(() =>
 			useLiveRecord({ load: io.load, subscribe: io.subscribe, connection: connection.port, deps: ['a'] }),
 		)
-		await waitFor(() => expect(result.current.status).toBe('ready'))
+		await waitFor(() => expect(result.current.status).toBe(Status.Ready))
 
 		await io.change(row('a', 'renamed'))
 
-		expect(result.current).toEqual({ status: 'ready', data: row('a', 'renamed') })
+		expect(result.current).toEqual({ status: Status.Ready, data: row('a', 'renamed') })
 	})
 
 	it('goes to gone on a delete, keeping only the title', async () => {
@@ -92,11 +93,11 @@ describe('useLiveRecord', () => {
 		const { result } = renderHook(() =>
 			useLiveRecord({ load: io.load, subscribe: io.subscribe, connection: connection.port, deps: ['a'] }),
 		)
-		await waitFor(() => expect(result.current.status).toBe('ready'))
+		await waitFor(() => expect(result.current.status).toBe(Status.Ready))
 
 		await io.remove()
 
-		expect(result.current).toEqual({ status: 'gone', title: 'Fix the nav' })
+		expect(result.current).toEqual({ status: Status.Gone, title: 'Fix the nav' })
 	})
 
 	it('reports a load failure', async () => {
@@ -108,7 +109,7 @@ describe('useLiveRecord', () => {
 			useLiveRecord({ load: io.load, subscribe: io.subscribe, connection: connection.port, deps: ['a'] }),
 		)
 
-		await waitFor(() => expect(result.current).toEqual({ status: 'failed', message: 'not found' }))
+		await waitFor(() => expect(result.current).toEqual({ status: Status.Failed, message: 'not found' }))
 	})
 
 	it('refetches once the subscription is open, closing the load race', async () => {
@@ -134,7 +135,7 @@ describe('useLiveRecord', () => {
 		io.setServer(ok(row('a', 'changed while away')))
 		act(() => connection.reconnect())
 
-		await waitFor(() => expect(result.current).toEqual({ status: 'ready', data: row('a', 'changed while away') }))
+		await waitFor(() => expect(result.current).toEqual({ status: Status.Ready, data: row('a', 'changed while away') }))
 	})
 
 	it('stays gone rather than being revived by a late update', async () => {
@@ -144,12 +145,12 @@ describe('useLiveRecord', () => {
 		const { result } = renderHook(() =>
 			useLiveRecord({ load: io.load, subscribe: io.subscribe, connection: connection.port, deps: ['a'] }),
 		)
-		await waitFor(() => expect(result.current.status).toBe('ready'))
+		await waitFor(() => expect(result.current.status).toBe(Status.Ready))
 
 		await io.remove()
 		await io.change(row('a', 'zombie'))
 
-		expect(result.current).toEqual({ status: 'gone', title: 'Doomed' })
+		expect(result.current).toEqual({ status: Status.Gone, title: 'Doomed' })
 	})
 
 	it('names the record by its latest title when it is deleted after a rename', async () => {
@@ -159,12 +160,12 @@ describe('useLiveRecord', () => {
 		const { result } = renderHook(() =>
 			useLiveRecord({ load: io.load, subscribe: io.subscribe, connection: connection.port, deps: ['a'] }),
 		)
-		await waitFor(() => expect(result.current.status).toBe('ready'))
+		await waitFor(() => expect(result.current.status).toBe(Status.Ready))
 
 		await io.change(row('a', 'Renamed'))
 		await io.remove()
 
-		expect(result.current).toEqual({ status: 'gone', title: 'Renamed' })
+		expect(result.current).toEqual({ status: Status.Gone, title: 'Renamed' })
 	})
 
 	it('stays idle and loads nothing when there is no record to load', async () => {
@@ -175,7 +176,7 @@ describe('useLiveRecord', () => {
 			useLiveRecord({ load: io.load, subscribe: io.subscribe, connection: connection.port, deps: ['a'], skip: true }),
 		)
 
-		expect(result.current).toEqual({ status: 'idle' })
+		expect(result.current).toEqual({ status: Status.Idle })
 		expect(io.load).not.toHaveBeenCalled()
 		expect(io.subscribe).not.toHaveBeenCalled()
 	})

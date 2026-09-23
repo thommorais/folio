@@ -1,13 +1,14 @@
 import type { Issue } from '_/core/domain/issue'
 import { useLiveRecord } from './realtime/use-live-record'
 import { useContainer } from './container'
+import { Status } from '_/lib/async-status'
 
 type IssueState =
-	| { readonly status: 'idle' }
-	| { readonly status: 'loading' }
-	| { readonly status: 'ready'; readonly issue: Issue }
-	| { readonly status: 'gone'; readonly title: string }
-	| { readonly status: 'failed'; readonly message: string }
+	| { readonly status: typeof Status.Idle }
+	| { readonly status: typeof Status.Loading }
+	| { readonly status: typeof Status.Ready; readonly issue: Issue }
+	| { readonly status: typeof Status.Gone; readonly title: string }
+	| { readonly status: typeof Status.Failed; readonly message: string }
 
 export const useIssue = (project: string, slug: string): IssueState => {
 	const { issues, connection } = useContainer()
@@ -20,7 +21,7 @@ export const useIssue = (project: string, slug: string): IssueState => {
 		skip: !slug,
 	})
 
-	return state.status === 'ready' ? { status: 'ready', issue: state.data } : state
+	return state.status === Status.Ready ? { status: Status.Ready, issue: state.data } : state
 }
 
 export const useIssueById = (project: string, id: string): IssueState => {
@@ -34,5 +35,5 @@ export const useIssueById = (project: string, id: string): IssueState => {
 		skip: !id,
 	})
 
-	return state.status === 'ready' ? { status: 'ready', issue: state.data } : state
+	return state.status === Status.Ready ? { status: Status.Ready, issue: state.data } : state
 }

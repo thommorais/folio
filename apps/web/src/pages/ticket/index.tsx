@@ -18,6 +18,7 @@ import { useScope } from '_/routing/use-scope'
 import { useSlugSync } from '_/routing/use-slug-sync'
 import { CycleTimeline } from './cycle-timeline'
 import { MapFrontier } from './map-frontier'
+import { Status } from '_/lib/async-status'
 
 const statusLabels: Record<IssueStatus, string> = {
 	open: 'Open',
@@ -52,7 +53,7 @@ const TicketDetail = () => {
 
 	useSlugSync({
 		current: ticketSlug,
-		record: state.status === 'ready' ? state.issue : undefined,
+		record: state.status === Status.Ready ? state.issue : undefined,
 		rename: renamed =>
 			void navigate({
 				to: '/$client/$domain/$slug/tickets/$ticket',
@@ -61,11 +62,11 @@ const TicketDetail = () => {
 			}),
 	})
 
-	if (state.status === 'idle' || state.status === 'loading') {
+	if (state.status === Status.Idle || state.status === Status.Loading) {
 		return <div className='bg-accent/40 h-32 animate-pulse' />
 	}
 
-	if (state.status === 'gone') {
+	if (state.status === Status.Gone) {
 		return (
 			<RecordGone title={state.title}>
 				<Link to='/$client/$domain/$slug/tickets' params={{ client, domain, slug }} className='text-sm underline'>
@@ -75,7 +76,7 @@ const TicketDetail = () => {
 		)
 	}
 
-	if (state.status === 'failed') {
+	if (state.status === Status.Failed) {
 		return <p className='text-destructive text-sm'>{state.message}</p>
 	}
 
@@ -98,12 +99,12 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 
 	// A log stamped with a cycle is shown on that round in the timeline, so
 	// only the loose ones are left for the section below it.
-	const unstamped = workLog.status === 'ready' ? workLog.entries.filter(entry => entry.cycleId === undefined) : []
+	const unstamped = workLog.status === Status.Ready ? workLog.entries.filter(entry => entry.cycleId === undefined) : []
 
-	const current = cycles.status === 'ready' ? newestFirst(cycles.cycles).at(0) : undefined
+	const current = cycles.status === Status.Ready ? newestFirst(cycles.cycles).at(0) : undefined
 	const siblings = useIssues(project, { kind: 'ticket' })
 	const parent =
-		ticket.parentId !== undefined && siblings.status === 'ready'
+		ticket.parentId !== undefined && siblings.status === Status.Ready
 			? siblings.issues.find(candidate => candidate.id === ticket.parentId)
 			: undefined
 
@@ -152,7 +153,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 
 			{ticket.wayfinder === 'map' && <MapFrontier project={project} map={ticket} />}
 
-			{cycles.status === 'ready' && cycles.cycles.length > 0 && (
+			{cycles.status === Status.Ready && cycles.cycles.length > 0 && (
 				<Section title='Cycles'>
 					<CycleTimeline project={project} cycles={cycles.cycles} />
 				</Section>
@@ -174,8 +175,8 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 			)}
 
 			<Section title='Plans'>
-				{plans.status === 'ready' && plans.plans.length === 0 && <Empty what='plans' />}
-				{plans.status === 'ready' && plans.plans.length > 0 && (
+				{plans.status === Status.Ready && plans.plans.length === 0 && <Empty what='plans' />}
+				{plans.status === Status.Ready && plans.plans.length > 0 && (
 					<ul className='border-border divide-border divide-y border'>
 						{plans.plans.map(plan => (
 							<li key={plan.id} className='flex items-center justify-between gap-4 px-4 py-3 text-sm'>
@@ -188,8 +189,8 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 			</Section>
 
 			<Section title='Todos'>
-				{todos.status === 'ready' && todos.issues.length === 0 && <Empty what='todos' />}
-				{todos.status === 'ready' && todos.issues.length > 0 && (
+				{todos.status === Status.Ready && todos.issues.length === 0 && <Empty what='todos' />}
+				{todos.status === Status.Ready && todos.issues.length > 0 && (
 					<ul className='border-border divide-border divide-y border'>
 						{todos.issues.map(todo => (
 							<li key={todo.id}>
@@ -230,8 +231,8 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 			</Section>
 
 			<Section title='Journal'>
-				{journal.status === 'ready' && journal.entries.length === 0 && <Empty what='entries' />}
-				{journal.status === 'ready' && journal.entries.length > 0 && (
+				{journal.status === Status.Ready && journal.entries.length === 0 && <Empty what='entries' />}
+				{journal.status === Status.Ready && journal.entries.length > 0 && (
 					<ul className='border-border divide-border divide-y border'>
 						{journal.entries.map(entry => (
 							<li key={entry.id}>

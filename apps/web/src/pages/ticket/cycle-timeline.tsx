@@ -3,6 +3,7 @@ import { useEntries } from '_/app/use-entries'
 import type { Cycle } from '_/core/domain/cycle'
 import { isResolved } from '_/core/domain/cycle'
 import { cycleProgress, newestFirst } from '_/core/domain/cycle-progress'
+import { Status } from '_/lib/async-status'
 
 type Props = {
 	readonly project: string
@@ -55,7 +56,7 @@ const CycleBlock = ({ project, cycle }: { readonly project: string; readonly cyc
 
 				{cycle.resolution && <p className='text-sm'>{cycle.resolution}</p>}
 
-				{logs.status === 'ready' && logs.entries.length > 0 && (
+				{logs.status === Status.Ready && logs.entries.length > 0 && (
 					<ul className='border-border space-y-3 border-l pl-4'>
 						{logs.entries.map(entry => (
 							<li key={entry.id} className='space-y-1'>

@@ -6,6 +6,7 @@ import { useEntry } from '_/app/use-entry'
 
 import { usePlan } from '_/app/use-plan'
 import { useIssue } from '_/app/use-issue'
+import { Status } from '_/lib/async-status'
 
 const sectionLabels: Record<string, string> = {
 	tickets: 'Tickets',
@@ -38,15 +39,15 @@ const useLeafLabel = (project: string | undefined, params: LeafParams) => {
 	if (project === undefined) return undefined
 
 	if (params.ticket !== undefined) {
-		return ticket.status === 'ready' ? ticket.issue.title : params.ticket
+		return ticket.status === Status.Ready ? ticket.issue.title : params.ticket
 	}
 	if (params.entry !== undefined) {
-		return entry.status === 'ready' ? entry.entry.title : params.entry
+		return entry.status === Status.Ready ? entry.entry.title : params.entry
 	}
 	// A plan is addressed by id, which would read as noise in the trail, so it
 	// waits for the title rather than falling back to the URL.
 	if (params.plan !== undefined) {
-		return plan.status === 'ready' ? plan.plan.title : undefined
+		return plan.status === Status.Ready ? plan.plan.title : undefined
 	}
 
 	return undefined
@@ -79,12 +80,12 @@ export const Breadcrumbs = () => {
 	const crumbs: Crumb[] = [{ key: 'root', label: <House size={14} aria-label='Clients' />, title: 'Clients', to: '/' }]
 
 	if (client !== undefined) {
-		const label = clientRecord.status === 'ready' ? clientRecord.client.name : client
+		const label = clientRecord.status === Status.Ready ? clientRecord.client.name : client
 		crumbs.push({ key: 'client', label, title: label, to: '/$client', params: { client } })
 	}
 
 	if (client !== undefined && domain !== undefined) {
-		const label = domainRecord.status === 'ready' ? domainRecord.domain.name : domain
+		const label = domainRecord.status === Status.Ready ? domainRecord.domain.name : domain
 		crumbs.push({
 			key: 'domain',
 			label,

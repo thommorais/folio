@@ -9,6 +9,7 @@ import { usePlan } from '_/app/use-plan'
 import type { Plan, PlanStatus } from '_/core/domain/plan'
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels'
 import { useScope } from '_/routing/use-scope'
+import { Status } from '_/lib/async-status'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
@@ -56,11 +57,11 @@ const PlanDetail = () => {
 	const { client, domain, slug, plan } = useParams({ from: '/_authenticated/$client/$domain/$slug/plans/$plan' })
 	const state = usePlan(slug, plan)
 
-	if (state.status === 'idle' || state.status === 'loading') {
+	if (state.status === Status.Idle || state.status === Status.Loading) {
 		return <Skeleton className='h-32' />
 	}
 
-	if (state.status === 'gone') {
+	if (state.status === Status.Gone) {
 		return (
 			<RecordGone title={state.title}>
 				<Link to='/$client/$domain/$slug/plans' params={{ client, domain, slug }} className='text-sm underline'>
@@ -70,7 +71,7 @@ const PlanDetail = () => {
 		)
 	}
 
-	if (state.status === 'failed') {
+	if (state.status === Status.Failed) {
 		return <p className='text-destructive text-sm'>{state.message}</p>
 	}
 

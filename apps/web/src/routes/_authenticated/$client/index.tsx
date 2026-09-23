@@ -4,25 +4,28 @@ import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useClient } from '_/app/use-client'
 import { useDomains } from '_/app/use-domains'
+import { Status } from '_/lib/async-status'
 
 const ClientPage = () => {
 	const { client: slug } = useParams({ from: '/_authenticated/$client/' })
 	const client = useClient(slug)
 	const state = useDomains(
-		client.status === 'ready' ? { clientId: client.client.id } : undefined,
-		client.status !== 'ready',
+		client.status === Status.Ready ? { clientId: client.client.id } : undefined,
+		client.status !== Status.Ready,
 	)
 
-	if (client.status === 'failed') return <p className='text-destructive text-sm'>{client.message}</p>
+	if (client.status === Status.Failed) return <p className='text-destructive text-sm'>{client.message}</p>
 
 	return (
 		<div className='space-y-6'>
 			<div className='space-y-1'>
-				<h1 className='font-serif text-3xl'>{client.status === 'ready' ? client.client.name : slug}</h1>
-				{client.status === 'ready' && client.client.descr && <p className='text-dim text-sm'>{client.client.descr}</p>}
+				<h1 className='font-serif text-3xl'>{client.status === Status.Ready ? client.client.name : slug}</h1>
+				{client.status === Status.Ready && client.client.descr && (
+					<p className='text-dim text-sm'>{client.client.descr}</p>
+				)}
 			</div>
 
-			{state.status === 'loading' && (
+			{state.status === Status.Loading && (
 				<div className='grid gap-4 sm:grid-cols-2'>
 					{[0, 1].map(key => (
 						<Skeleton key={key} className='border-border h-[124px] border' />
@@ -30,13 +33,13 @@ const ClientPage = () => {
 				</div>
 			)}
 
-			{state.status === 'failed' && <p className='text-destructive text-sm'>{state.message}</p>}
+			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 
-			{state.status === 'ready' && state.domains.length === 0 && (
+			{state.status === Status.Ready && state.domains.length === 0 && (
 				<p className='text-dim text-sm'>No domains in this client yet.</p>
 			)}
 
-			{state.status === 'ready' && state.domains.length > 0 && (
+			{state.status === Status.Ready && state.domains.length > 0 && (
 				<div className='grid gap-4 sm:grid-cols-2'>
 					{state.domains.map((domain, index) => (
 						<StaggerItem key={domain.id} index={index}>

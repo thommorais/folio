@@ -5,11 +5,12 @@ import type { IssueFilter } from '_/core/ports/issues'
 import { useFilterKey } from './realtime/use-filter-key'
 import { useLiveList } from './realtime/use-live-list'
 import { useContainer } from './container'
+import { Status } from '_/lib/async-status'
 
 type IssuesState =
-	| { readonly status: 'loading' }
-	| { readonly status: 'ready'; readonly issues: readonly Issue[] }
-	| { readonly status: 'failed'; readonly message: string }
+	| { readonly status: typeof Status.Loading }
+	| { readonly status: typeof Status.Ready; readonly issues: readonly Issue[] }
+	| { readonly status: typeof Status.Failed; readonly message: string }
 
 export const useIssues = (project: string, filter?: IssueFilter): IssuesState => {
 	const { issues, connection } = useContainer()
@@ -25,5 +26,5 @@ export const useIssues = (project: string, filter?: IssueFilter): IssuesState =>
 		deps: [project, key, issues],
 	})
 
-	return state.status === 'ready' ? { status: 'ready', issues: state.data } : state
+	return state.status === Status.Ready ? { status: Status.Ready, issues: state.data } : state
 }

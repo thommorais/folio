@@ -9,6 +9,7 @@ import { useIssues } from '_/app/use-issues'
 import type { Entry } from '_/core/domain/entry'
 import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels'
 import { useScope } from '_/routing/use-scope'
+import { Status } from '_/lib/async-status'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
@@ -17,7 +18,7 @@ const EntryBody = ({ project, entry }: { readonly project: string; readonly entr
 	const { client, domain } = useScope()
 	const tickets = useIssues(project, {})
 	const ticket =
-		entry.issueId !== undefined && tickets.status === 'ready'
+		entry.issueId !== undefined && tickets.status === Status.Ready
 			? tickets.issues.find(candidate => candidate.id === entry.issueId)
 			: undefined
 
@@ -69,7 +70,7 @@ const JournalEntryDetail = () => {
 
 	useSlugSync({
 		current: entry,
-		record: state.status === 'ready' ? state.entry : undefined,
+		record: state.status === Status.Ready ? state.entry : undefined,
 		rename: renamed =>
 			void navigate({
 				to: '/$client/$domain/$slug/journal/$entry',
@@ -78,11 +79,11 @@ const JournalEntryDetail = () => {
 			}),
 	})
 
-	if (state.status === 'idle' || state.status === 'loading') {
+	if (state.status === Status.Idle || state.status === Status.Loading) {
 		return <div className='bg-accent/40 h-32 animate-pulse' />
 	}
 
-	if (state.status === 'gone') {
+	if (state.status === Status.Gone) {
 		return (
 			<RecordGone title={state.title}>
 				<Link to='/$client/$domain/$slug/journal' params={{ client, domain, slug }} className='text-sm underline'>
@@ -92,7 +93,7 @@ const JournalEntryDetail = () => {
 		)
 	}
 
-	if (state.status === 'failed') {
+	if (state.status === Status.Failed) {
 		return <p className='text-destructive text-sm'>{state.message}</p>
 	}
 

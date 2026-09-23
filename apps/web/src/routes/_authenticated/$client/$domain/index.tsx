@@ -6,27 +6,30 @@ import { StaggerItem } from '_/components/motion/stagger'
 import { useDomain } from '_/app/use-domain'
 import { useProjects } from '_/app/use-projects'
 import { MemberRoster } from '_/pages/domain/member-roster'
+import { Status } from '_/lib/async-status'
 
 const DomainPage = () => {
 	const { client, domain: slug } = useParams({ from: '/_authenticated/$client/$domain/' })
 	const domain = useDomain(client, slug)
 	const state = useProjects(
-		domain.status === 'ready' ? { domainId: domain.domain.id } : undefined,
-		domain.status !== 'ready',
+		domain.status === Status.Ready ? { domainId: domain.domain.id } : undefined,
+		domain.status !== Status.Ready,
 	)
 
-	if (domain.status === 'failed') return <p className='text-destructive text-sm'>{domain.message}</p>
+	if (domain.status === Status.Failed) return <p className='text-destructive text-sm'>{domain.message}</p>
 
 	return (
 		<div className='space-y-6'>
 			<div className='space-y-1'>
-				<h1 className='font-serif text-3xl'>{domain.status === 'ready' ? domain.domain.name : slug}</h1>
-				{domain.status === 'ready' && domain.domain.descr && <p className='text-dim text-sm'>{domain.domain.descr}</p>}
+				<h1 className='font-serif text-3xl'>{domain.status === Status.Ready ? domain.domain.name : slug}</h1>
+				{domain.status === Status.Ready && domain.domain.descr && (
+					<p className='text-dim text-sm'>{domain.domain.descr}</p>
+				)}
 			</div>
 
-			{domain.status === 'ready' && <MemberRoster members={domain.domain.members} />}
+			{domain.status === Status.Ready && <MemberRoster members={domain.domain.members} />}
 
-			{state.status === 'loading' && (
+			{state.status === Status.Loading && (
 				<div className='grid gap-4 sm:grid-cols-2'>
 					{[0, 1].map(key => (
 						<Skeleton key={key} className='border-border h-[124px] border' />
@@ -34,13 +37,13 @@ const DomainPage = () => {
 				</div>
 			)}
 
-			{state.status === 'failed' && <p className='text-destructive text-sm'>{state.message}</p>}
+			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 
-			{state.status === 'ready' && state.projects.length === 0 && (
+			{state.status === Status.Ready && state.projects.length === 0 && (
 				<p className='text-dim text-sm'>No projects in this domain yet.</p>
 			)}
 
-			{state.status === 'ready' && state.projects.length > 0 && (
+			{state.status === Status.Ready && state.projects.length > 0 && (
 				<div className='grid gap-4 sm:grid-cols-2'>
 					{state.projects.map((project, index) => (
 						<StaggerItem key={project.id} index={index}>
