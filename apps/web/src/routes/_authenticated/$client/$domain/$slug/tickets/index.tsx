@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue'
+import { DEFAULT_TICKET_STATUSES, ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue'
 import { ISSUE_SORT_FIELDS, type IssueSortField, type Sort } from '_/core/ports/sort'
 import { Issues } from '_/pages/issues'
 import { asMember, asMembers, asSort, asString, asStrings } from '_/routes/search-params'
@@ -20,5 +20,5 @@ export const Route = createFileRoute('/_authenticated/$client/$domain/$slug/tick
 		q: asString(search.q),
 		sort: asSort(ISSUE_SORT_FIELDS, search.sort),
 	}),
-	component: () => <Issues kind='ticket' emptyLabel='tickets' />,
+	component: () => <Issues kind='ticket' emptyLabel='tickets' defaultStatuses={DEFAULT_TICKET_STATUSES} />,
 })

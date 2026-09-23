@@ -1,7 +1,7 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { DropdownMenuItem } from '@thom/ui/dropdown-menu'
 import { useIssues } from '_/app/use-issues'
-import { PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan'
+import { DEFAULT_PLAN_STATUSES, PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan'
 import { PLAN_SORT_FIELDS, type PlanSortField } from '_/core/ports/sort'
 import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
 import { SortMenu } from '_/components/list/sort-menu'
@@ -22,6 +22,7 @@ const PlanFilters = () => {
 	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/plans/' })
 	const navigate = useNavigate()
 	const tickets = useIssues(slug)
+	const statuses = search.statuses ?? DEFAULT_PLAN_STATUSES
 
 	const setFilter = (patch: Partial<PlansSearch>) => {
 		void navigate({
@@ -88,9 +89,9 @@ const PlanFilters = () => {
 					<FilterCheckboxItem
 						key={status}
 						label={PLAN_STATUS_LABELS[status]}
-						checked={search.statuses?.includes(status) ?? false}
+						checked={statuses.includes(status)}
 						onCheckedChange={() => {
-							setFilter({ statuses: toggle<PlanStatus>(search.statuses, status) })
+							setFilter({ statuses: toggle<PlanStatus>(statuses, status) })
 						}}
 					/>
 				))}

@@ -10,6 +10,8 @@ export const PLAN_STATUSES = ['draft', 'active', 'done', 'abandoned'] as const
 
 export type PlanStatus = (typeof PLAN_STATUSES)[number]
 
+export const DEFAULT_PLAN_STATUSES: readonly PlanStatus[] = PLAN_STATUSES.filter(status => status !== 'done')
+
 export type Plan = {
 	readonly id: PlanId
 	readonly projectId: ProjectId

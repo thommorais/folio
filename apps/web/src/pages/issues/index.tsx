@@ -130,15 +130,17 @@ const Row = ({
 type IssuesProps = {
 	readonly kind: IssueKind
 	readonly emptyLabel: string
+	readonly defaultStatuses?: readonly IssueStatus[]
 }
 
-const Issues = ({ kind, emptyLabel }: IssuesProps) => {
+const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 	const { slug } = useParams({ strict: false }) as { readonly slug: string }
 	const search = useSearch({ strict: false }) as IssuesSearch
+	const statuses = search.statuses ?? defaultStatuses
 
 	const state = useIssues(slug, {
 		kind,
-		status: search.statuses,
+		status: statuses,
 		priority: search.priority,
 		tags: search.tags,
 		search: search.q,
@@ -147,7 +149,7 @@ const Issues = ({ kind, emptyLabel }: IssuesProps) => {
 
 	const filtered =
 		search.q !== undefined ||
-		search.statuses !== undefined ||
+		statuses !== undefined ||
 		search.tags !== undefined ||
 		search.priority !== undefined
 
@@ -195,7 +197,7 @@ const Issues = ({ kind, emptyLabel }: IssuesProps) => {
 
 	return (
 		<div className='space-y-4'>
-			<IssueFilters />
+			<IssueFilters defaultStatuses={defaultStatuses} />
 			{list}
 		</div>
 	)

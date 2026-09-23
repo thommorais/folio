@@ -4,7 +4,7 @@ import { Badge } from '@thom/ui/badge'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { usePlans } from '_/app/use-plans'
-import type { Plan } from '_/core/domain/plan'
+import { DEFAULT_PLAN_STATUSES, type Plan } from '_/core/domain/plan'
 import { PlanFilters } from './plan-filters'
 import { PLAN_STATUS_LABELS } from './status-labels'
 import { useScope } from '_/routing/use-scope'
@@ -45,13 +45,11 @@ const Plans = () => {
 
 	const state = usePlans(slug, {
 		ticketId: search.ticket,
-		status: search.statuses,
+		status: search.statuses ?? DEFAULT_PLAN_STATUSES,
 		tags: search.tags,
 		search: search.q,
 		sort: search.sort,
 	})
-
-	const filtered = search.q !== undefined || search.statuses !== undefined || search.tags !== undefined
 
 	return (
 		<div className='space-y-4'>
@@ -68,7 +66,7 @@ const Plans = () => {
 			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 
 			{state.status === Status.Ready && state.plans.length === 0 && (
-				<p className='text-dim text-sm'>{filtered ? 'No plans match.' : 'No plans yet.'}</p>
+				<p className='text-dim text-sm'>No plans match.</p>
 			)}
 
 			{state.status === Status.Ready && state.plans.length > 0 && (

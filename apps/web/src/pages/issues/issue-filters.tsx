@@ -25,8 +25,9 @@ type IssuesSearch = {
 	readonly sort?: { readonly field: IssueSortField; readonly direction: 'asc' | 'desc' }
 }
 
-const IssueFilters = () => {
+const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly IssueStatus[] }) => {
 	const search = useSearch({ strict: false }) as IssuesSearch
+	const statuses = search.statuses ?? defaultStatuses
 	const navigate = useNavigate()
 
 	const setFilter = (patch: Partial<IssuesSearch>) => {
@@ -87,9 +88,9 @@ const IssueFilters = () => {
 					<FilterCheckboxItem
 						key={status}
 						label={ISSUE_STATUS_LABELS[status]}
-						checked={search.statuses?.includes(status) ?? false}
+						checked={statuses?.includes(status) ?? false}
 						onCheckedChange={() => {
-							setFilter({ statuses: toggle<IssueStatus>(search.statuses, status) })
+							setFilter({ statuses: toggle<IssueStatus>(statuses, status) })
 						}}
 					/>
 				))}

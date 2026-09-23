@@ -14,6 +14,8 @@ export const ISSUE_STATUSES = ['open', 'in_progress', 'blocked', 'done', 'cancel
 
 export type IssueStatus = (typeof ISSUE_STATUSES)[number]
 
+export const DEFAULT_TICKET_STATUSES: readonly IssueStatus[] = ISSUE_STATUSES.filter(status => status !== 'done')
+
 export const PRIORITIES = ['low', 'medium', 'high'] as const
 
 export type Priority = (typeof PRIORITIES)[number]
