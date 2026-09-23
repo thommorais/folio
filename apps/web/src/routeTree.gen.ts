@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedClientRouteImport } from './routes/_authenticated/$client'
+import { Route as ShareTokenRouteImport } from './routes/share/$token'
 import { Route as AuthenticatedClientIndexRouteImport } from './routes/_authenticated/$client/index'
 import { Route as AuthenticatedClientDomainRouteImport } from './routes/_authenticated/$client/$domain'
 import { Route as AuthenticatedClientDomainIndexRouteImport } from './routes/_authenticated/$client/$domain/index'
@@ -45,6 +46,11 @@ const AuthenticatedClientRoute = AuthenticatedClientRouteImport.update({
   id: '/$client',
   path: '/$client',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ShareTokenRoute = ShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedClientIndexRoute =
   AuthenticatedClientIndexRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/$client': typeof AuthenticatedClientRouteWithChildren
+  '/share/$token': typeof ShareTokenRoute
   '/$client/$domain': typeof AuthenticatedClientDomainRouteWithChildren
   '/$client/': typeof AuthenticatedClientIndexRoute
   '/$client/$domain/$slug': typeof AuthenticatedClientDomainSlugRouteWithChildren
@@ -145,6 +152,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/share/$token': typeof ShareTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/$client': typeof AuthenticatedClientIndexRoute
   '/$client/$domain': typeof AuthenticatedClientDomainIndexRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/$client': typeof AuthenticatedClientRouteWithChildren
+  '/share/$token': typeof ShareTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/$client/$domain': typeof AuthenticatedClientDomainRouteWithChildren
   '/_authenticated/$client/': typeof AuthenticatedClientIndexRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/$client'
+    | '/share/$token'
     | '/$client/$domain'
     | '/$client/'
     | '/$client/$domain/$slug'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/share/$token'
     | '/'
     | '/$client'
     | '/$client/$domain'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/$client'
+    | '/share/$token'
     | '/_authenticated/'
     | '/_authenticated/$client/$domain'
     | '/_authenticated/$client/'
@@ -236,6 +248,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ShareTokenRoute: typeof ShareTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$client'
       preLoaderRoute: typeof AuthenticatedClientRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/share/$token': {
+      id: '/share/$token'
+      path: '/share/$token'
+      fullPath: '/share/$token'
+      preLoaderRoute: typeof ShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/$client/': {
       id: '/_authenticated/$client/'
@@ -448,6 +468,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ShareTokenRoute: ShareTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

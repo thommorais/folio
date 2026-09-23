@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo } from 'react'
 import { createThemeAdapter } from '_/adapters/browser/theme-adapter'
+import { createSharesAdapter } from '_/adapters/http/shares-adapter'
 import { createAuthAdapter } from '_/adapters/pocketbase/auth-adapter'
 import { createClientsAdapter } from '_/adapters/pocketbase/clients-adapter'
 import { createConnectionAdapter } from '_/adapters/pocketbase/connection-adapter'
@@ -20,6 +21,7 @@ import type { IssuesPort } from '_/core/ports/issues'
 import type { PlansPort } from '_/core/ports/plans'
 import type { ProjectsPort } from '_/core/ports/projects'
 import type { SearchPort } from '_/core/ports/search'
+import type { SharesPort } from '_/core/ports/shares'
 import type { ThemePort } from '_/core/ports/theme'
 
 export type Container = {
@@ -33,6 +35,7 @@ export type Container = {
 	readonly plans: PlansPort
 	readonly projects: ProjectsPort
 	readonly search: SearchPort
+	readonly shares: SharesPort
 	readonly theme: ThemePort
 }
 
@@ -47,6 +50,7 @@ export const createContainer = (): Container => ({
 	plans: createPlansAdapter(),
 	projects: createProjectsAdapter(),
 	search: createSearchAdapter(),
+	shares: createSharesAdapter(),
 	theme: createThemeAdapter(),
 })
 
