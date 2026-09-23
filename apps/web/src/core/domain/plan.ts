@@ -1,16 +1,23 @@
-import type { Branded } from './branded'
-import type { ProjectId, UserId } from './project'
-import type { IssueId } from './issue'
+import type { Branded } from './branded';
+import type { IssueId } from './issue';
+import type { ProjectId, UserId } from './project';
 
 export type PlanId = Branded<string, 'PlanId'>
 
 export const planId = (value: string): PlanId => value as PlanId
 
-export const PLAN_STATUSES = ['draft', 'active', 'done', 'abandoned'] as const
+const STATUS = {
+	DRAFT:  'draft',
+	ACTIVE:'active',
+	DONE: 'done',
+	ABANDONED: 'abandoned'
+} as const
+
+export const PLAN_STATUSES = [STATUS.DRAFT, STATUS.ACTIVE, STATUS.DONE, STATUS.ABANDONED] as const
 
 export type PlanStatus = (typeof PLAN_STATUSES)[number]
 
-export const DEFAULT_PLAN_STATUSES: readonly PlanStatus[] = PLAN_STATUSES.filter(status => status !== 'done')
+export const DEFAULT_PLAN_STATUSES: readonly PlanStatus[] = PLAN_STATUSES.filter(status => status !== STATUS.DONE && status !== STATUS.ABANDONED )
 
 export type Plan = {
 	readonly id: PlanId

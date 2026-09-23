@@ -42,5 +42,6 @@ export const isAddressable = (kind: EntryKind): boolean => kind === 'journal' ||
 export const KIND = {
 	TICKET: 'ticket',
 	TAGS: 'tags',
-	TODO: 'todo'
+	TODO: 'todo',
+	LOG: 'log'
 } as const

@@ -1,25 +1,25 @@
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { cn } from '@thom/libs/cn'
-import { Badge } from '@thom/ui/badge'
-import { Heading } from '@thom/ui/heading'
-import { useCycles } from '_/app/use-cycles'
-import { useEntries } from '_/app/use-entries'
-import { usePlans } from '_/app/use-plans'
-import { useIssue } from '_/app/use-issue'
-import { useIssues } from '_/app/use-issues'
-import { Markdown } from '_/components/markdown'
-import { RecordGone } from '_/components/record/record-gone'
-import { ShareSheet } from '_/components/share/share-sheet'
-import { newestFirst } from '_/core/domain/cycle-progress'
-import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
-import type { Issue, IssueStatus } from '_/core/domain/issue'
-import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
-import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels'
-import { useScope } from '_/routing/use-scope'
-import { useSlugSync } from '_/routing/use-slug-sync'
-import { CycleTimeline } from './cycle-timeline'
-import { MapFrontier } from './map-frontier'
-import { Status } from '_/lib/async-status'
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { cn } from '@thom/libs/cn';
+import { Badge } from '@thom/ui/badge';
+import { Heading } from '@thom/ui/heading';
+import { useCycles } from '_/app/use-cycles';
+import { useEntries } from '_/app/use-entries';
+import { useIssue } from '_/app/use-issue';
+import { useIssues } from '_/app/use-issues';
+import { usePlans } from '_/app/use-plans';
+import { Markdown } from '_/components/markdown';
+import { RecordGone } from '_/components/record/record-gone';
+import { ShareSheet } from '_/components/share/share-sheet';
+import { newestFirst } from '_/core/domain/cycle-progress';
+import { ADDRESSABLE_KINDS, KIND } from '_/core/domain/entry';
+import type { Issue, IssueStatus } from '_/core/domain/issue';
+import { Status } from '_/lib/async-status';
+import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels';
+import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels';
+import { useScope } from '_/routing/use-scope';
+import { useSlugSync } from '_/routing/use-slug-sync';
+import { CycleTimeline } from './cycle-timeline';
+import { MapFrontier } from './map-frontier';
 
 const statusLabels: Record<IssueStatus, string> = {
 	open: 'Open',
@@ -93,17 +93,17 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	const { client, domain } = useScope()
 	const ticketId = ticket.id
 	const plans = usePlans(project, { ticketId })
-	const todos = useIssues(project, { kind: 'todo', parentId: ticketId })
+	const todos = useIssues(project, { kind: KIND.TODO, parentId: ticketId })
 	const journal = useEntries(project, { kinds: ADDRESSABLE_KINDS, issueId: ticketId })
 	const cycles = useCycles(project, { ticketId })
-	const workLog = useEntries(project, { kind: 'log', issueId: ticketId })
+	const workLog = useEntries(project, { kind: KIND.LOG, issueId: ticketId })
 
 	// A log stamped with a cycle is shown on that round in the timeline, so
 	// only the loose ones are left for the section below it.
 	const unstamped = workLog.status === Status.Ready ? workLog.entries.filter(entry => entry.cycleId === undefined) : []
 
 	const current = cycles.status === Status.Ready ? newestFirst(cycles.cycles).at(0) : undefined
-	const siblings = useIssues(project, { kind: 'ticket' })
+	const siblings = useIssues(project, { kind: KIND.TICKET})
 	const parent =
 		ticket.parentId !== undefined && siblings.status === Status.Ready
 			? siblings.issues.find(candidate => candidate.id === ticket.parentId)
@@ -257,4 +257,4 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	)
 }
 
-export { TicketDetail }
+export { TicketDetail };

@@ -1,16 +1,16 @@
-import { Link, useParams, useSearch } from '@tanstack/react-router'
-import { cn } from '@thom/libs/cn'
-import { Badge } from '@thom/ui/badge'
-import { Skeleton } from '_/components/motion/skeleton'
-import { StaggerItem } from '_/components/motion/stagger'
-import { useIssues } from '_/app/use-issues'
-import { isTerminal, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue'
-import type { IssueSortField, Sort } from '_/core/ports/sort'
-import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree'
-import { IssueFilters } from './issue-filters'
-import { ISSUE_STATUS_LABELS as statusLabels } from './status-labels'
-import { useScope } from '_/routing/use-scope'
-import { Status } from '_/lib/async-status'
+import { Link, useParams, useSearch } from '@tanstack/react-router';
+import { cn } from '@thom/libs/cn';
+import { Badge } from '@thom/ui/badge';
+import { useIssues } from '_/app/use-issues';
+import { Skeleton } from '_/components/motion/skeleton';
+import { StaggerItem } from '_/components/motion/stagger';
+import { isTerminal, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
+import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree';
+import type { IssueSortField, Sort } from '_/core/ports/sort';
+import { Status } from '_/lib/async-status';
+import { useScope } from '_/routing/use-scope';
+import { IssueFilters } from './issue-filters';
+import { ISSUE_STATUS_LABELS as statusLabels } from './status-labels';
 
 type IssuesSearch = {
 	readonly statuses?: readonly IssueStatus[]
@@ -153,9 +153,6 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 		search.tags !== undefined ||
 		search.priority !== undefined
 
-	// A filtered list carries matches only, so the ancestors needed to place them
-	// come from an unfiltered read. The adapter fetches the project's issues
-	// whole either way, so this is the same query the list already makes.
 	const everything = useIssues(slug, { kind, sort: search.sort })
 
 	const list = (() => {
@@ -184,8 +181,6 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 			<div className='border-border border'>
 				{rows.map((row, index) => (
 					<StaggerItem key={row.issue.id} index={index}>
-						{/* Only roots get a rule. Nested rows are already separated by
-						    their connector, and a full-width border would cut across it. */}
 						<div className={cn(index > 0 && row.depth === 0 && 'border-border border-t')}>
 							<Row row={row} project={slug} kind={kind} />
 						</div>
@@ -203,4 +198,4 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 	)
 }
 
-export { Issues }
+export { Issues };

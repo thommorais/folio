@@ -166,7 +166,7 @@ const WorkFilters = () => {
 			</FilterMenuItem>
 
 			<FilterMenuItem label='Ticket'>
-				<div className='max-h-[300px] overflow-y-auto'>
+				<div className='max-h-75 overflow-y-auto'>
 					{tickets.status === Status.Ready && tickets.issues.length === 0 && (
 						<DropdownMenuItem disabled>No tickets found</DropdownMenuItem>
 					)}
@@ -185,7 +185,7 @@ const WorkFilters = () => {
 			</FilterMenuItem>
 
 			<FilterMenuItem label='Tags'>
-				<div className='max-h-[300px] overflow-y-auto'>
+				<div className='max-h-75 overflow-y-auto'>
 					{[...CONTEXT_TAGS, ...KIND_TAGS].map(tag => (
 						<FilterCheckboxItem
 							key={tag}

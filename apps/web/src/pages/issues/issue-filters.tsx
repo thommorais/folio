@@ -1,11 +1,10 @@
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { ISSUE_STATUSES, type IssueStatus } from '_/core/domain/issue'
-import { PRIORITIES, type Priority } from '_/core/domain/issue'
-import { ISSUE_SORT_FIELDS, type IssueSortField } from '_/core/ports/sort'
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
-import { SortMenu } from '_/components/list/sort-menu'
-import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
-import { ISSUE_STATUS_LABELS } from './status-labels'
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar';
+import { SortMenu } from '_/components/list/sort-menu';
+import { ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue';
+import { ISSUE_SORT_FIELDS, type IssueSortField } from '_/core/ports/sort';
+import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary';
+import { ISSUE_STATUS_LABELS } from './status-labels';
 
 const SORT_LABELS: Record<IssueSortField, string> = {
 	title: 'Title',
@@ -110,7 +109,7 @@ const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly
 			</FilterMenuItem>
 
 			<FilterMenuItem label='Tags'>
-				<div className='max-h-[300px] overflow-y-auto'>
+				<div className='max-h-75 overflow-y-auto'>
 					{[...CONTEXT_TAGS, ...KIND_TAGS].map(tag => (
 						<FilterCheckboxItem
 							key={tag}
@@ -127,4 +126,4 @@ const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly
 	)
 }
 
-export { IssueFilters }
+export { IssueFilters };

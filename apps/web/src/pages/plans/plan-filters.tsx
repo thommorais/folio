@@ -1,14 +1,15 @@
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { DropdownMenuItem } from '@thom/ui/dropdown-menu'
-import { useIssues } from '_/app/use-issues'
-import { DEFAULT_PLAN_STATUSES, PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan'
-import { PLAN_SORT_FIELDS, type PlanSortField } from '_/core/ports/sort'
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
-import { SortMenu } from '_/components/list/sort-menu'
-import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
-import type { PlansSearch } from '_/routes/_authenticated/$client/$domain/$slug/plans/index'
-import { PLAN_STATUS_LABELS } from './status-labels'
-import { Status } from '_/lib/async-status'
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { DropdownMenuItem } from '@thom/ui/dropdown-menu';
+import { useIssues } from '_/app/use-issues';
+import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar';
+import { SortMenu } from '_/components/list/sort-menu';
+import { KIND } from '_/core/domain/entry';
+import { DEFAULT_PLAN_STATUSES, PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan';
+import { PLAN_SORT_FIELDS, type PlanSortField } from '_/core/ports/sort';
+import { Status } from '_/lib/async-status';
+import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary';
+import type { PlansSearch } from '_/routes/_authenticated/$client/$domain/$slug/plans/index';
+import { PLAN_STATUS_LABELS } from './status-labels';
 
 const SORT_LABELS: Record<PlanSortField, string> = {
 	title: 'Title',
@@ -39,7 +40,7 @@ const PlanFilters = () => {
 
 	if (search.ticket !== undefined) {
 		chips.push({
-			key: 'ticket',
+			key: KIND.TICKET,
 			label: ticketTitle(search.ticket),
 			onRemove: () => {
 				setFilter({ ticket: undefined })
@@ -57,7 +58,7 @@ const PlanFilters = () => {
 	}
 	if (search.tags !== undefined) {
 		chips.push({
-			key: 'tags',
+			key: KIND.TAGS,
 			label: search.tags.join(', '),
 			onRemove: () => {
 				setFilter({ tags: undefined })
@@ -98,7 +99,7 @@ const PlanFilters = () => {
 			</FilterMenuItem>
 
 			<FilterMenuItem label='Ticket'>
-				<div className='max-h-[300px] overflow-y-auto'>
+				<div className='max-h-75 overflow-y-auto'>
 					{tickets.status === Status.Ready && tickets.issues.length === 0 && (
 						<DropdownMenuItem disabled>No tickets found</DropdownMenuItem>
 					)}
@@ -117,7 +118,7 @@ const PlanFilters = () => {
 			</FilterMenuItem>
 
 			<FilterMenuItem label='Tags'>
-				<div className='max-h-[300px] overflow-y-auto'>
+				<div className='max-h-75 overflow-y-auto'>
 					{[...CONTEXT_TAGS, ...KIND_TAGS].map(tag => (
 						<FilterCheckboxItem
 							key={tag}
@@ -134,4 +135,4 @@ const PlanFilters = () => {
 	)
 }
 
-export { PlanFilters }
+export { PlanFilters };
