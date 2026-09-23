@@ -128,9 +128,9 @@ Tickets and todos are one kind of record and share one status set:
 `draft,active,done,abandoned`.
 
 `ticket get` and `doc get` accept an id or a slug, but a **slug only resolves
-with a project selected** — it is unique within a project, not globally. With a
-project selected `ticket brief` treats its argument as a slug, so pass the slug
-rather than the id there.
+with a project selected** — it is unique within a project, not globally. The
+same holds for `ticket brief`. With a project selected the argument is tried as
+a slug first and then as an id, so either works.
 
 ## Tickets form a graph
 

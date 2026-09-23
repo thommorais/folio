@@ -47,6 +47,11 @@ func (e apiError) Error() string {
 	return fmt.Sprintf("%d: %s", e.status, e.Message)
 }
 
+func IsNotFound(err error) bool {
+	var failure apiError
+	return errors.As(err, &failure) && failure.status == http.StatusNotFound
+}
+
 func (c *Client) do(method, path string, body any, out any) error {
 	if c.token == "" {
 		return ErrNoToken

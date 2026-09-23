@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"folio/cli/internal/client"
-	"folio/cli/internal/config"
 )
 
 func docCommand() *cobra.Command {
@@ -77,16 +76,7 @@ func docGetCommand() *cobra.Command {
 				return err
 			}
 
-			// A slug is unique only within a project, so a slug needs the
-			// project route; ids resolve without one.
-			get := folio.GetDoc
-			if project := config.Project(flagProject); project != "" {
-				get = func(ref string) (client.Doc, error) {
-					return folio.GetDocBySlug(project, ref)
-				}
-			}
-
-			doc, err := get(args[0])
+			doc, err := bySlugOrID(args[0], folio.GetDocBySlug, folio.GetDoc)
 			if err != nil {
 				return err
 			}

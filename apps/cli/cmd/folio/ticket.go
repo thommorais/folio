@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"folio/cli/internal/client"
-	"folio/cli/internal/config"
 )
 
 func ticketCommand() *cobra.Command {
@@ -86,16 +85,7 @@ func ticketGetCommand() *cobra.Command {
 				return err
 			}
 
-			// A slug is unique only within a project, so a slug needs the
-			// project route; ids resolve without one.
-			get := folio.GetTicket
-			if project := config.Project(flagProject); project != "" {
-				get = func(ref string) (client.Ticket, error) {
-					return folio.GetTicketBySlug(project, ref)
-				}
-			}
-
-			ticket, err := get(args[0])
+			ticket, err := bySlugOrID(args[0], folio.GetTicketBySlug, folio.GetTicket)
 			if err != nil {
 				return err
 			}
@@ -127,16 +117,14 @@ most recent only.
 				return err
 			}
 
-			get := func(ref string) (client.TicketBrief, error) {
-				return folio.GetTicketBrief(ref, recentJournal)
-			}
-			if project := config.Project(flagProject); project != "" {
-				get = func(ref string) (client.TicketBrief, error) {
-					return folio.GetTicketBriefBySlug(project, ref, recentJournal)
-				}
-			}
-
-			brief, err := get(args[0])
+			brief, err := bySlugOrID(args[0],
+				func(project, slug string) (client.TicketBrief, error) {
+					return folio.GetTicketBriefBySlug(project, slug, recentJournal)
+				},
+				func(id string) (client.TicketBrief, error) {
+					return folio.GetTicketBrief(id, recentJournal)
+				},
+			)
 			if err != nil {
 				return err
 			}
