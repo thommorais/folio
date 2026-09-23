@@ -3,72 +3,41 @@ import type { SearchHit, SearchKind, SearchPort, SearchQuery } from '_/core/port
 import { SEARCH_KINDS } from '_/core/ports/search'
 import { err, ok, type Result } from '_/lib/result'
 import { tryCatch } from '_/lib/try-catch'
-import {
-	Collections,
-	type JournClientsResponse,
-	type JournDomainsResponse,
-	type JournProjectsResponse,
-} from '_/pocketbase-types'
 import { getPocketBaseClient } from './client'
-import { keyed } from './request-key'
-import { filterFor } from './filter-builder'
 
 const DEFAULT_LIMIT = 20
 
-const SNIPPET_LENGTH = 200
-
-type SearchableRecord = {
+// One ranked request to the folio API, rather than a query per kind merged by
+// recency here. The API answers from an FTS5 index, so a title match outranks
+// a body match and the scores are comparable across kinds, which merging
+// separate queries could never be. It is also the only way to see knowledge,
+// which belongs to no project and so has no collection this app can scope.
+type SearchHitResponse = {
+	kind: string
 	id: string
-	project: string
+	project_id: string
+	project_slug: string
+	domain_slug: string
+	client_slug: string
 	slug?: string
 	title: string
-	body?: string
-	goal?: string
-	tags?: string[]
-	created: string
-	expand?: {
-		project?: JournProjectsResponse<{
-			domain?: JournDomainsResponse<{ client?: JournClientsResponse }>
-		}>
-	}
+	snippet?: string
+	tags: string[]
+	created_at: string
 }
 
-type SearchColumns = {
-	title: string
-	body: string
-	goal: string
-}
-
-const sources: Record<SearchKind, { collection: string; text: keyof SearchColumns; kind?: string }> = {
-	log: { collection: Collections.JournEntries, text: 'body', kind: 'journal' },
-	doc: { collection: Collections.JournEntries, text: 'body', kind: 'doc' },
-	todo: { collection: Collections.JournIssues, text: 'body', kind: 'todo' },
-	plan: { collection: Collections.JournPlans, text: 'goal' },
-}
-
-// Mirrors rules.Snippet in the Go core: collapse whitespace, cut on a word
-// boundary when one is near the limit.
-const snippet = (text: string): string => {
-	const clean = text.replace(/\s+/gu, ' ').trim()
-	if (clean.length <= SNIPPET_LENGTH) return clean
-
-	const cut = clean.slice(0, SNIPPET_LENGTH)
-	const boundary = cut.lastIndexOf(' ')
-	return `${(boundary > SNIPPET_LENGTH / 2 ? cut.slice(0, boundary) : cut).replace(/[,.;:\s]+$/u, '')}…`
-}
-
-const toHit = (kind: SearchKind, textField: keyof SearchColumns, record: SearchableRecord): SearchHit => ({
-	kind,
-	id: record.id,
-	projectId: toProjectId(record.project),
-	projectSlug: record.expand?.project?.slug ?? '',
-	clientSlug: record.expand?.project?.expand?.domain?.expand?.client?.slug ?? '',
-	domainSlug: record.expand?.project?.expand?.domain?.slug ?? '',
-	slug: record.slug ?? '',
-	title: record.title,
-	snippet: snippet(String(record[textField as keyof SearchableRecord] ?? '')),
-	tags: record.tags ?? [],
-	createdAt: new Date(record.created),
+const toHit = (hit: SearchHitResponse): SearchHit => ({
+	kind: hit.kind as SearchKind,
+	id: hit.id,
+	projectId: toProjectId(hit.project_id),
+	projectSlug: hit.project_slug,
+	clientSlug: hit.client_slug,
+	domainSlug: hit.domain_slug,
+	slug: hit.slug ?? '',
+	title: hit.title,
+	snippet: hit.snippet ?? '',
+	tags: hit.tags ?? [],
+	createdAt: new Date(hit.created_at),
 })
 
 export const createSearchAdapter = (): SearchPort => {
@@ -79,45 +48,23 @@ export const createSearchAdapter = (): SearchPort => {
 			const term = text.trim()
 			if (term === '') return ok([])
 
-			const wanted = kinds?.length ? kinds : SEARCH_KINDS
+			// The kinds are always sent, even unfiltered: the API answers more
+			// of them than this app can open.
+			const params = new URLSearchParams({
+				q: term,
+				limit: String(limit),
+				kind: (kinds?.length ? kinds : SEARCH_KINDS).join(','),
+			})
 
+			// send() carries the PocketBase auth token, which is the same token
+			// the folio API authenticates with.
 			const { data, error } = await tryCatch(
-				Promise.all(
-					wanted.map(async kind => {
-						const { collection, text: textField, kind: rowKind } = sources[kind]
-						const { expr, params } = filterFor<SearchColumns>()([
-							{ field: 'title', comparator: 'contains', value: term },
-							{ field: textField, comparator: 'contains', value: term },
-						])
-
-						// Both clauses target the same term, so OR them rather than AND.
-						const matches = `(${expr.replace(' && ', ' || ')})`
-						// Issues and entries each hold several kinds in one collection.
-						const scoped = rowKind === undefined ? matches : `${matches} && kind = {:kind}`
-
-						const { items } = await client.collection(collection).getList<SearchableRecord>(
-							1,
-							limit,
-							keyed(`search.${kind}`, {
-								filter: client.filter(scoped, { ...params, kind: rowKind }),
-								expand: 'project.domain.client',
-								sort: '-created',
-							}),
-						)
-
-						return items.map(record => toHit(kind, textField, record))
-					}),
-				),
+				client.send<{ hits: SearchHitResponse[] }>(`/api/folio/search?${params.toString()}`, { method: 'GET' }),
 			)
 
 			return error
 				? err(new Error(`Search failed: ${error.message}`, { cause: error }))
-				: ok(
-						data
-							.flat()
-							.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-							.slice(0, limit),
-					)
+				: ok((data.hits ?? []).map(toHit))
 		},
 	}
 }

@@ -2,9 +2,11 @@ package pb
 
 import (
 	"context"
-	"sort"
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -14,6 +16,9 @@ import (
 	"folio/folio-core/ports"
 )
 
+// SearchRepository answers a query from the FTS5 index rather than the source
+// collections, so one statement covers every kind and the rows come back
+// ranked by relevance instead of recency.
 type SearchRepository struct {
 	app core.App
 }
@@ -24,205 +29,172 @@ func NewSearchRepository(app core.App) *SearchRepository {
 
 var _ ports.SearchRepository = (*SearchRepository)(nil)
 
+// snippetLen is how much surrounding text a hit carries: enough for an agent
+// to judge relevance without fetching the record.
 const snippetLen = 200
 
+// bm25Weights scores title far above body, because a query that names a record
+// is almost always looking for that record. The eight leading zeros are the
+// UNINDEXED columns, which contribute nothing but still occupy a position.
+const bm25Weights = "0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0"
+
+type searchRow struct {
+	Kind        string `db:"kind"`
+	RecID       string `db:"rec_id"`
+	Slug        string `db:"slug"`
+	Project     string `db:"project"`
+	ProjectSlug string `db:"project_slug"`
+	DomainSlug  string `db:"domain_slug"`
+	ClientSlug  string `db:"client_slug"`
+	Tags        string `db:"tags"`
+	Created     string `db:"created"`
+	Title       string `db:"title"`
+	Body        string `db:"body"`
+}
+
 func (r *SearchRepository) Search(ctx context.Context, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
-	want := map[domain.SearchKind]bool{}
-	for _, k := range q.Kinds {
-		want[k] = true
-	}
-	all := len(want) == 0
-
-	var hits []domain.SearchHit
-
-	issueKinds := make([]string, 0, 2)
-	if all || want[domain.SearchKindTicket] {
-		issueKinds = append(issueKinds, string(domain.IssueTicket))
-	}
-	if all || want[domain.SearchKindTodo] {
-		issueKinds = append(issueKinds, string(domain.IssueTodo))
-	}
-	if len(issueKinds) > 0 {
-		found, err := r.searchIssues(project, q, issueKinds)
-		if err != nil {
-			return nil, err
-		}
-		hits = append(hits, found...)
-	}
-
-	entryKinds := make([]string, 0, 3)
-	if all || want[domain.SearchKindJournal] {
-		entryKinds = append(entryKinds, string(domain.EntryJournal))
-	}
-	if all || want[domain.SearchKindDoc] {
-		entryKinds = append(entryKinds, string(domain.EntryDoc))
-	}
-	if all || want[domain.SearchKindWorkLog] {
-		entryKinds = append(entryKinds, string(domain.EntryLog))
-	}
-	if len(entryKinds) > 0 {
-		found, err := r.searchEntries(project, q, entryKinds)
-		if err != nil {
-			return nil, err
-		}
-		hits = append(hits, found...)
-	}
-
-	if all || want[domain.SearchKindPlan] {
-		found, err := r.searchPlans(project, q)
-		if err != nil {
-			return nil, err
-		}
-		hits = append(hits, found...)
-	}
-	if all || want[domain.SearchKindCycle] {
-		found, err := r.searchCycles(project, q)
-		if err != nil {
-			return nil, err
-		}
-		hits = append(hits, found...)
-	}
-
-	sort.SliceStable(hits, func(i, j int) bool { return hits[i].CreatedAt.After(hits[j].CreatedAt) })
-	return applyPaging(hits, q.Offset, q.Limit), nil
+	return r.search(ctx, []domain.ProjectID{project}, q)
 }
 
-func textFilter(project domain.ProjectID, q domain.SearchQuery, fields ...string) (string, dbx.Params) {
-	filter := []string{"project = {:project}"}
-	params := dbx.Params{"project": string(project)}
-
-	if text := strings.TrimSpace(q.Text); text != "" {
-		ors := make([]string, 0, len(fields))
-		for _, f := range fields {
-			ors = append(ors, f+" ~ {:text}")
-		}
-		filter = append(filter, "("+strings.Join(ors, " || ")+")")
-		params["text"] = text
-	}
-	for i, tag := range q.Tags {
-		key := "tag" + strconv.Itoa(i)
-		filter = append(filter, "tags ~ {:"+key+"}")
-		params[key] = `"` + tag + `"`
-	}
-	return strings.Join(filter, " && "), params
-}
-
-func kindClause(filter string, params dbx.Params, kinds []string) (string, dbx.Params) {
-	ors := make([]string, 0, len(kinds))
-	for i, k := range kinds {
-		key := "kind" + strconv.Itoa(i)
-		ors = append(ors, "kind = {:"+key+"}")
-		params[key] = k
-	}
-	return filter + " && (" + strings.Join(ors, " || ") + ")", params
-}
-
-func (r *SearchRepository) searchIssues(project domain.ProjectID, q domain.SearchQuery, kinds []string) ([]domain.SearchHit, error) {
-	filter, params := textFilter(project, q, "title", "body")
-	filter, params = kindClause(filter, params, kinds)
-
-	records, err := r.app.FindRecordsByFilter(ColIssues, filter, "-created", q.Limit, 0, params)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	out := make([]domain.SearchHit, 0, len(records))
-	for _, rec := range records {
-		kind := domain.SearchKindTicket
-		if rec.GetString("kind") == string(domain.IssueTodo) {
-			kind = domain.SearchKindTodo
-		}
-		out = append(out, domain.SearchHit{
-			Kind:      kind,
-			ID:        rec.Id,
-			ProjectID: project,
-			Title:     rec.GetString("title"),
-			Snippet:   rules.Snippet(rec.GetString("body"), snippetLen),
-			Tags:      strSlice(rec, "tags"),
-			CreatedAt: rec.GetDateTime("created").Time(),
-		})
-	}
-	return out, nil
-}
-
-var entrySearchKind = map[string]domain.SearchKind{
-	string(domain.EntryJournal): domain.SearchKindJournal,
-	string(domain.EntryDoc):     domain.SearchKindDoc,
-	string(domain.EntryLog):     domain.SearchKindWorkLog,
-}
-
-func (r *SearchRepository) searchEntries(project domain.ProjectID, q domain.SearchQuery, kinds []string) ([]domain.SearchHit, error) {
-	filter, params := textFilter(project, q, "title", "body")
-	filter, params = kindClause(filter, params, kinds)
-
-	records, err := r.app.FindRecordsByFilter(ColEntries, filter, "-created", q.Limit, 0, params)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	out := make([]domain.SearchHit, 0, len(records))
-	for _, rec := range records {
-		title := rec.GetString("title")
-		if title == "" {
-			title = "Work log"
-		}
-		out = append(out, domain.SearchHit{
-			Kind:      entrySearchKind[rec.GetString("kind")],
-			ID:        rec.Id,
-			ProjectID: project,
-			Title:     title,
-			Snippet:   rules.Snippet(rec.GetString("body"), snippetLen),
-			Tags:      strSlice(rec, "tags"),
-			CreatedAt: rec.GetDateTime("created").Time(),
-		})
-	}
-	return out, nil
-}
-
-func (r *SearchRepository) searchPlans(project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
-	filter, params := textFilter(project, q, "title", "goal")
-	records, err := r.app.FindRecordsByFilter(ColPlans, filter, "-created", q.Limit, 0, params)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	out := make([]domain.SearchHit, 0, len(records))
-	for _, rec := range records {
-		out = append(out, domain.SearchHit{
-			Kind:      domain.SearchKindPlan,
-			ID:        rec.Id,
-			ProjectID: project,
-			Title:     rec.GetString("title"),
-			Snippet:   rules.Snippet(rec.GetString("goal"), snippetLen),
-			Tags:      strSlice(rec, "tags"),
-			CreatedAt: rec.GetDateTime("created").Time(),
-		})
-	}
-	return out, nil
-}
-
-func (r *SearchRepository) searchCycles(project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
-	filter := []string{"project = {:project}", "resolution != ''"}
-	params := dbx.Params{"project": string(project)}
-	if text := strings.TrimSpace(q.Text); text != "" {
-		filter = append(filter, "resolution ~ {:text}")
-		params["text"] = text
-	}
-	if len(q.Tags) > 0 {
+// SearchAcross ranks one result set spanning several projects. The index holds
+// every project already, so this is the same single query with a wider scope
+// rather than a fan-out whose scores could not be compared.
+func (r *SearchRepository) SearchAcross(ctx context.Context, projects []domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+	if len(projects) == 0 {
 		return []domain.SearchHit{}, nil
 	}
+	return r.search(ctx, projects, q)
+}
 
-	records, err := r.app.FindRecordsByFilter(ColCycles, strings.Join(filter, " && "), "-created", q.Limit, 0, params)
-	if err != nil {
+func (r *SearchRepository) search(ctx context.Context, projects []domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+	params := dbx.Params{}
+	// Knowledge is indexed as global and answers every search regardless of
+	// the project in scope; everything else is fenced by the project list.
+	where := []string{fmt.Sprintf("(%[1]s.scope = {:global} OR %[1]s.project IN (%[2]s))",
+		SearchIndex, bindAll(params, "project", toStrings(projects)))}
+	params["global"] = scopeGlobal
+
+	if match := rules.FTSQuery(q.Text); match != "" {
+		where = append(where, SearchIndex+" MATCH {:match}")
+		params["match"] = match
+	}
+
+	if len(q.Kinds) > 0 {
+		kinds := make([]string, 0, len(q.Kinds))
+		for _, kind := range q.Kinds {
+			kinds = append(kinds, string(kind))
+		}
+		where = append(where, SearchIndex+".kind IN ("+bindAll(params, "kind", kinds)+")")
+	}
+
+	// Tags are stored as a JSON array, so a containment test is a LIKE over
+	// the quoted value. Every kind is filtered the same way; kinds that carry
+	// no tags simply stop matching, which is what a tag filter should mean.
+	for i, tag := range q.Tags {
+		key := "tag" + strconv.Itoa(i)
+		where = append(where, SearchIndex+".tags LIKE {:"+key+"}")
+		params[key] = `%"` + tag + `"%`
+	}
+
+	// Ranking only means something once a MATCH has scored the rows. Without
+	// one, newest first is the honest order and matches the old behaviour.
+	order := SearchIndex + ".created DESC"
+	if _, matched := params["match"]; matched {
+		order = fmt.Sprintf("bm25(%s, %s) ASC, %s.created DESC", SearchIndex, bm25Weights, SearchIndex)
+	}
+
+	// The index stores the project id, but a client routes by the whole path,
+	// so the three slugs are joined in here rather than resolved per row
+	// later. The joins are left joins because knowledge has no project.
+	query := fmt.Sprintf(
+		`SELECT %[1]s.kind, %[1]s.rec_id, %[1]s.slug, %[1]s.project,
+		        COALESCE(p.slug, '') AS project_slug,
+		        COALESCE(d.slug, '') AS domain_slug,
+		        COALESCE(c.slug, '') AS client_slug,
+		        %[1]s.tags, %[1]s.created, %[1]s.title, %[1]s.body
+		 FROM %[1]s
+		 LEFT JOIN %[2]s p ON p.id = %[1]s.project
+		 LEFT JOIN %[5]s d ON d.id = p.domain
+		 LEFT JOIN %[6]s c ON c.id = d.client
+		 WHERE %[3]s ORDER BY %[4]s LIMIT {:limit} OFFSET {:offset}`,
+		SearchIndex, ColProjects, strings.Join(where, " AND "), order, ColDomains, ColClients,
+	)
+
+	limit := q.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+	params["limit"] = limit
+	params["offset"] = max(q.Offset, 0)
+
+	var rows []searchRow
+	if err := r.app.DB().NewQuery(query).Bind(params).WithContext(ctx).All(&rows); err != nil {
 		return nil, mapErr(err)
 	}
-	out := make([]domain.SearchHit, 0, len(records))
-	for _, rec := range records {
-		out = append(out, domain.SearchHit{
-			Kind:      domain.SearchKindCycle,
-			ID:        rec.Id,
-			ProjectID: project,
-			Title:     "Cycle " + strconv.Itoa(rec.GetInt("ordinal")) + " resolution",
-			Snippet:   rules.Snippet(rec.GetString("resolution"), snippetLen),
-			CreatedAt: rec.GetDateTime("created").Time(),
+
+	hits := make([]domain.SearchHit, 0, len(rows))
+	for _, row := range rows {
+		hits = append(hits, domain.SearchHit{
+			Kind:        domain.SearchKind(row.Kind),
+			ID:          row.RecID,
+			ProjectID:   domain.ProjectID(row.Project),
+			ProjectSlug: row.ProjectSlug,
+			DomainSlug:  row.DomainSlug,
+			ClientSlug:  row.ClientSlug,
+			Slug:        row.Slug,
+			Title:       row.Title,
+			Snippet:     rules.Snippet(row.Body, snippetLen),
+			Tags:        parseTags(row.Tags),
+			CreatedAt:   parseCreated(row.Created),
 		})
 	}
-	return out, nil
+
+	return hits, nil
+}
+
+// bindAll binds each value under a numbered key and returns the placeholder
+// list for an IN clause.
+func bindAll(params dbx.Params, prefix string, values []string) string {
+	placeholders := make([]string, 0, len(values))
+	for i, value := range values {
+		key := prefix + strconv.Itoa(i)
+		placeholders = append(placeholders, "{:"+key+"}")
+		params[key] = value
+	}
+	return strings.Join(placeholders, ", ")
+}
+
+func toStrings(ids []domain.ProjectID) []string {
+	out := make([]string, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, string(id))
+	}
+	return out
+}
+
+// parseTags reads the JSON array PocketBase stores tags in. A malformed or
+// absent value yields no tags rather than an error: a hit is still useful
+// without them.
+func parseTags(raw string) []string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" || trimmed == "[]" || trimmed == "null" {
+		return nil
+	}
+
+	var tags []string
+	if err := json.Unmarshal([]byte(trimmed), &tags); err != nil {
+		return nil
+	}
+	return tags
+}
+
+// parseCreated reads PocketBase's stored timestamp. The index keeps it as the
+// raw string, so the layout has to match what PocketBase writes.
+func parseCreated(raw string) time.Time {
+	for _, layout := range []string{"2006-01-02 15:04:05.000Z", "2006-01-02 15:04:05Z", time.RFC3339} {
+		if t, err := time.Parse(layout, raw); err == nil {
+			return t
+		}
+	}
+	return time.Time{}
 }

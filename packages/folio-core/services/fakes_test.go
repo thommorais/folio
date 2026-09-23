@@ -245,13 +245,32 @@ func (r *fakePlans) Delete(_ context.Context, id domain.PlanID) error {
 }
 
 type fakeSearch struct {
-	hits []domain.SearchHit
+	hits  []domain.SearchHit
+	scope []domain.ProjectID
+	// lastLimit is what the service passed down, which is how the clamping
+	// tests see a limit the caller never asked for.
+	lastLimit int
 }
 
-func (r *fakeSearch) Search(_ context.Context, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+func (r *fakeSearch) Search(ctx context.Context, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+	return r.SearchAcross(ctx, []domain.ProjectID{project}, q)
+}
+
+// SearchAcross records the scope it was asked for, which is what the global
+// search tests assert on: the service is responsible for the project list,
+// not for filtering the hits afterwards.
+func (r *fakeSearch) SearchAcross(_ context.Context, projects []domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error) {
+	r.scope = projects
+	r.lastLimit = q.Limit
+
+	wanted := map[domain.ProjectID]bool{}
+	for _, id := range projects {
+		wanted[id] = true
+	}
+
 	out := []domain.SearchHit{}
 	for _, h := range r.hits {
-		if h.ProjectID == project {
+		if wanted[h.ProjectID] {
 			out = append(out, h)
 		}
 	}
@@ -308,13 +327,13 @@ func (r *fakeCycles) Delete(_ context.Context, id domain.CycleID) error {
 
 // compile-time checks that the doubles satisfy the ports they stand in for.
 var (
-	_ ports.ProjectRepository   = (*fakeProjects)(nil)
-	_ ports.PlanRepository      = (*fakePlans)(nil)
-	_ ports.IssueRepository     = (*fakeIssues)(nil)
-	_ ports.EntryRepository     = (*fakeEntries)(nil)
-	_ ports.CycleRepository     = (*fakeCycles)(nil)
-	_ ports.SearchRepository    = (*fakeSearch)(nil)
-	_ ports.Clock               = (*fakeClock)(nil)
-	_ ports.IDGenerator         = (*seqIDs)(nil)
-	_ ports.Logger              = nopLogger{}
+	_ ports.ProjectRepository = (*fakeProjects)(nil)
+	_ ports.PlanRepository    = (*fakePlans)(nil)
+	_ ports.IssueRepository   = (*fakeIssues)(nil)
+	_ ports.EntryRepository   = (*fakeEntries)(nil)
+	_ ports.CycleRepository   = (*fakeCycles)(nil)
+	_ ports.SearchRepository  = (*fakeSearch)(nil)
+	_ ports.Clock             = (*fakeClock)(nil)
+	_ ports.IDGenerator       = (*seqIDs)(nil)
+	_ ports.Logger            = nopLogger{}
 )

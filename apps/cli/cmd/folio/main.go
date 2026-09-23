@@ -65,6 +65,7 @@ func main() {
 		cycleCommand(),
 		docCommand(),
 		journalCommand(),
+		knowledgeCommand(),
 		loginCommand(),
 		logoutCommand(),
 		planCommand(),

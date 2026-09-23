@@ -16,6 +16,8 @@ import { Route as AuthenticatedClientRouteImport } from './routes/_authenticated
 import { Route as ShareTokenRouteImport } from './routes/share/$token'
 import { Route as AuthenticatedClientIndexRouteImport } from './routes/_authenticated/$client/index'
 import { Route as AuthenticatedClientDomainRouteImport } from './routes/_authenticated/$client/$domain'
+import { Route as AuthenticatedKnowledgeIndexRouteImport } from './routes/_authenticated/knowledge/index'
+import { Route as AuthenticatedKnowledgeNoteRouteImport } from './routes/_authenticated/knowledge/$note'
 import { Route as AuthenticatedClientDomainIndexRouteImport } from './routes/_authenticated/$client/$domain/index'
 import { Route as AuthenticatedClientDomainSlugRouteImport } from './routes/_authenticated/$client/$domain/$slug'
 import { Route as AuthenticatedClientDomainSlugIndexRouteImport } from './routes/_authenticated/$client/$domain/$slug/index'
@@ -63,6 +65,18 @@ const AuthenticatedClientDomainRoute =
     id: '/$domain',
     path: '/$domain',
     getParentRoute: () => AuthenticatedClientRoute,
+  } as any)
+const AuthenticatedKnowledgeIndexRoute =
+  AuthenticatedKnowledgeIndexRouteImport.update({
+    id: '/knowledge/',
+    path: '/knowledge/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKnowledgeNoteRoute =
+  AuthenticatedKnowledgeNoteRouteImport.update({
+    id: '/knowledge/$note',
+    path: '/knowledge/$note',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedClientDomainIndexRoute =
   AuthenticatedClientDomainIndexRouteImport.update({
@@ -137,7 +151,9 @@ export interface FileRoutesByFullPath {
   '/$client': typeof AuthenticatedClientRouteWithChildren
   '/share/$token': typeof ShareTokenRoute
   '/$client/$domain': typeof AuthenticatedClientDomainRouteWithChildren
+  '/knowledge/$note': typeof AuthenticatedKnowledgeNoteRoute
   '/$client/': typeof AuthenticatedClientIndexRoute
+  '/knowledge/': typeof AuthenticatedKnowledgeIndexRoute
   '/$client/$domain/$slug': typeof AuthenticatedClientDomainSlugRouteWithChildren
   '/$client/$domain/': typeof AuthenticatedClientDomainIndexRoute
   '/$client/$domain/$slug/todos': typeof AuthenticatedClientDomainSlugTodosRoute
@@ -154,7 +170,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/share/$token': typeof ShareTokenRoute
   '/': typeof AuthenticatedIndexRoute
+  '/knowledge/$note': typeof AuthenticatedKnowledgeNoteRoute
   '/$client': typeof AuthenticatedClientIndexRoute
+  '/knowledge': typeof AuthenticatedKnowledgeIndexRoute
   '/$client/$domain': typeof AuthenticatedClientDomainIndexRoute
   '/$client/$domain/$slug/todos': typeof AuthenticatedClientDomainSlugTodosRoute
   '/$client/$domain/$slug/work': typeof AuthenticatedClientDomainSlugWorkRoute
@@ -174,7 +192,9 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/$client/$domain': typeof AuthenticatedClientDomainRouteWithChildren
+  '/_authenticated/knowledge/$note': typeof AuthenticatedKnowledgeNoteRoute
   '/_authenticated/$client/': typeof AuthenticatedClientIndexRoute
+  '/_authenticated/knowledge/': typeof AuthenticatedKnowledgeIndexRoute
   '/_authenticated/$client/$domain/$slug': typeof AuthenticatedClientDomainSlugRouteWithChildren
   '/_authenticated/$client/$domain/': typeof AuthenticatedClientDomainIndexRoute
   '/_authenticated/$client/$domain/$slug/todos': typeof AuthenticatedClientDomainSlugTodosRoute
@@ -195,7 +215,9 @@ export interface FileRouteTypes {
     | '/$client'
     | '/share/$token'
     | '/$client/$domain'
+    | '/knowledge/$note'
     | '/$client/'
+    | '/knowledge/'
     | '/$client/$domain/$slug'
     | '/$client/$domain/'
     | '/$client/$domain/$slug/todos'
@@ -212,7 +234,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/share/$token'
     | '/'
+    | '/knowledge/$note'
     | '/$client'
+    | '/knowledge'
     | '/$client/$domain'
     | '/$client/$domain/$slug/todos'
     | '/$client/$domain/$slug/work'
@@ -231,7 +255,9 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/_authenticated/'
     | '/_authenticated/$client/$domain'
+    | '/_authenticated/knowledge/$note'
     | '/_authenticated/$client/'
+    | '/_authenticated/knowledge/'
     | '/_authenticated/$client/$domain/$slug'
     | '/_authenticated/$client/$domain/'
     | '/_authenticated/$client/$domain/$slug/todos'
@@ -301,6 +327,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/$client/$domain'
       preLoaderRoute: typeof AuthenticatedClientDomainRouteImport
       parentRoute: typeof AuthenticatedClientRoute
+    }
+    '/_authenticated/knowledge/': {
+      id: '/_authenticated/knowledge/'
+      path: '/knowledge'
+      fullPath: '/knowledge/'
+      preLoaderRoute: typeof AuthenticatedKnowledgeIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/knowledge/$note': {
+      id: '/_authenticated/knowledge/$note'
+      path: '/knowledge/$note'
+      fullPath: '/knowledge/$note'
+      preLoaderRoute: typeof AuthenticatedKnowledgeNoteRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/$client/$domain/': {
       id: '/_authenticated/$client/$domain/'
@@ -454,11 +494,15 @@ const AuthenticatedClientRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedClientRoute: typeof AuthenticatedClientRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedKnowledgeNoteRoute: typeof AuthenticatedKnowledgeNoteRoute
+  AuthenticatedKnowledgeIndexRoute: typeof AuthenticatedKnowledgeIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedClientRoute: AuthenticatedClientRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedKnowledgeNoteRoute: AuthenticatedKnowledgeNoteRoute,
+  AuthenticatedKnowledgeIndexRoute: AuthenticatedKnowledgeIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

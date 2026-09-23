@@ -30,12 +30,18 @@ stands and why it was done that way. Titled, searchable, editable, and
 anchored to a branch, PR or external tracker key. A **doc** is durable
 knowledge meant to be kept current.
 
+**Knowledge** is a note that outlives the project it was learned on. It is the
+one model with no domain and no roster: any signed-in user reads and writes
+it, and the project it may name is a label rather than a fence. That is why
+`KnowledgeUseCase` takes no project and `KnowledgeService` holds no membership
+check beyond one on an attached project.
+
 A **ticket** is a unit of work carrying its own plans, todos, logs and docs.
 Each of those four holds an optional ticket, so a record either hangs off a
 ticket or sits directly under the project; a ticket in another project is
 refused, so the reference cannot cross a tenancy boundary. A ticket's
 progress counts its todos, and deleting one detaches its contents. **Search**
-spans logs, docs, todos, plans and tickets.
+spans every kind, knowledge included.
 
 ## Adding a client
 
@@ -61,6 +67,12 @@ permission check by forgetting one.
 - Batch writes are partial: a rejected item is reported by index, the rest go
   through, and the endpoint answers 207.
 - Every listing is clamped to `MaxPageSize`.
+- Search is an FTS5 index in `adapters/pb`, mirrored by triggers and ranked by
+  bm25 with the title weighted above the body. Adding a searchable collection
+  means adding one entry to `sources`.
+- Tags for entries and issues live in join tables, not in the `tags` column on
+  those records, which nothing writes. Knowledge is the exception: it has no
+  domain to scope a tag row by, so its column is the record of truth.
 
 ## Tests
 

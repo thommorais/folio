@@ -8,6 +8,7 @@ import { createCyclesAdapter } from '_/adapters/pocketbase/cycles-adapter'
 import { createDomainsAdapter } from '_/adapters/pocketbase/domains-adapter'
 import { createEntriesAdapter } from '_/adapters/pocketbase/entries-adapter'
 import { createIssuesAdapter } from '_/adapters/pocketbase/issues-adapter'
+import { createKnowledgeAdapter } from '_/adapters/pocketbase/knowledge-adapter'
 import { createPlansAdapter } from '_/adapters/pocketbase/plans-adapter'
 import { createProjectsAdapter } from '_/adapters/pocketbase/projects-adapter'
 import { createSearchAdapter } from '_/adapters/pocketbase/search-adapter'
@@ -19,6 +20,7 @@ import type { CyclesPort } from '_/core/ports/cycles'
 import type { DomainsPort } from '_/core/ports/domains'
 import type { EntriesPort } from '_/core/ports/entries'
 import type { IssuesPort } from '_/core/ports/issues'
+import type { KnowledgePort } from '_/core/ports/knowledge'
 import type { PlansPort } from '_/core/ports/plans'
 import type { ProjectsPort } from '_/core/ports/projects'
 import type { SearchPort } from '_/core/ports/search'
@@ -34,6 +36,7 @@ export type Container = {
 	readonly domains: DomainsPort
 	readonly entries: EntriesPort
 	readonly issues: IssuesPort
+	readonly knowledge: KnowledgePort
 	readonly plans: PlansPort
 	readonly projects: ProjectsPort
 	readonly search: SearchPort
@@ -50,6 +53,7 @@ export const createContainer = (): Container => ({
 	domains: createDomainsAdapter(),
 	entries: createEntriesAdapter(),
 	issues: createIssuesAdapter(),
+	knowledge: createKnowledgeAdapter(),
 	plans: createPlansAdapter(),
 	projects: createProjectsAdapter(),
 	search: createSearchAdapter(),

@@ -1,13 +1,23 @@
+import { Link } from '@tanstack/react-router'
 import { PreviewSheet } from './preview-sheet'
 import { OpenSearchButton } from './search/open-search-button'
 import { SearchModal } from './search/search-modal'
 import { UserMenu } from './user-menu'
 
+// Knowledge sits in the header rather than under a project, because it belongs
+// to none: there is no breadcrumb that would ever lead to it.
 const Header = () => (
 	<header className='border-border group flex h-[70px] items-center justify-between border-b px-4 md:px-6'>
 		<OpenSearchButton />
 
-		<div className='ml-auto flex items-center space-x-2'>
+		<div className='ml-auto flex items-center space-x-4'>
+			<Link
+				to='/knowledge'
+				className='text-dim hover:text-foreground text-sm transition-colors'
+				activeProps={{ className: 'text-foreground' }}
+			>
+				Knowledge
+			</Link>
 			<UserMenu />
 		</div>
 	</header>

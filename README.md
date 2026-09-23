@@ -57,11 +57,20 @@ steps), **logs** (what was built, how, and where it stands) and **docs**
 A **ticket** is a unit of work large enough to carry its own plans, todos,
 logs and docs: those four each hold an optional ticket, so the same record
 either hangs off a ticket or sits loose under the project. Deleting a ticket
-detaches its contents rather than destroying them. Search spans all five.
+detaches its contents rather than destroying them.
+
+**Knowledge** sits outside all of that. A tip, a snippet, a fix worth keeping
+is rarely about one project, so a note belongs to none: every signed-in user
+reads and writes it, and the project it may name records where it was learned
+rather than who may see it.
+
+Search spans every kind at once, ranked by relevance through a SQLite FTS5
+index, and knowledge answers from inside any project.
 
 Permissions are checked in the service layer, so every client gets the same
 rules; PocketBase collection rules enforce the same tenancy for direct REST
-access.
+access. Knowledge is the deliberate exception at both layers: its only check
+is that the caller is signed in.
 
 ## Docs
 
