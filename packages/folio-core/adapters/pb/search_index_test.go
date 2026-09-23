@@ -230,14 +230,22 @@ func TestIdentifiersSurviveTokenizing(t *testing.T) {
 }
 
 // Filters narrow a ranked result rather than being applied to a separate scan.
+//
+// The records are written through the repository rather than by setting the
+// columns, because tags do not live on the record: a test that writes a tags
+// column directly passes against an index that could never see a real tag.
 func TestKindAndTagFilters(t *testing.T) {
 	s := setup(t)
+	ctx := context.Background()
 
-	doc := newRecord(t, s.app, pb.ColEntries, map[string]any{
-		"domain": s.domain.Id, "project": s.project.Id, "kind": "doc",
-		"slug": "indexing", "title": "Indexing", "body": "how search works",
-		"tags": []string{"decision"},
+	doc, err := pb.NewEntryRepository(s.app).Create(ctx, domain.Entry{
+		ID: "ftsdoc000000001", Kind: domain.EntryDoc, ProjectID: domain.ProjectID(s.project.Id),
+		Slug: "indexing", Title: "Indexing", Body: "how search works",
+		Tags: []string{"decision"},
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	newRecord(t, s.app, pb.ColIssues, map[string]any{
 		"domain": s.domain.Id, "project": s.project.Id, "kind": "todo",
 		"slug": "indexing-todo", "title": "Indexing", "status": "open", "priority": "low",
@@ -246,13 +254,50 @@ func TestKindAndTagFilters(t *testing.T) {
 	byKind := search(t, s.app, s.project.Id, domain.SearchQuery{
 		Text: "indexing", Kinds: []domain.SearchKind{domain.SearchKindDoc},
 	})
-	if got := ids(byKind); !slices.Equal(got, []string{doc.Id}) {
-		t.Errorf("kind filter gave %v, want only the doc %s", got, doc.Id)
+	if got := ids(byKind); !slices.Equal(got, []string{string(doc.ID)}) {
+		t.Errorf("kind filter gave %v, want only the doc %s", got, doc.ID)
 	}
 
 	byTag := search(t, s.app, s.project.Id, domain.SearchQuery{Text: "indexing", Tags: []string{"decision"}})
-	if got := ids(byTag); !slices.Equal(got, []string{doc.Id}) {
-		t.Errorf("tag filter gave %v, want only the tagged doc %s", got, doc.Id)
+	if got := ids(byTag); !slices.Equal(got, []string{string(doc.ID)}) {
+		t.Errorf("tag filter gave %v, want only the tagged doc %s", got, doc.ID)
+	}
+
+	if len(byTag) == 1 && !slices.Equal(byTag[0].Tags, []string{"decision"}) {
+		t.Errorf("hit carries tags %v, want [decision]", byTag[0].Tags)
+	}
+}
+
+// Tags are written to a join table after the record, so the record's own
+// triggers cannot see them. Retagging has to reach the index too.
+func TestRetaggingUpdatesTheIndex(t *testing.T) {
+	s := setup(t)
+	ctx := context.Background()
+	repo := pb.NewEntryRepository(s.app)
+
+	doc, err := repo.Create(ctx, domain.Entry{
+		ID: "ftsretag0000001", Kind: domain.EntryDoc, ProjectID: domain.ProjectID(s.project.Id),
+		Slug: "retag", Title: "Retag", Body: "caching strategy", Tags: []string{"decision"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byOld := search(t, s.app, s.project.Id, domain.SearchQuery{Text: "caching", Tags: []string{"decision"}})
+	if len(byOld) != 1 {
+		t.Fatalf("the original tag does not match: %d hits", len(byOld))
+	}
+
+	doc.Tags = []string{"rejected"}
+	if _, err := repo.Update(ctx, doc); err != nil {
+		t.Fatal(err)
+	}
+
+	if hits := search(t, s.app, s.project.Id, domain.SearchQuery{Text: "caching", Tags: []string{"decision"}}); len(hits) != 0 {
+		t.Errorf("the removed tag still matches: %v", ids(hits))
+	}
+	if hits := search(t, s.app, s.project.Id, domain.SearchQuery{Text: "caching", Tags: []string{"rejected"}}); len(hits) != 1 {
+		t.Errorf("the new tag does not match: %d hits", len(hits))
 	}
 }
 

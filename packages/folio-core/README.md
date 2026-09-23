@@ -61,6 +61,11 @@ permission check by forgetting one.
 - Batch writes are partial: a rejected item is reported by index, the rest go
   through, and the endpoint answers 207.
 - Every listing is clamped to `MaxPageSize`.
+- Search is an FTS5 index in `adapters/pb`, mirrored by triggers and ranked by
+  bm25 with the title weighted above the body. Adding a searchable collection
+  means adding one entry to `sources`.
+- Tags for entries and issues live in join tables, not in the `tags` column on
+  those records, which nothing writes.
 
 ## Tests
 

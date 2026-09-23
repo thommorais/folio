@@ -6,6 +6,8 @@ import (
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+
+	"folio/folio-core/ports"
 )
 
 // SearchIndex is the FTS5 table every searchable kind is mirrored into.
@@ -57,6 +59,37 @@ type indexed struct {
 	// Where is an extra predicate, in the same `{a}` form, that a row must
 	// satisfy to be indexed at all.
 	Where string
+	// TagTarget names which join table carries this collection's tags, when
+	// one does. Tags are written after the record itself and never touch its
+	// row, so the record's own triggers cannot see them: the join table needs
+	// triggers of its own that rebuild the index row.
+	TagTarget ports.TagTarget
+}
+
+// tagJoinOf reuses the repository's mapping so the index and the writes agree
+// on which table holds a target's tags.
+func (s indexed) tagJoinOf() (collection, ref string) {
+	return tagJoin(s.TagTarget)
+}
+
+// tagsFrom aggregates a record's tag slugs as the JSON array the index stores,
+// which is the shape the tag filter's LIKE expects.
+func tagsFrom(collection, ref string) string {
+	return fmt.Sprintf(
+		`(SELECT COALESCE(json_group_array(t.slug), '[]') FROM %s j JOIN %s t ON t.id = j.tag WHERE j.%s = {a}.id)`,
+		collection, ColTags, ref,
+	)
+}
+
+// tagsExpr is the SQL for a row's tags, from its join table when it has one.
+func (s indexed) tagsExpr() string {
+	if s.TagTarget != "" {
+		return tagsFrom(s.tagJoinOf())
+	}
+	if s.Tags != "" {
+		return s.Tags
+	}
+	return noTags
 }
 
 // expand resolves the `{a}` alias in a fragment.
@@ -76,11 +109,11 @@ var sources = []indexed{
 		Collection: ColEntries,
 		// A log has no title of its own, so the index supplies one; a journal
 		// entry or doc that was saved without one falls back the same way.
-		Kind:  `CASE {a}.kind WHEN 'log' THEN 'worklog' ELSE {a}.kind END`,
-		Title: `CASE WHEN {a}.title = '' THEN 'Work log' ELSE {a}.title END`,
-		Body:  `{a}.body`,
-		Slug:  `{a}.slug`,
-		Tags:  `COALESCE({a}.tags, '[]')`,
+		Kind:      `CASE {a}.kind WHEN 'log' THEN 'worklog' ELSE {a}.kind END`,
+		Title:     `CASE WHEN {a}.title = '' THEN 'Work log' ELSE {a}.title END`,
+		Body:      `{a}.body`,
+		Slug:      `{a}.slug`,
+		TagTarget: ports.TagEntry,
 	},
 	{
 		Collection: ColIssues,
@@ -88,7 +121,7 @@ var sources = []indexed{
 		Title:      `{a}.title`,
 		Body:       `{a}.body`,
 		Slug:       `{a}.slug`,
-		Tags:       `COALESCE({a}.tags, '[]')`,
+		TagTarget:  ports.TagIssue,
 	},
 	{
 		Collection: ColPlans,
@@ -96,7 +129,9 @@ var sources = []indexed{
 		Title:      `{a}.title`,
 		Body:       `{a}.goal`,
 		Slug:       noSlug,
-		Tags:       `COALESCE({a}.tags, '[]')`,
+		// A plan has a tags column, but nothing writes it and there is no
+		// join table, so a plan carries no tags rather than a stale array.
+		Tags: noTags,
 	},
 	{
 		Collection: ColCycles,
@@ -148,6 +183,9 @@ func ensureSearchIndex(app core.App) error {
 		if err := ensureTriggers(app, source); err != nil {
 			return fmt.Errorf("%s triggers: %w", source.Collection, err)
 		}
+		if err := ensureTagTriggers(app, source); err != nil {
+			return fmt.Errorf("%s tag triggers: %w", source.Collection, err)
+		}
 	}
 
 	return backfillSearchIndex(app)
@@ -165,7 +203,7 @@ func (s indexed) selectFor(alias string) string {
 		alias,
 		expand(s.Slug, alias),
 		alias,
-		expand(s.Tags, alias),
+		expand(s.tagsExpr(), alias),
 		alias,
 		expand(s.Title, alias),
 		expand(s.Body, alias),
@@ -204,6 +242,57 @@ func ensureTriggers(app core.App, s indexed) error {
 		fmt.Sprintf(`CREATE TRIGGER %s_ai AFTER INSERT ON %s BEGIN %s END`, prefix, s.Collection, insert),
 		fmt.Sprintf(`CREATE TRIGGER %s_ad AFTER DELETE ON %s BEGIN %s END`, prefix, s.Collection, remove),
 		fmt.Sprintf(`CREATE TRIGGER %s_au AFTER UPDATE ON %s BEGIN %s %s END`, prefix, s.Collection, remove, insert),
+	}
+
+	for _, sql := range statements {
+		if _, err := db.NewQuery(sql).Execute(); err != nil {
+			return fmt.Errorf("%s: %w", sql, err)
+		}
+	}
+
+	return nil
+}
+
+// ensureTagTriggers rebuilds a record's index row when its tags change.
+//
+// Tagging writes to a join table, not to the record, so nothing about the
+// record's own row changes and its update trigger never fires. These triggers
+// watch the join table instead and re-read the record, which is why the insert
+// they run selects from the source collection rather than from `new`.
+func ensureTagTriggers(app core.App, s indexed) error {
+	if s.TagTarget == "" {
+		return nil
+	}
+
+	db := app.DB()
+	joinTable, ref := s.tagJoinOf()
+	prefix := "fts_" + joinTable
+
+	// The row is rebuilt for whichever record the join row points at, which is
+	// new.<ref> on insert and old.<ref> on delete.
+	rebuild := func(alias string) string {
+		record := alias + "." + ref
+
+		remove := fmt.Sprintf(`DELETE FROM %s WHERE source = '%s' AND rec_id = %s;`,
+			SearchIndex, s.Collection, record)
+
+		insert := fmt.Sprintf(`INSERT INTO %s(%s) %s FROM %s src WHERE src.id = %s`,
+			SearchIndex, indexColumnList, s.selectFor("src"), s.Collection, record)
+		if s.Where != "" {
+			insert += " AND " + expand(s.Where, "src")
+		}
+
+		return remove + insert + ";"
+	}
+
+	statements := []string{
+		fmt.Sprintf(`DROP TRIGGER IF EXISTS %s_ai`, prefix),
+		fmt.Sprintf(`DROP TRIGGER IF EXISTS %s_ad`, prefix),
+
+		fmt.Sprintf(`CREATE TRIGGER %s_ai AFTER INSERT ON %s BEGIN %s END`,
+			prefix, joinTable, rebuild("new")),
+		fmt.Sprintf(`CREATE TRIGGER %s_ad AFTER DELETE ON %s BEGIN %s END`,
+			prefix, joinTable, rebuild("old")),
 	}
 
 	for _, sql := range statements {
