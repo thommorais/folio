@@ -77,6 +77,11 @@ func Register(app core.App) error {
 	if err := applyRules(app); err != nil {
 		return fmt.Errorf("rules: %w", err)
 	}
+	// Last: the index mirrors every collection above, so they all have to
+	// exist before its triggers can reference them.
+	if err := ensureSearchIndex(app); err != nil {
+		return fmt.Errorf("search index: %w", err)
+	}
 	return nil
 }
 

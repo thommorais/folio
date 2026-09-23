@@ -89,9 +89,6 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.POST("/issues/{issue}/links", h.linkIssue)
 	g.DELETE("/issues/{issue}/links/{to}", h.unlinkIssue)
 
-
-
-
 	g.GET("/projects/{project}/entries", h.listEntries)
 	g.POST("/projects/{project}/entries", h.writeEntry)
 	g.GET("/projects/{project}/entries/{slug}", h.getEntryBySlug)
@@ -101,6 +98,7 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.DELETE("/entries/{entry}", h.deleteEntry)
 
 	g.GET("/projects/{project}/search", h.searchProject)
+	g.GET("/search", h.searchAll)
 
 	g.GET("/projects/{project}/shares", h.listShares)
 	g.POST("/issues/{issue}/shares", h.shareIssue)

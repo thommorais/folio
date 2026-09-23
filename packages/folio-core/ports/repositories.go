@@ -92,6 +92,10 @@ type CycleRepository interface {
 
 type SearchRepository interface {
 	Search(ctx context.Context, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error)
+	// SearchAcross ranks one result set over several projects at once.
+	// Running Search per project and merging would compare bm25 scores from
+	// separate queries, which are not on a common scale.
+	SearchAcross(ctx context.Context, projects []domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error)
 }
 
 type ShareRepository interface {

@@ -22,10 +22,10 @@ type Doc struct {
 // DocFilter narrows a doc listing. Zero values mean "no restriction".
 type DocFilter struct {
 	IssueID IssueID
-	Tags     []string
-	Search   string
-	Limit    int
-	Offset   int
+	Tags    []string
+	Search  string
+	Limit   int
+	Offset  int
 }
 
 // SearchKind identifies which collection a search hit came from.
@@ -47,6 +47,12 @@ type SearchHit struct {
 	Kind      SearchKind
 	ID        string
 	ProjectID ProjectID
+	// ProjectSlug names the hit's project, which a global search needs and a
+	// project-scoped one already knows.
+	ProjectSlug string
+	// Slug addresses the record in its own routes. Empty for kinds that have
+	// none, such as todos and plans.
+	Slug      string
 	Title     string
 	Snippet   string
 	Tags      []string

@@ -55,7 +55,7 @@ type progressView struct {
 type planView struct {
 	ID        string       `json:"id"`
 	ProjectID string       `json:"project_id"`
-	IssueID  string       `json:"issue_id,omitempty"`
+	IssueID   string       `json:"issue_id,omitempty"`
 	Title     string       `json:"title"`
 	Goal      string       `json:"goal,omitempty"`
 	Status    string       `json:"status"`
@@ -79,7 +79,7 @@ func toPlanView(p domain.Plan) planView {
 type cycleView struct {
 	ID         string `json:"id"`
 	ProjectID  string `json:"project_id"`
-	IssueID   string `json:"issue_id,omitempty"`
+	IssueID    string `json:"issue_id,omitempty"`
 	Ordinal    int    `json:"ordinal"`
 	Phase      string `json:"phase"`
 	Resolution string `json:"resolution,omitempty"`
@@ -103,18 +103,21 @@ func toCycleView(c domain.Cycle) cycleView {
 }
 
 type searchHitView struct {
-	Kind      string   `json:"kind"`
-	ID        string   `json:"id"`
-	ProjectID string   `json:"project_id"`
-	Title     string   `json:"title"`
-	Snippet   string   `json:"snippet,omitempty"`
-	Tags      []string `json:"tags"`
-	CreatedAt string   `json:"created_at"`
+	Kind        string   `json:"kind"`
+	ID          string   `json:"id"`
+	ProjectID   string   `json:"project_id"`
+	ProjectSlug string   `json:"project_slug"`
+	Slug        string   `json:"slug,omitempty"`
+	Title       string   `json:"title"`
+	Snippet     string   `json:"snippet,omitempty"`
+	Tags        []string `json:"tags"`
+	CreatedAt   string   `json:"created_at"`
 }
 
 func toSearchHitView(h domain.SearchHit) searchHitView {
 	return searchHitView{
 		Kind: string(h.Kind), ID: h.ID, ProjectID: string(h.ProjectID),
+		ProjectSlug: h.ProjectSlug, Slug: h.Slug,
 		Title: h.Title, Snippet: h.Snippet, Tags: orEmpty(h.Tags),
 		CreatedAt: rfc3339(h.CreatedAt),
 	}
@@ -211,12 +214,12 @@ func toIssueIDs(raw []string) []domain.IssueID {
 }
 
 type issueBriefView struct {
-	Issue    issueView      `json:"issue"`
-	Children []issueView    `json:"children"`
-	Plans    []planView     `json:"plans"`
-	Journal  []entryView    `json:"journal"`
-	Docs     []entryView    `json:"docs"`
-	Cycles   []cycleView    `json:"cycles"`
+	Issue    issueView   `json:"issue"`
+	Children []issueView `json:"children"`
+	Plans    []planView  `json:"plans"`
+	Journal  []entryView `json:"journal"`
+	Docs     []entryView `json:"docs"`
+	Cycles   []cycleView `json:"cycles"`
 }
 
 func toIssueBriefView(b domain.IssueBrief) issueBriefView {
