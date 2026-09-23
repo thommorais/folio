@@ -162,6 +162,36 @@ func TestParentCycleIsRejected(t *testing.T) {
 	}
 }
 
+func TestRejectedLinkLeavesNoIssue(t *testing.T) {
+	f := newIssueFixture(t)
+
+	theirs, err := f.svc.CreateIssue(t.Context(), f.owner, ports.CreateIssueInput{
+		ProjectID: f.other, Kind: domain.IssueTicket, Title: "Theirs",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cases := map[string]ports.CreateIssueInput{
+		"missing parent":            {ParentID: "nope"},
+		"parent in another project": {ParentID: theirs.ID},
+		"missing blocker":           {DependsOn: []domain.IssueID{"nope"}},
+	}
+	for name, in := range cases {
+		t.Run(name, func(t *testing.T) {
+			in.ProjectID, in.Kind, in.Title = f.project, domain.IssueTicket, name
+			if _, err := f.svc.CreateIssue(t.Context(), f.owner, in); err == nil {
+				t.Fatal("create should be rejected")
+			}
+			for _, issue := range f.issues.items {
+				if issue.Title == name {
+					t.Errorf("rejected create still stored %q", issue.ID)
+				}
+			}
+		})
+	}
+}
+
 func TestViewerCannotWrite(t *testing.T) {
 	f := newIssueFixture(t)
 

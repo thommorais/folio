@@ -193,6 +193,11 @@ func (s *IssueService) create(ctx context.Context, actor ports.Actor, in ports.C
 	if err := s.slugFree(ctx, issue.ProjectID, issue.Slug, ""); err != nil {
 		return domain.Issue{}, err
 	}
+	for _, ref := range append([]domain.IssueID{in.ParentID}, in.DependsOn...) {
+		if err := s.inScope(ctx, ref, issue.ProjectID); err != nil {
+			return domain.Issue{}, err
+		}
+	}
 
 	created, err := s.repo.Create(ctx, issue)
 	if err != nil {
