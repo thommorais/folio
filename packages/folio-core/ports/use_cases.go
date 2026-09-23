@@ -180,8 +180,6 @@ type SearchUseCase interface {
 	Search(ctx context.Context, actor Actor, project domain.ProjectID, q domain.SearchQuery) ([]domain.SearchHit, error)
 }
 
-// ShareUseCase manages read-only links. Every method but OpenShare takes an
-// actor; OpenShare is authorised by the token alone.
 type ShareUseCase interface {
 	ShareIssue(ctx context.Context, actor Actor, issue domain.IssueID, label string) (domain.Share, error)
 	SharePlan(ctx context.Context, actor Actor, plan domain.PlanID, label string) (domain.Share, error)

@@ -31,9 +31,6 @@ func toShareView(s domain.Share) shareView {
 	return out
 }
 
-// sharedView is what a link holder receives. It carries neither the token
-// nor the member-facing share row: the holder already has one, and the
-// other names the people who shared it.
 type sharedView struct {
 	Kind  string          `json:"kind"`
 	Label string          `json:"label"`
@@ -42,9 +39,6 @@ type sharedView struct {
 	Todos []issueView     `json:"todos,omitempty"`
 }
 
-// toSharedView blanks the account and project IDs. They mean nothing to a
-// holder without an account, and would let one link be correlated with
-// another.
 func toSharedView(item domain.SharedItem) sharedView {
 	out := sharedView{Label: item.Share.Label}
 	if item.Brief != nil {
@@ -109,8 +103,6 @@ func (h *Handler) openShare(e *core.RequestEvent) error {
 	if err != nil {
 		return fail(e, err)
 	}
-	// The page is the item's current state, and a revoked link must stop
-	// answering at once, so no cache may keep a copy.
 	e.Response.Header().Set("Cache-Control", "no-store")
 	return e.JSON(http.StatusOK, toSharedView(item))
 }

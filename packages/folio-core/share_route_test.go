@@ -33,9 +33,6 @@ func record(t *testing.T, app core.App, collection string, values map[string]any
 	return r
 }
 
-// The share route is mounted outside the authenticated group, so this runs
-// the real router rather than the handler alone: a route that slipped into
-// the group would still pass a handler test.
 func TestShareLinkOpensWithoutAnAccount(t *testing.T) {
 	dir, err := os.MkdirTemp("", "folio-share")
 	if err != nil {

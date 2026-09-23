@@ -44,8 +44,6 @@ func New(d Deps) *Handler {
 // rest of its own surface, so folio takes its own namespace.
 const BasePath = "/api/folio"
 
-// SharePath is outside BasePath because BasePath requires auth, and whoever
-// holds a share link has no account.
 const SharePath = "/api/share"
 
 // Mount registers every route. Auth is PocketBase's: RequireAuth rejects

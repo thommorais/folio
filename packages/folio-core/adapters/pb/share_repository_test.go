@@ -93,8 +93,6 @@ func TestShareIsVisibleToMembersOnly(t *testing.T) {
 	}
 }
 
-// The web app creates shares straight through the collection API, so the
-// create rule is the only check on that path.
 func TestShareCreateRuleOverRest(t *testing.T) {
 	s := setup(t)
 	elsewhere := newRecord(t, s.app, pb.ColProjects, map[string]any{

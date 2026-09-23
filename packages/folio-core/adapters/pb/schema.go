@@ -402,13 +402,9 @@ func ensureShares(app core.App) error {
 	c := core.NewBaseCollection(ColShares)
 	c.Fields.Add(
 		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
-		// A deleted item takes its links with it, so a token never opens
-		// onto nothing.
 		&core.RelationField{Name: "issue", CollectionId: issues.Id, CascadeDelete: true, MaxSelect: 1},
 		&core.RelationField{Name: "plan", CollectionId: plans.Id, CascadeDelete: true, MaxSelect: 1},
 		&core.TextField{Name: "label", Required: true, Max: 120, Presentable: true},
-		// 43 alphanumerics is about 256 bits, the same strength as the
-		// service's generator, so both creation paths yield equal tokens.
 		&core.TextField{Name: "token", Required: true, Min: 43, Max: 43, AutogeneratePattern: "[a-zA-Z0-9]{43}"},
 		&core.RelationField{Name: "created_by", Required: true, CollectionId: users.Id, MaxSelect: 1},
 		&core.DateField{Name: "last_accessed_at"},
@@ -564,16 +560,10 @@ func applyRules(app core.App) error {
 	if err != nil {
 		return err
 	}
-	// Anyone who can read the project can copy its links. Creation is checked
-	// here in full because the web app writes shares through the collection
-	// API: the row must be filed under the caller, point at exactly one issue
-	// or plan of its own project, and leave the token to the server.
 	shares.ListRule = strPtr(memberOfDomain)
 	shares.ViewRule = strPtr(memberOfDomain)
 	shares.CreateRule = strPtr(writerOfDomain + " && created_by = @request.auth.id && @request.body.token:isset = false" +
 		" && ((issue != '' && plan = '' && issue.project = project) || (plan != '' && issue = '' && plan.project = project))")
-	// A link is revoked, never edited: pointing an existing token at a
-	// different item would hand its holder something they were not given.
 	shares.UpdateRule = nil
 	shares.DeleteRule = strPtr(writerOfDomain)
 	if err := app.Save(shares); err != nil {

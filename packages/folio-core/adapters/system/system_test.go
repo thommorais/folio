@@ -7,8 +7,6 @@ import (
 	"folio/folio-core/adapters/system"
 )
 
-// The shares collection rejects any other shape, so a token the service
-// generates must match the pattern PocketBase autogenerates.
 func TestTokenMatchesTheStoredPattern(t *testing.T) {
 	pattern := regexp.MustCompile(`^[a-zA-Z0-9]{43}$`)
 	seen := map[string]bool{}

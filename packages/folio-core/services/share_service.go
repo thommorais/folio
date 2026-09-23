@@ -28,9 +28,6 @@ func NewShareService(repo ports.ShareRepository, issues ports.IssueRepository, p
 
 var _ ports.ShareUseCase = (*ShareService)(nil)
 
-// holder reads on behalf of whoever presents a valid token. Membership does
-// not apply to them: the token already proved access to this one item, and
-// the use cases below read nothing beyond it.
 var holder = ports.Actor{Superuser: true}
 
 func (s *ShareService) ShareIssue(ctx context.Context, actor ports.Actor, id domain.IssueID, label string) (domain.Share, error) {
@@ -82,8 +79,6 @@ func (s *ShareService) RevokeShare(ctx context.Context, actor ports.Actor, id do
 	return s.repo.Delete(ctx, id)
 }
 
-// OpenShare answers ErrNotFound for a malformed, unknown and revoked token
-// alike, so a holder cannot tell a typo from a link that once worked.
 func (s *ShareService) OpenShare(ctx context.Context, token string) (domain.SharedItem, error) {
 	if token == "" {
 		return domain.SharedItem{}, domain.ErrNotFound
@@ -113,7 +108,6 @@ func (s *ShareService) OpenShare(ctx context.Context, token string) (domain.Shar
 		item.Todos = todos
 	}
 
-	// A failed visit stamp must not cost the holder the page.
 	if err := s.repo.Touch(ctx, share.ID, s.clock.Now()); err != nil {
 		s.log.Warn("share visit not recorded", map[string]any{"share": string(share.ID), "error": err.Error()})
 	}
