@@ -10,7 +10,7 @@ type ProjectsState =
 	| { readonly status: 'ready'; readonly projects: readonly Project[] }
 	| { readonly status: 'failed'; readonly message: string }
 
-export const useProjects = (filter?: ProjectFilter): ProjectsState => {
+export const useProjects = (filter?: ProjectFilter, skip = false): ProjectsState => {
 	const { projects, connection } = useContainer()
 	const key = useFilterKey(filter)
 
@@ -20,6 +20,7 @@ export const useProjects = (filter?: ProjectFilter): ProjectsState => {
 		fold: foldUpdates,
 		connection,
 		deps: [key, projects],
+		skip,
 	})
 
 	return state.status === 'ready' ? { status: 'ready', projects: state.data } : state

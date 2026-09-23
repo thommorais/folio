@@ -10,7 +10,7 @@ type DomainsState =
 	| { readonly status: 'ready'; readonly domains: readonly Domain[] }
 	| { readonly status: 'failed'; readonly message: string }
 
-export const useDomains = (filter?: DomainFilter): DomainsState => {
+export const useDomains = (filter?: DomainFilter, skip = false): DomainsState => {
 	const { domains, connection } = useContainer()
 	const key = useFilterKey(filter)
 
@@ -20,6 +20,7 @@ export const useDomains = (filter?: DomainFilter): DomainsState => {
 		fold: foldUpdates,
 		connection,
 		deps: [key, domains],
+		skip,
 	})
 
 	return state.status === 'ready' ? { status: 'ready', domains: state.data } : state

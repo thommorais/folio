@@ -10,7 +10,10 @@ import { MemberRoster } from '_/pages/domain/member-roster'
 const DomainPage = () => {
 	const { client, domain: slug } = useParams({ from: '/_authenticated/$client/$domain/' })
 	const domain = useDomain(client, slug)
-	const state = useProjects(domain.status === 'ready' ? { domainId: domain.domain.id } : undefined)
+	const state = useProjects(
+		domain.status === 'ready' ? { domainId: domain.domain.id } : undefined,
+		domain.status !== 'ready',
+	)
 
 	if (domain.status === 'failed') return <p className='text-destructive text-sm'>{domain.message}</p>
 

@@ -143,6 +143,50 @@ describe('useLiveList', () => {
 		expect(result.current).toEqual({ status: 'ready', data: [row('a'), row('z')] })
 	})
 
+	it('neither loads nor subscribes while skipped', async () => {
+		const io = setup([row('a')])
+		const connection = fakeConnection()
+
+		const { result } = renderHook(() =>
+			useLiveList({
+				load: io.list,
+				subscribe: io.subscribe,
+				fold: foldUpdates,
+				connection: connection.port,
+				deps: [],
+				skip: true,
+			}),
+		)
+		await act(async () => {})
+
+		expect(result.current).toEqual({ status: 'loading' })
+		expect(io.list).not.toHaveBeenCalled()
+		expect(io.subscribe).not.toHaveBeenCalled()
+	})
+
+	it('loads and subscribes once it stops being skipped', async () => {
+		const io = setup([row('a')])
+		const connection = fakeConnection()
+
+		const { result, rerender } = renderHook(
+			({ skip }) =>
+				useLiveList({
+					load: io.list,
+					subscribe: io.subscribe,
+					fold: foldUpdates,
+					connection: connection.port,
+					deps: [],
+					skip,
+				}),
+			{ initialProps: { skip: true } },
+		)
+
+		rerender({ skip: false })
+
+		await waitFor(() => expect(result.current).toEqual({ status: 'ready', data: [row('a')] }))
+		expect(io.subscribe).toHaveBeenCalledTimes(1)
+	})
+
 	it('closes the subscription on unmount', async () => {
 		const io = setup([row('a')])
 		const connection = fakeConnection()

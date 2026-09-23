@@ -8,7 +8,10 @@ import { useDomains } from '_/app/use-domains'
 const ClientPage = () => {
 	const { client: slug } = useParams({ from: '/_authenticated/$client/' })
 	const client = useClient(slug)
-	const state = useDomains(client.status === 'ready' ? { clientId: client.client.id } : undefined)
+	const state = useDomains(
+		client.status === 'ready' ? { clientId: client.client.id } : undefined,
+		client.status !== 'ready',
+	)
 
 	if (client.status === 'failed') return <p className='text-destructive text-sm'>{client.message}</p>
 

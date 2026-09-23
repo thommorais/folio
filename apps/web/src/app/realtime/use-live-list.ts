@@ -14,6 +14,7 @@ type Options<T extends Entity> = {
 	readonly fold: (rows: readonly T[], row: T, action: ActionEvent) => readonly T[]
 	readonly connection: ConnectionPort
 	readonly deps: readonly unknown[]
+	readonly skip?: boolean
 }
 
 export const useLiveList = <T extends Entity>({
@@ -22,20 +23,23 @@ export const useLiveList = <T extends Entity>({
 	fold,
 	connection,
 	deps,
+	skip = false,
 }: Options<T>): AsyncState<readonly T[]> => {
-	const { state, refetch, patch } = useAsyncState(load, deps)
+	const { state, refetch, patch } = useAsyncState(load, deps, skip)
 
 	const update = useEffectEvent((row: T, action: ActionEvent) => {
 		patch(rows => fold(rows, row, action))
 	})
 
 	const open = useEffectEvent(async () => {
+		if (skip) return { success: true, value: async () => {} } as Result<Unsubscribe>
+
 		const result = await subscribe(update)
 		if (result.success) void refetch()
 		return result
 	})
 
-	useSubscription(open, deps)
+	useSubscription(open, [...deps, skip])
 
 	useEffect(() => connection.onReconnect(() => void refetch()), [connection, refetch])
 
