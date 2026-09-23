@@ -1,6 +1,6 @@
-import type { Branded } from './branded'
-import type { PlanId } from './plan'
-import type { ProjectId, UserId } from './project'
+import type { Branded } from './branded';
+import type { PlanId } from './plan';
+import type { ProjectId, UserId } from './project';
 
 export type IssueId = Branded<string, 'IssueId'>
 
@@ -14,7 +14,7 @@ export const ISSUE_STATUSES = ['open', 'in_progress', 'blocked', 'done', 'cancel
 
 export type IssueStatus = (typeof ISSUE_STATUSES)[number]
 
-export const DEFAULT_TICKET_STATUSES: readonly IssueStatus[] = ISSUE_STATUSES.filter(status => status !== 'done')
+export const DEFAULT_TICKET_STATUSES: readonly IssueStatus[] = ISSUE_STATUSES.filter(status => status !== 'done' && status !== 'cancelled')
 
 export const PRIORITIES = ['low', 'medium', 'high'] as const
 
