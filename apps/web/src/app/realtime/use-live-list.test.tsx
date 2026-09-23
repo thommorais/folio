@@ -1,12 +1,12 @@
-import { act, renderHook, waitFor } from '@testing-library/react'
-import { foldUpdates } from '_/adapters/pocketbase/fold-updates'
-import type { ConnectionPort } from '_/core/ports/connection'
-import type { Unsubscribe } from '_/core/ports/subscription'
-import { ok } from '_/lib/result'
-import type { ActionEvent } from '_/types'
-import { describe, expect, it, vi } from 'vitest'
-import { useLiveList } from './use-live-list'
-import { Status } from '_/lib/async-status'
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { foldUpdates } from '_/adapters/pocketbase/fold-updates';
+import type { ConnectionPort } from '_/core/ports/connection';
+import type { Unsubscribe } from '_/core/ports/subscription';
+import { Status } from '_/lib/async-status';
+import { ok } from '_/lib/result';
+import type { ActionEvent } from '_/types';
+import { describe, expect, it, vi } from 'vitest';
+import { useLiveList } from './use-live-list';
 
 type Row = { readonly id: string; readonly title: string }
 

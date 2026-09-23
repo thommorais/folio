@@ -1,11 +1,11 @@
-import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
-import type { Unsubscribe } from '_/core/ports/subscription'
-import type { Result } from '_/lib/result'
-import { useEffect, useEffectEvent, useState } from 'react'
-import { useSubscription } from './realtime/use-subscription'
-import { useContainer } from './container'
-import { collectCounts, type CountsState } from './counts'
-import { Status } from '_/lib/async-status'
+import { ADDRESSABLE_KINDS, KIND } from '_/core/domain/entry';
+import type { Unsubscribe } from '_/core/ports/subscription';
+import { Status } from '_/lib/async-status';
+import type { Result } from '_/lib/result';
+import { useEffect, useEffectEvent, useState } from 'react';
+import { useContainer } from './container';
+import { collectCounts, type CountsState } from './counts';
+import { useSubscription } from './realtime/use-subscription';
 
 export const useCounts = (project: string): CountsState => {
 	const { entries, issues, plans, connection } = useContainer()
@@ -13,9 +13,9 @@ export const useCounts = (project: string): CountsState => {
 
 	const load = useEffectEvent(async () => {
 		const results = await Promise.all([
-			issues.count(project, { kind: 'ticket' }),
+			issues.count(project, { kind: KIND.TICKET }),
 			plans.count(project),
-			issues.count(project, { kind: 'todo' }),
+			issues.count(project, { kind: KIND.TODO }),
 			// The journal lists both kinds, so its tile counts both.
 			entries.count(project, { kinds: ADDRESSABLE_KINDS }),
 		])
@@ -28,9 +28,6 @@ export const useCounts = (project: string): CountsState => {
 		void load()
 	}, [project])
 
-	// The tiles sit beside lists that update themselves, so a count that only
-	// loaded once would drift out of step with the rows right next to it. The
-	// event carries one record, not a total, so recount instead of adjusting.
 	const recount = useEffectEvent(() => {
 		void load()
 	})

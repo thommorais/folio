@@ -1,14 +1,14 @@
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { DropdownMenuItem } from '@thom/ui/dropdown-menu'
-import { useIssues } from '_/app/use-issues'
-import { ADDRESSABLE_KINDS, type AddressableKind } from '_/core/domain/entry'
-import { ENTRY_SORT_FIELDS, type EntrySortField } from '_/core/ports/sort'
-import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar'
-import { SortMenu } from '_/components/list/sort-menu'
-import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary'
-import type { JournalSearch } from '_/routes/_authenticated/$client/$domain/$slug/journal'
-import { ENTRY_KIND_LABELS } from './kind-labels'
-import { Status } from '_/lib/async-status'
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { DropdownMenuItem } from '@thom/ui/dropdown-menu';
+import { useIssues } from '_/app/use-issues';
+import { ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar';
+import { SortMenu } from '_/components/list/sort-menu';
+import { ADDRESSABLE_KINDS, KIND, type AddressableKind } from '_/core/domain/entry';
+import { ENTRY_SORT_FIELDS, type EntrySortField } from '_/core/ports/sort';
+import { Status } from '_/lib/async-status';
+import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary';
+import type { JournalSearch } from '_/routes/_authenticated/$client/$domain/$slug/journal';
+import { ENTRY_KIND_LABELS } from './kind-labels';
 
 const SORT_LABELS: Record<EntrySortField, string> = {
 	title: 'Title',
@@ -21,7 +21,7 @@ const JournalFilters = () => {
 	const { slug } = useParams({ from: '/_authenticated/$client/$domain/$slug/journal/' })
 	const search = useSearch({ from: '/_authenticated/$client/$domain/$slug/journal/' })
 	const navigate = useNavigate()
-	const tickets = useIssues(slug, { kind: 'ticket' })
+	const tickets = useIssues(slug, { kind: KIND.TICKET })
 
 	const setFilter = (patch: Partial<JournalSearch>) => {
 		void navigate({
@@ -47,7 +47,7 @@ const JournalFilters = () => {
 	}
 	if (search.ticket !== undefined) {
 		chips.push({
-			key: 'ticket',
+			key: KIND.TICKET,
 			label: ticketTitle(search.ticket),
 			onRemove: () => {
 				setFilter({ ticket: undefined })
@@ -56,7 +56,7 @@ const JournalFilters = () => {
 	}
 	if (search.tags !== undefined) {
 		chips.push({
-			key: 'tags',
+			key: KIND.TAGS,
 			label: search.tags.join(', '),
 			onRemove: () => {
 				setFilter({ tags: undefined })
@@ -97,7 +97,7 @@ const JournalFilters = () => {
 			</FilterMenuItem>
 
 			<FilterMenuItem label='Ticket'>
-				<div className='max-h-[300px] overflow-y-auto'>
+				<div className='max-h-75 overflow-y-auto'>
 					{tickets.status === Status.Ready && tickets.issues.length === 0 && (
 						<DropdownMenuItem disabled>No tickets found</DropdownMenuItem>
 					)}
@@ -116,7 +116,7 @@ const JournalFilters = () => {
 			</FilterMenuItem>
 
 			<FilterMenuItem label='Tags'>
-				<div className='max-h-[300px] overflow-y-auto'>
+				<div className='max-h-75 overflow-y-auto'>
 					{[...CONTEXT_TAGS, ...KIND_TAGS].map(tag => (
 						<FilterCheckboxItem
 							key={tag}
@@ -133,4 +133,4 @@ const JournalFilters = () => {
 	)
 }
 
-export { JournalFilters }
+export { JournalFilters };

@@ -1,8 +1,8 @@
-import type { Branded } from './branded'
-import type { CycleId } from './cycle'
-import type { IssueId } from './issue'
-import type { PlanId } from './plan'
-import type { ProjectId, UserId } from './project'
+import type { Branded } from './branded';
+import type { CycleId } from './cycle';
+import type { IssueId } from './issue';
+import type { PlanId } from './plan';
+import type { ProjectId, UserId } from './project';
 
 export type EntryId = Branded<string, 'EntryId'>
 
@@ -38,3 +38,9 @@ export const ADDRESSABLE_KINDS = ['journal', 'doc'] as const
 export type AddressableKind = (typeof ADDRESSABLE_KINDS)[number]
 
 export const isAddressable = (kind: EntryKind): boolean => kind === 'journal' || kind === 'doc'
+
+export const KIND = {
+	TICKET: 'ticket',
+	TAGS: 'tags',
+	TODO: 'todo'
+} as const
