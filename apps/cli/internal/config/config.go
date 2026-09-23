@@ -16,7 +16,7 @@ const (
 	EnvProject = "FOLIO_PROJECT"
 	EnvHome    = "FOLIO_CONFIG_DIR"
 
-	DefaultURL = "http://127.0.0.1:8090"
+	DefaultURL = "https://folio.journ.app"
 )
 
 var ErrNoToken = errors.New("no token: set " + EnvToken + " or run `folio login`")

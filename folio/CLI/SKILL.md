@@ -47,7 +47,7 @@ folio config set url https://folio.example.com
 Precedence for url and token: flag, then environment (`FOLIO_URL`, `FOLIO_TOKEN`),
 then the cached login. The cache is taken as a **pair** — the URL and token are
 only read together, because a token is valid only for the host that issued it.
-Default URL is `http://127.0.0.1:8090`.
+Default URL is `https://folio.journ.app`.
 
 `--url` accepts a bare host; loopback gets `http`, anything else `https`.
 
