@@ -1,15 +1,15 @@
-import { useParams, useSearch } from '@tanstack/react-router'
-import { useIssues } from '_/app/use-issues'
-import { usePlans } from '_/app/use-plans'
-import { isTerminal, ISSUE_KIND, ISSUE_STATUS, type Issue } from '_/core/domain/issue'
-import { isTerminal as isPlanTerminal, type Plan } from '_/core/domain/plan'
-import { useScope } from '_/routing/use-scope'
-import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
-import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels'
-import { Section, type WorkItem } from './section'
-import type { WorkType } from './types'
-import { WorkFilters } from './work-filters'
-import { Status } from '_/lib/async-status'
+import { useParams, useSearch } from '@tanstack/react-router';
+import { useIssues } from '_/app/use-issues';
+import { usePlans } from '_/app/use-plans';
+import { ISSUE_KIND, ISSUE_STATUS, isTerminal, type Issue } from '_/core/domain/issue';
+import { isTerminal as isPlanTerminal, PLAN_STATUS, type Plan } from '_/core/domain/plan';
+import { Status } from '_/lib/async-status';
+import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels';
+import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels';
+import { useScope } from '_/routing/use-scope';
+import { Section, type WorkItem } from './section';
+import type { WorkType } from './types';
+import { WorkFilters } from './work-filters';
 
 type Scope = {
 	readonly client: string
@@ -57,8 +57,7 @@ const Work = () => {
 
 	const scope: Scope = { client, domain, slug }
 	const term = search.q
-	// No selection means every section shows, which is what an untouched filter
-	// should do.
+
 	const shows = (type: WorkType): boolean => search.types === undefined || search.types.includes(type)
 
 	const filtered =
@@ -73,24 +72,25 @@ const Work = () => {
 	const tickets = useIssues(slug, {
 		kind: ISSUE_KIND.TICKET,
 		search: term,
-		status: search.statuses,
+		status: search.statuses || [ISSUE_STATUS.IN_PROGRESS, ISSUE_STATUS.OPEN, ISSUE_STATUS.BLOCKED],
 		priority: search.priority,
 		tags: search.tags,
 		sort: search.sort,
 	})
+
 	const todos = useIssues(slug, {
 		kind: ISSUE_KIND.TODO,
 		search: term,
-		status: search.statuses,
+		status: search.statuses || [ISSUE_STATUS.IN_PROGRESS, ISSUE_STATUS.OPEN, ISSUE_STATUS.BLOCKED],
 		priority: search.priority,
 		tags: search.tags,
 		parentId: search.ticket,
 		sort: search.sort,
 	})
-	// Plans carry no priority, so that filter narrows the other two sections only.
+
 	const plans = usePlans(slug, {
 		search: term,
-		status: search.planStatuses,
+		status: search.planStatuses || [PLAN_STATUS.ACTIVE],
 		tags: search.tags,
 		ticketId: search.ticket,
 		sort: search.sort,
@@ -120,7 +120,7 @@ const Work = () => {
 						message={plans.status === Status.Failed ? plans.message : undefined}
 						emptyLabel='plans'
 						filtered={filtered}
-						to='/$client/$domain/$slug/plans'
+						to='https://folio.journ.app/welligence/web/xwwp/tickets/xwwp-5227-update-apollo-js/$client/$domain/$slug/plans'
 						params={scope}
 					/>
 				)}
@@ -141,4 +141,4 @@ const Work = () => {
 	)
 }
 
-export { Work }
+export { Work };
