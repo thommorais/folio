@@ -267,4 +267,4 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	)
 }
 
-export { TicketDetail };
+export { TicketBody, TicketDetail };
