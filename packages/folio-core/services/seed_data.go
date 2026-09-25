@@ -257,6 +257,26 @@ colourblindness. Status is the fill.`,
 							Body:     `A map with no blockers is a list, and a list reads better than a column of boxes.`,
 						},
 						{
+							Slug:     "draw-the-edges",
+							Title:    "Draw the edges",
+							Status:   domain.IssueOpen,
+							Priority: domain.PriorityHigh,
+							Size:     3,
+							Tags:     []string{"web", "frontend"},
+							Body: `Orthogonal SVG paths: parent solid, blocks arrowed, relates dotted.
+Hovering a node dims everything off its dependency path.`,
+						},
+						{
+							Slug:     "ship-the-wayfinder-view",
+							Title:    "Ship the wayfinder view",
+							Status:   domain.IssueOpen,
+							Priority: domain.PriorityMedium,
+							Size:     2,
+							Tags:     []string{"web", "release"},
+							Body: `Route, link from the ticket header, and keep the grouped list as the
+fallback for a map with no relations worth drawing.`,
+						},
+						{
 							Title:    "Make the graph keyboard navigable",
 							Status:   domain.IssueBlocked,
 							Priority: domain.PriorityMedium,
@@ -281,11 +301,9 @@ about drawing the relations rather than listing them.`},
 							phase:  domain.PhasePlan,
 							mapKey: "map",
 							logs: []ports.WriteEntryInput{
-								{Body: `Ranking, edges and the subtree walk are pure functions in the domain now,
-tested without a renderer. Layout is longest-path over parent and blocker
-links, so an edge always points downwards.`},
-								{Body: `Kept the node shape carrying the wayfinder type rather than colour, so the
-picture survives dark mode and colourblindness. Status is the fill.`},
+								{Body: `Planning the graph on its own map. Cycle 1 answered "what now" but not
+"why can I not start this", and the layout choice decides everything
+drawn after it, so the decisions close before any of the build todos move.`},
 							},
 						},
 					},
@@ -361,37 +379,6 @@ enough. Revisit only if someone builds a map that big.`},
 							Tags:      []string{"design", "web"},
 							Body: `Four phases, several rounds, work logs hanging off each. Try it as a
 vertical rail before building it properly.`,
-						},
-					},
-					{
-						key:       "edges",
-						parent:    "map",
-						dependsOn: []string{"parser"},
-						relatedTo: []string{"rail"},
-						issue: ports.CreateIssueInput{
-							Slug:      "draw-the-edges",
-							Title:     "Draw the edges",
-							Status:    domain.IssueOpen,
-							Priority:  domain.PriorityHigh,
-							Wayfinder: domain.WayfinderTask,
-							Tags:      []string{"web", "frontend"},
-							Body: `Orthogonal SVG paths: parent solid, blocks arrowed, relates dotted.
-Hovering a node dims everything off its dependency path.`,
-						},
-					},
-					{
-						key:       "ship",
-						parent:    "map",
-						dependsOn: []string{"rail", "edges"},
-						issue: ports.CreateIssueInput{
-							Slug:      "ship-the-wayfinder-view",
-							Title:     "Ship the wayfinder view",
-							Status:    domain.IssueOpen,
-							Priority:  domain.PriorityMedium,
-							Wayfinder: domain.WayfinderTask,
-							Tags:      []string{"web", "release"},
-							Body: `Route, link from the ticket header, and keep the grouped list as the
-fallback for a map with no relations worth drawing.`,
 						},
 					},
 					{

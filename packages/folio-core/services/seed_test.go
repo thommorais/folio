@@ -64,4 +64,14 @@ func TestSeedWritesTheDemoAndReruns(t *testing.T) {
 	if theMap.Wayfinder != domain.WayfinderMap || theMap.ParentID != work.ID {
 		t.Fatalf("map = %+v, want a map under the work ticket", theMap)
 	}
+
+	for _, slug := range []string{"draw-the-edges", "ship-the-wayfinder-view"} {
+		step, err := uc.Issues.GetIssueBySlug(t.Context(), actor, project.ID, slug)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if step.Kind != domain.IssueTodo || step.ParentID != work.ID {
+			t.Errorf("%s is build work: want a todo under the work ticket, got kind %s under %s", slug, step.Kind, step.ParentID)
+		}
+	}
 }
