@@ -71,7 +71,7 @@ Knowledge is not scoped to a project, so it answers from wherever you are.
 
 	cmd.PersistentFlags().StringVarP(&flagProject, "project", "p", "", "project id or slug")
 	cmd.Flags().BoolVar(&all, "all", false, "search every project you can read, not just the current one")
-	cmd.Flags().StringVar(&kinds, "kind", "", "comma separated: ticket,todo,plan,doc,journal,worklog,resolution,knowledge")
+	cmd.Flags().StringVar(&kinds, "kind", "", "comma separated: ticket,todo,plan,doc,journal,worklog,resolution,decision,knowledge")
 	cmd.Flags().StringVar(&tags, "tags", "", "comma separated tags")
 	registerTagCompletion(cmd)
 	cmd.Flags().IntVar(&query.Limit, "limit", 0, "maximum hits")

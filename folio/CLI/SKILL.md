@@ -1,6 +1,6 @@
 ---
 name: folio-cli
-description: How to drive the folio CLI — the `folio` command for projects, tickets, plans, todos, cycles, work logs, journal and docs. Use when reading or writing anything in a folio workspace, when a task mentions folio tickets/todos/plans/cycles/worklogs/journal/docs, or when `folio` appears in a command.
+description: How to drive the folio CLI — the `folio` command for projects, tickets, plans, todos, cycles, work logs, journal and docs. Use when reading or writing anything in a folio workspace, when a task mentions folio tickets/todos/plans/cycles/worklogs/journal/docs, when running wayfinder or a PDCA cycle against folio, or when `folio` appears in a command.
 ---
 
 # folio CLI
@@ -138,38 +138,65 @@ A ticket can sit under another (`--parent`) and can be blocked by others
 (`--depends-on`, comma separated ids). `blocked` is derived on read from whether
 any blocker is still open, so it is never set by hand; the separate `blocked`
 *status* is the one you set yourself. Cycles in either the parent chain or the
-dependency graph are refused at write time.
+dependency graph are refused at write time. `--depends-on` on `ticket update`
+replaces the whole set.
+
+`--wayfinder` is one of `map`, `research`, `prototype`, `grilling`, `task`: a
+field of its own, not a tag. A ticket with none of them is **work**; `map` is a
+map; the other four are **decisions**.
+
+## The PDCA loop
+
+Work runs in cycles: plan, do, check, act, then resolve. A ticket that ships,
+gets a bug and comes back opens cycle 2 rather than overwriting cycle 1. Every
+cycle command takes the ticket's id, or its slug with a project selected.
 
 ```bash
-folio ticket create "The map" --wayfinder map
-folio ticket create "Decide the shape" --parent <map-id> --wayfinder grilling
-folio ticket create "Build it" --parent <map-id> --depends-on <id1>,<id2>
-folio ticket frontier <map-id>
+folio cycle open <ticket>                    # cycle N at plan
+folio cycle open <ticket> --map "<title>"    # same, planned by a new wayfinder map
+folio cycle next <ticket>                    # one phase forward
+folio cycle resolve <ticket> "<what happened>"
+folio cycle list <ticket>
 ```
 
-`ticket frontier <id>` lists that ticket's children that are open, unblocked and
-unassigned, oldest first. `--wayfinder` is one of `map`, `research`,
-`prototype`, `grilling`, `task`, and is a field of its own rather than a tag, so
-it does not touch the tag vocabulary.
+Rules the server holds you to:
 
-## Cycles carry the PDCA loop
+- Phases move one step at a time, forward only. `next` after act is refused:
+  resolve instead.
+- A new cycle opens only once the current one is resolved.
+- A cycle planned by a map stays in plan while any decision on the map is
+  open. `next` names how many are left.
+- Decisions never run cycles of their own; open the cycle on the work ticket
+  the decision serves.
+- Closing a ticket needs a resolution on its **current** cycle. A ticket that
+  never opened a cycle closes freely.
 
-A ticket that ships, gets a bug and comes back opens a second cycle rather than
-overwriting the first. Each cycle has an ordinal, a phase and a resolution, and
-`ticket get` reports the latest as `cycle N: phase`.
+A second pass is a new cycle with a new map: `cycle open <ticket> --map` on
+cycle 2 files the map beside cycle 1's, under the same work ticket.
 
-```bash
-folio cycle open <ticket-id>          # starts at plan
-folio cycle phase <cycle-id> do       # plan -> do -> check -> act, one step
-folio cycle resolve <cycle-id> "Shipped behind a flag"
-folio cycle list <ticket-id>
-```
+## Wayfinding operations
 
-Phases advance one step at a time and never go backwards. A new cycle cannot
-open while the current one is unresolved, and **closing a ticket requires a
-resolution on its current cycle** — an earlier cycle's resolution does not
-count. A ticket that never opened a cycle closes freely, so this binds only
-work that opted into the loop.
+The wayfinder skill asks the tracker for these. In folio:
+
+| Wayfinder | folio |
+|---|---|
+| Create the map | `folio cycle open <work> --map "<title>"` when it plans a cycle, else `folio ticket create "<title>" --wayfinder map --parent <work>` |
+| Map body: Destination, Notes, Not yet specified, Out of scope | `folio ticket update <map> --body "..."` |
+| Decisions so far | derived: `folio ticket brief <map>` prints each closed child as `title: answer`; keep no such section in the body |
+| Create a ticket | `folio ticket create "<title>" --parent <map> --wayfinder <type> --body "## Question ..."` |
+| Wire blocking (second pass) | `folio ticket update <id> --depends-on <ids>` |
+| Frontier | `folio ticket frontier <map>` |
+| Claim | `folio ticket update <id> --assignee <your-user-id>` |
+| Resolve | `folio ticket resolve <id> "<one-line answer>" --detail -` with the reasoning on stdin |
+| Rule out of scope | `folio ticket resolve <id> "<why>" --cancel` |
+| Link an asset or research branch | `folio worklog write "<pointer>" --ticket <id>` |
+
+A decision cannot close without an answer, so `ticket resolve` is the only
+close. The answer is the gist the map lists; `--detail` becomes a resolution
+entry linked from the ticket and found by `folio search --kind decision`.
+
+Your user id is on your row in `folio project get --json` under `members`;
+there is no shorthand for yourself yet.
 
 ## Work logs
 
