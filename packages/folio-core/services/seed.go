@@ -216,7 +216,7 @@ func seedWayfinder(
 			return err
 		}
 
-		if err := seedLogs(ctx, uc, actor, project, created.ID, node, report); err != nil {
+		if err := seedLogs(ctx, uc, actor, project, created.ID, "", node, node.logs, report); err != nil {
 			return err
 		}
 
@@ -297,18 +297,8 @@ func seedCycles(
 
 		// Written before the round is resolved, since a work log is stamped
 		// with the cycle that is open when it lands.
-		for i, log := range round.logs {
-			log.ProjectID = project
-			log.Kind = domain.EntryLog
-			log.IssueID = ticket
-			log.CycleID = cycle.ID
-			if log.Title == "" {
-				log.Title = fmt.Sprintf("%s, note %d", node.issue.Title, i+1)
-			}
-			if _, err := uc.Entries.WriteEntry(ctx, actor, log); err != nil {
-				return fmt.Errorf("wayfinder %q: work log: %w", node.key, err)
-			}
-			report.WorkLogs++
+		if err := seedLogs(ctx, uc, actor, project, ticket, cycle.ID, node, round.logs, report); err != nil {
+			return err
 		}
 
 		if round.resolution != "" {
@@ -327,13 +317,16 @@ func seedLogs(
 	actor ports.Actor,
 	project domain.ProjectID,
 	ticket domain.IssueID,
+	cycle domain.CycleID,
 	node wayfinderNode,
+	logs []ports.WriteEntryInput,
 	report *SeedReport,
 ) error {
-	for i, log := range node.logs {
+	for i, log := range logs {
 		log.ProjectID = project
 		log.Kind = domain.EntryLog
 		log.IssueID = ticket
+		log.CycleID = cycle
 		if log.Title == "" {
 			log.Title = fmt.Sprintf("%s, note %d", node.issue.Title, i+1)
 		}
