@@ -127,3 +127,23 @@ func TestOpenCycleWithMapDeletesTheMapWhenTheLinkIsRefused(t *testing.T) {
 		t.Errorf("cleanup = %+v", last)
 	}
 }
+
+func TestMeReadsTheSignedInUser(t *testing.T) {
+	var gotPath, gotAuth string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath, gotAuth = r.URL.Path, r.Header.Get("Authorization")
+		_, _ = w.Write([]byte(`{"token":"fresh","record":{"id":"u1","email":"a@b.c"}}`))
+	}))
+	defer server.Close()
+
+	id, err := New(server.URL, "tok").Me()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "u1" {
+		t.Errorf("id = %q, want u1", id)
+	}
+	if gotPath != "/api/collections/users/auth-refresh" || gotAuth == "" {
+		t.Errorf("path = %q, auth = %q", gotPath, gotAuth)
+	}
+}

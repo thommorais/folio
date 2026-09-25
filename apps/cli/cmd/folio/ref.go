@@ -24,3 +24,17 @@ func ticketID(folio *client.Client, ref string) (string, error) {
 	ticket, err := bySlugOrID(ref, folio.GetTicketBySlug, folio.GetTicket)
 	return ticket.ID, err
 }
+
+const assigneeHelp = "user id, or me"
+
+func resolveMe(folio *client.Client, assignee *string) error {
+	if assignee == nil || *assignee != "me" {
+		return nil
+	}
+	id, err := folio.Me()
+	if err != nil {
+		return err
+	}
+	*assignee = id
+	return nil
+}

@@ -187,7 +187,7 @@ The wayfinder skill asks the tracker for these. In folio:
 | Create a ticket | `folio ticket create "<title>" --parent <map> --wayfinder <type> --body -` with `## Question` on stdin |
 | Wire blocking (second pass) | `folio ticket update <id> --depends-on <ids>` |
 | Frontier | `folio ticket frontier <map>` |
-| Claim | `folio ticket update <id> --assignee <your-user-id>` |
+| Claim | `folio ticket update <id> --assignee me` |
 | Resolve | `folio ticket resolve <id> "<one-line answer>" --detail -` with the reasoning on stdin |
 | Rule out of scope | `folio ticket resolve <id> "<why>" --cancel` |
 | Link an asset or research branch | `folio worklog write "<pointer>" --ticket <id>` |
@@ -195,9 +195,6 @@ The wayfinder skill asks the tracker for these. In folio:
 A decision cannot close without an answer, so `ticket resolve` is the only
 close. The answer is the gist the map lists; `--detail` becomes a resolution
 entry linked from the ticket and found by `folio search --kind decision`.
-
-Your user id is on your row in `folio project get --json` under `members`;
-there is no shorthand for yourself yet.
 
 ## Work logs
 

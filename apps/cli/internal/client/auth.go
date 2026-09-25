@@ -50,3 +50,15 @@ func (c *Client) Login(identity, password string) (Session, error) {
 
 	return Session{Token: body.Token, Email: body.Record.Email, Name: body.Record.Name}, nil
 }
+
+func (c *Client) Me() (string, error) {
+	var body struct {
+		Record struct {
+			ID string `json:"id"`
+		} `json:"record"`
+	}
+	if err := c.do(http.MethodPost, "/api/collections/users/auth-refresh", struct{}{}, &body); err != nil {
+		return "", err
+	}
+	return body.Record.ID, nil
+}

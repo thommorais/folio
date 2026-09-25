@@ -170,3 +170,66 @@ func TestTicketBodyReadsStdin(t *testing.T) {
 		})
 	}
 }
+
+func meServer(t *testing.T) *[]request {
+	t.Helper()
+
+	var got []request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		req := request{method: r.Method, path: r.URL.Path + "?" + r.URL.RawQuery}
+		if raw, _ := io.ReadAll(r.Body); len(raw) > 0 {
+			_ = json.Unmarshal(raw, &req.body)
+		}
+		got = append(got, req)
+
+		switch {
+		case r.URL.Path == "/api/collections/users/auth-refresh":
+			_, _ = w.Write([]byte(`{"token":"fresh","record":{"id":"u1"}}`))
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/issues"):
+			_, _ = w.Write([]byte(`{"issues":[]}`))
+		default:
+			_, _ = w.Write([]byte(`{"id":"tk1","project_id":"pr1","kind":"ticket","title":"Tree or graph","status":"open","assignee":"u1","tags":[],"depends_on":[]}`))
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	t.Setenv("FOLIO_URL", server.URL)
+	t.Setenv("FOLIO_TOKEN", "tok")
+	t.Setenv("FOLIO_PROJECT", "folio")
+
+	return &got
+}
+
+func TestAssigneeMeResolvesTheSignedInUser(t *testing.T) {
+	t.Run("update claims", func(t *testing.T) {
+		got := meServer(t)
+		if err := runTicket(t, "", "update", "tk1", "--assignee", "me"); err != nil {
+			t.Fatal(err)
+		}
+		last := (*got)[len(*got)-1]
+		if last.method != http.MethodPatch || last.body["assignee"] != "u1" {
+			t.Errorf("patch = %+v", last)
+		}
+	})
+
+	t.Run("list filters", func(t *testing.T) {
+		got := meServer(t)
+		if err := runTicket(t, "", "list", "--assignee", "me"); err != nil {
+			t.Fatal(err)
+		}
+		last := (*got)[len(*got)-1]
+		if !strings.Contains(last.path, "assignee=u1") {
+			t.Errorf("list = %+v", last)
+		}
+	})
+
+	t.Run("an explicit id costs no lookup", func(t *testing.T) {
+		got := meServer(t)
+		if err := runTicket(t, "", "update", "tk1", "--assignee", "u9"); err != nil {
+			t.Fatal(err)
+		}
+		if len(*got) != 1 || (*got)[0].body["assignee"] != "u9" {
+			t.Errorf("requests = %+v", *got)
+		}
+	})
+}

@@ -52,6 +52,9 @@ func ticketListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if err := resolveMe(folio, &filter.Assignee); err != nil {
+				return err
+			}
 
 			tickets, err := folio.ListTickets(project, filter)
 			if err != nil {
@@ -64,7 +67,7 @@ func ticketListCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&status, "status", "", "comma separated: open,in_progress,blocked,done,cancelled")
 	cmd.Flags().StringVar(&filter.Priority, "priority", "", "low, medium or high")
-	cmd.Flags().StringVar(&filter.Assignee, "assignee", "", "user id")
+	cmd.Flags().StringVar(&filter.Assignee, "assignee", "", assigneeHelp)
 	cmd.Flags().StringVar(&tags, "tags", "", "comma separated tags")
 	registerTagCompletion(cmd)
 	cmd.Flags().StringVarP(&filter.Search, "query", "q", "", "match the title and body")
@@ -239,6 +242,9 @@ func ticketCreateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if err := resolveMe(folio, in.Assignee); err != nil {
+				return err
+			}
 
 			ticket, err := folio.CreateTicket(project, in)
 			if err != nil {
@@ -253,7 +259,7 @@ func ticketCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&status, "status", "", "defaults to open")
 	cmd.Flags().StringVar(&priority, "priority", "", "low, medium or high; defaults to medium")
 	cmd.Flags().StringVar(&size, "size", "", "effort: 1, 2, 3, 5 or 8")
-	cmd.Flags().StringVar(&assignee, "assignee", "", "user id")
+	cmd.Flags().StringVar(&assignee, "assignee", "", assigneeHelp)
 	cmd.Flags().StringVar(&externalRef, "external-ref", "", "key in another tracker, e.g. JIRA-123")
 	cmd.Flags().StringVar(&tags, "tags", "", tagHelp())
 	cmd.Flags().StringVar(&parent, "parent", "", "id of the ticket this one sits under")
@@ -304,6 +310,9 @@ func ticketUpdateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if err := resolveMe(folio, in.Assignee); err != nil {
+				return err
+			}
 
 			ticket, err := folio.UpdateTicket(args[0], in)
 			if err != nil {
@@ -319,7 +328,7 @@ func ticketUpdateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&status, "status", "", "open, in_progress, blocked, done or cancelled")
 	cmd.Flags().StringVar(&priority, "priority", "", "low, medium or high")
 	cmd.Flags().StringVar(&size, "size", "", "effort: 1, 2, 3, 5 or 8")
-	cmd.Flags().StringVar(&assignee, "assignee", "", "user id")
+	cmd.Flags().StringVar(&assignee, "assignee", "", assigneeHelp)
 	cmd.Flags().StringVar(&externalRef, "external-ref", "", "key in another tracker")
 	cmd.Flags().StringVar(&tags, "tags", "", "replace the tags; "+tagHelp())
 	cmd.Flags().StringVar(&parent, "parent", "", "id of the ticket this one sits under")
