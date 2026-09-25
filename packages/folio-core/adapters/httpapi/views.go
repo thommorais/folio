@@ -149,33 +149,35 @@ func orEmpty(s []string) []string {
 }
 
 type issueView struct {
-	ID          string       `json:"id"`
-	Kind        string       `json:"kind"`
-	ProjectID   string       `json:"project_id"`
-	ParentID    string       `json:"parent_id,omitempty"`
-	PlanID      string       `json:"plan_id,omitempty"`
-	Slug        string       `json:"slug"`
-	Title       string       `json:"title"`
-	Body        string       `json:"body"`
-	Status      string       `json:"status"`
-	Priority    string       `json:"priority"`
-	Size        int          `json:"size,omitempty"`
-	Score       float64      `json:"score"`
-	Assignee    string       `json:"assignee,omitempty"`
-	Tags        []string     `json:"tags"`
-	Position    int          `json:"position,omitempty"`
-	DueDate     string       `json:"due_date,omitempty"`
-	ExternalRef string       `json:"external_ref,omitempty"`
-	DependsOn   []string     `json:"depends_on"`
-	RelatedTo   []string     `json:"related_to"`
-	Wayfinder   string       `json:"wayfinder,omitempty"`
-	Blocked     bool         `json:"blocked"`
-	Cycle       int          `json:"cycle,omitempty"`
-	Phase       string       `json:"phase,omitempty"`
-	Progress    progressView `json:"progress"`
-	CreatedBy   string       `json:"created_by,omitempty"`
-	CreatedAt   string       `json:"created_at"`
-	UpdatedAt   string       `json:"updated_at"`
+	ID              string       `json:"id"`
+	Kind            string       `json:"kind"`
+	ProjectID       string       `json:"project_id"`
+	ParentID        string       `json:"parent_id,omitempty"`
+	PlanID          string       `json:"plan_id,omitempty"`
+	Slug            string       `json:"slug"`
+	Title           string       `json:"title"`
+	Body            string       `json:"body"`
+	Status          string       `json:"status"`
+	Priority        string       `json:"priority"`
+	Size            int          `json:"size,omitempty"`
+	Score           float64      `json:"score"`
+	Assignee        string       `json:"assignee,omitempty"`
+	Tags            []string     `json:"tags"`
+	Position        int          `json:"position,omitempty"`
+	DueDate         string       `json:"due_date,omitempty"`
+	ExternalRef     string       `json:"external_ref,omitempty"`
+	DependsOn       []string     `json:"depends_on"`
+	RelatedTo       []string     `json:"related_to"`
+	Wayfinder       string       `json:"wayfinder,omitempty"`
+	Resolution      string       `json:"resolution,omitempty"`
+	ResolutionEntry string       `json:"resolution_entry_id,omitempty"`
+	Blocked         bool         `json:"blocked"`
+	Cycle           int          `json:"cycle,omitempty"`
+	Phase           string       `json:"phase,omitempty"`
+	Progress        progressView `json:"progress"`
+	CreatedBy       string       `json:"created_by,omitempty"`
+	CreatedAt       string       `json:"created_at"`
+	UpdatedAt       string       `json:"updated_at"`
 }
 
 func toIssueView(i domain.Issue) issueView {
@@ -192,6 +194,7 @@ func toIssueView(i domain.Issue) issueView {
 		Position: i.Position, DueDate: due, ExternalRef: i.ExternalRef,
 		DependsOn: fromIssueIDs(i.DependsOn), RelatedTo: fromIssueIDs(i.RelatedTo),
 		Wayfinder: string(i.Wayfinder), Blocked: i.Blocked,
+		Resolution: i.Resolution, ResolutionEntry: string(i.ResolutionEntry),
 		Cycle: i.Cycle, Phase: string(i.Phase),
 		Progress:  progressView{Total: i.Progress.Total, Done: i.Progress.Done, Percent: i.Progress.Percent()},
 		CreatedBy: string(i.CreatedBy),

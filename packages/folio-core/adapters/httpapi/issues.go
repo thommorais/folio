@@ -95,22 +95,24 @@ func (h *Handler) issueFrontier(e *core.RequestEvent) error {
 }
 
 type issueBody struct {
-	Kind        *string   `json:"kind"`
-	ParentID    *string   `json:"parent_id"`
-	PlanID      *string   `json:"plan_id"`
-	Slug        *string   `json:"slug"`
-	Title       *string   `json:"title"`
-	Body        *string   `json:"body"`
-	Status      *string   `json:"status"`
-	Priority    *string   `json:"priority"`
-	Size        *int      `json:"size"`
-	Assignee    *string   `json:"assignee"`
-	Tags        *[]string `json:"tags"`
-	Position    *int      `json:"position"`
-	DueDate     *string   `json:"due_date"`
-	DependsOn   *[]string `json:"depends_on"`
-	Wayfinder   *string   `json:"wayfinder"`
-	ExternalRef *string   `json:"external_ref"`
+	Kind            *string   `json:"kind"`
+	ParentID        *string   `json:"parent_id"`
+	PlanID          *string   `json:"plan_id"`
+	Slug            *string   `json:"slug"`
+	Title           *string   `json:"title"`
+	Body            *string   `json:"body"`
+	Status          *string   `json:"status"`
+	Priority        *string   `json:"priority"`
+	Size            *int      `json:"size"`
+	Assignee        *string   `json:"assignee"`
+	Tags            *[]string `json:"tags"`
+	Position        *int      `json:"position"`
+	DueDate         *string   `json:"due_date"`
+	DependsOn       *[]string `json:"depends_on"`
+	Wayfinder       *string   `json:"wayfinder"`
+	ExternalRef     *string   `json:"external_ref"`
+	Resolution      *string   `json:"resolution"`
+	ResolutionEntry *string   `json:"resolution_entry_id"`
 }
 
 func (b issueBody) toCreate(project domain.ProjectID) ports.CreateIssueInput {
@@ -156,6 +158,9 @@ func (b issueBody) toCreate(project domain.ProjectID) ports.CreateIssueInput {
 	}
 	if b.ExternalRef != nil {
 		in.ExternalRef = *b.ExternalRef
+	}
+	if b.Resolution != nil {
+		in.Resolution = *b.Resolution
 	}
 	return in
 }
@@ -215,7 +220,7 @@ func (h *Handler) updateIssue(e *core.RequestEvent) error {
 	in := ports.UpdateIssueInput{
 		Slug: body.Slug, Title: body.Title, Body: body.Body,
 		Tags: body.Tags, Position: body.Position, DueDate: body.DueDate,
-		ExternalRef: body.ExternalRef,
+		ExternalRef: body.ExternalRef, Resolution: body.Resolution,
 	}
 	if body.Kind != nil {
 		kind := domain.IssueKind(*body.Kind)
@@ -252,6 +257,10 @@ func (h *Handler) updateIssue(e *core.RequestEvent) error {
 	if body.Wayfinder != nil {
 		wayfinder := domain.WayfinderType(*body.Wayfinder)
 		in.Wayfinder = &wayfinder
+	}
+	if body.ResolutionEntry != nil {
+		entry := domain.EntryID(*body.ResolutionEntry)
+		in.ResolutionEntry = &entry
 	}
 
 	issue, err := h.issues.UpdateIssue(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("issue")), in)
