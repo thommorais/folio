@@ -8,47 +8,51 @@ import (
 )
 
 type Ticket struct {
-	ID          string   `json:"id"`
-	Kind        string   `json:"kind"`
-	ProjectID   string   `json:"project_id"`
-	ParentID    string   `json:"parent_id,omitempty"`
-	PlanID      string   `json:"plan_id,omitempty"`
-	Size        int      `json:"size,omitempty"`
-	Score       float64  `json:"score"`
-	RelatedTo   []string `json:"related_to"`
-	Slug        string   `json:"slug"`
-	Title       string   `json:"title"`
-	Body        string   `json:"body"`
-	Status      string   `json:"status"`
-	Priority    string   `json:"priority"`
-	Assignee    string   `json:"assignee,omitempty"`
-	Tags        []string `json:"tags"`
-	ExternalRef string   `json:"external_ref,omitempty"`
-	DependsOn   []string `json:"depends_on"`
-	Wayfinder   string   `json:"wayfinder,omitempty"`
-	Blocked     bool     `json:"blocked"`
-	Cycle       int      `json:"cycle,omitempty"`
-	Phase       string   `json:"phase,omitempty"`
-	Progress    Progress `json:"progress"`
-	CreatedAt   string   `json:"created_at"`
-	UpdatedAt   string   `json:"updated_at"`
+	ID              string   `json:"id"`
+	Kind            string   `json:"kind"`
+	ProjectID       string   `json:"project_id"`
+	ParentID        string   `json:"parent_id,omitempty"`
+	PlanID          string   `json:"plan_id,omitempty"`
+	Size            int      `json:"size,omitempty"`
+	Score           float64  `json:"score"`
+	RelatedTo       []string `json:"related_to"`
+	Slug            string   `json:"slug"`
+	Title           string   `json:"title"`
+	Body            string   `json:"body"`
+	Status          string   `json:"status"`
+	Priority        string   `json:"priority"`
+	Assignee        string   `json:"assignee,omitempty"`
+	Tags            []string `json:"tags"`
+	ExternalRef     string   `json:"external_ref,omitempty"`
+	DependsOn       []string `json:"depends_on"`
+	Wayfinder       string   `json:"wayfinder,omitempty"`
+	Resolution      string   `json:"resolution,omitempty"`
+	ResolutionEntry string   `json:"resolution_entry_id,omitempty"`
+	Blocked         bool     `json:"blocked"`
+	Cycle           int      `json:"cycle,omitempty"`
+	Phase           string   `json:"phase,omitempty"`
+	Progress        Progress `json:"progress"`
+	CreatedAt       string   `json:"created_at"`
+	UpdatedAt       string   `json:"updated_at"`
 }
 
 type TicketInput struct {
-	Kind        *string   `json:"kind,omitempty"`
-	ParentID    *string   `json:"parent_id,omitempty"`
-	PlanID      *string   `json:"plan_id,omitempty"`
-	Size        *int      `json:"size,omitempty"`
-	DependsOn   *[]string `json:"depends_on,omitempty"`
-	Wayfinder   *string   `json:"wayfinder,omitempty"`
-	Slug        *string   `json:"slug,omitempty"`
-	Title       *string   `json:"title,omitempty"`
-	Body        *string   `json:"body,omitempty"`
-	Status      *string   `json:"status,omitempty"`
-	Priority    *string   `json:"priority,omitempty"`
-	Assignee    *string   `json:"assignee,omitempty"`
-	Tags        *[]string `json:"tags,omitempty"`
-	ExternalRef *string   `json:"external_ref,omitempty"`
+	Kind            *string   `json:"kind,omitempty"`
+	ParentID        *string   `json:"parent_id,omitempty"`
+	PlanID          *string   `json:"plan_id,omitempty"`
+	Size            *int      `json:"size,omitempty"`
+	DependsOn       *[]string `json:"depends_on,omitempty"`
+	Wayfinder       *string   `json:"wayfinder,omitempty"`
+	Slug            *string   `json:"slug,omitempty"`
+	Title           *string   `json:"title,omitempty"`
+	Body            *string   `json:"body,omitempty"`
+	Status          *string   `json:"status,omitempty"`
+	Priority        *string   `json:"priority,omitempty"`
+	Assignee        *string   `json:"assignee,omitempty"`
+	Tags            *[]string `json:"tags,omitempty"`
+	ExternalRef     *string   `json:"external_ref,omitempty"`
+	Resolution      *string   `json:"resolution,omitempty"`
+	ResolutionEntry *string   `json:"resolution_entry_id,omitempty"`
 }
 
 type TicketFilter struct {
@@ -108,11 +112,12 @@ func (c *Client) ListTickets(project string, filter TicketFilter) ([]Ticket, err
 }
 
 const (
-	KindTicket  = "ticket"
-	KindTodo    = "todo"
-	KindJournal = "journal"
-	KindDoc     = "doc"
-	KindLog     = "log"
+	KindTicket     = "ticket"
+	KindTodo       = "todo"
+	KindJournal    = "journal"
+	KindDoc        = "doc"
+	KindLog        = "log"
+	KindResolution = "resolution"
 )
 
 func (c *Client) TicketFrontier(id string) ([]Ticket, error) {
@@ -150,6 +155,36 @@ func (c *Client) CreateTicket(project string, in TicketInput) (Ticket, error) {
 func (c *Client) UpdateTicket(id string, in TicketInput) (Ticket, error) {
 	var ticket Ticket
 	err := c.do(http.MethodPatch, "/api/folio/issues/"+id, in, &ticket)
+	return ticket, err
+}
+
+type Resolution struct {
+	Answer string
+	Detail string
+	Status string
+}
+
+func (c *Client) ResolveTicket(project, id string, r Resolution) (Ticket, error) {
+	status := r.Status
+	if status == "" {
+		status = "done"
+	}
+	in := TicketInput{Status: &status, Resolution: &r.Answer}
+
+	var detail WorkLog
+	if r.Detail != "" {
+		kind := KindResolution
+		if err := c.do(http.MethodPost, "/api/folio/projects/"+project+"/entries",
+			LogInput{Kind: &kind, TicketID: &id, Body: &r.Detail}, &detail); err != nil {
+			return Ticket{}, err
+		}
+		in.ResolutionEntry = &detail.ID
+	}
+
+	ticket, err := c.UpdateTicket(id, in)
+	if err != nil && detail.ID != "" {
+		_ = c.DeleteWorkLog(detail.ID)
+	}
 	return ticket, err
 }
 

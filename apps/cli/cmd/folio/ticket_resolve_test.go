@@ -1,0 +1,139 @@
+package main
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
+	"testing"
+
+	"folio/cli/internal/client"
+)
+
+func resolveServer(t *testing.T) *[]request {
+	t.Helper()
+
+	var got []request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		req := request{method: r.Method, path: r.URL.Path}
+		if raw, _ := io.ReadAll(r.Body); len(raw) > 0 {
+			_ = json.Unmarshal(raw, &req.body)
+		}
+		got = append(got, req)
+
+		switch r.Method {
+		case http.MethodPost:
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(`{"id":"e1","kind":"resolution","issue_id":"tk1","body":"why"}`))
+		default:
+			_, _ = w.Write([]byte(`{"id":"tk1","project_id":"pr1","kind":"ticket","title":"Tree or graph","status":"done","wayfinder":"grilling","resolution":"A graph.","tags":[],"depends_on":[]}`))
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	t.Setenv("FOLIO_URL", server.URL)
+	t.Setenv("FOLIO_TOKEN", "tok")
+	t.Setenv("FOLIO_PROJECT", "")
+
+	return &got
+}
+
+func runTicket(t *testing.T, stdin string, args ...string) error {
+	t.Helper()
+
+	stdout, in := os.Stdout, os.Stdin
+	devnull, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = io.Copy(w, strings.NewReader(stdin))
+	_ = w.Close()
+	os.Stdout, os.Stdin = devnull, r
+	t.Cleanup(func() {
+		os.Stdout, os.Stdin = stdout, in
+		_ = devnull.Close()
+		_ = r.Close()
+	})
+
+	cmd := ticketCommand()
+	cmd.SetOut(devnull)
+	cmd.SetErr(devnull)
+	cmd.SetArgs(args)
+	return cmd.Execute()
+}
+
+func TestTicketResolveClosesWithTheDetail(t *testing.T) {
+	got := resolveServer(t)
+
+	if err := runTicket(t, "The tree hides blockers.\n", "resolve", "tk1", "A graph.", "--detail", "-"); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(*got) != 3 {
+		t.Fatalf("requests = %+v", *got)
+	}
+	lookup, post, patch := (*got)[0], (*got)[1], (*got)[2]
+	if lookup.method != http.MethodGet || lookup.path != "/api/folio/issues/tk1" {
+		t.Errorf("lookup = %+v", lookup)
+	}
+	if post.path != "/api/folio/projects/pr1/entries" || post.body["kind"] != "resolution" || post.body["body"] != "The tree hides blockers.\n" {
+		t.Errorf("post = %+v", post)
+	}
+	if patch.method != http.MethodPatch || patch.body["status"] != "done" ||
+		patch.body["resolution"] != "A graph." || patch.body["resolution_entry_id"] != "e1" {
+		t.Errorf("patch = %+v", patch)
+	}
+}
+
+func TestTicketResolveCancelRulesItOut(t *testing.T) {
+	got := resolveServer(t)
+
+	if err := runTicket(t, "", "resolve", "tk1", "Out of scope.", "--cancel"); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(*got) != 2 {
+		t.Fatalf("requests = %+v", *got)
+	}
+	if patch := (*got)[1]; patch.body["status"] != "cancelled" || patch.body["resolution"] != "Out of scope." {
+		t.Errorf("patch = %+v", patch)
+	}
+}
+
+func TestBriefShowsEachChildsAnswer(t *testing.T) {
+	stdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	t.Cleanup(func() { os.Stdout = stdout })
+
+	err = renderBrief(client.TicketBrief{
+		Ticket: client.Ticket{ID: "map1", Title: "The map", Wayfinder: "map"},
+		Children: []client.Ticket{
+			{ID: "tk1", Kind: "ticket", Status: "done", Priority: "high", Title: "Tree or graph", Resolution: "A graph."},
+			{ID: "tk2", Kind: "ticket", Status: "open", Priority: "medium", Title: "Draw the edges"},
+		},
+	})
+	_ = w.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, _ := io.ReadAll(r)
+
+	for _, line := range strings.Split(string(out), "\n") {
+		if strings.Contains(line, "tk1") && !strings.HasSuffix(line, "Tree or graph: A graph.") {
+			t.Errorf("answered child = %q", line)
+		}
+		if strings.Contains(line, "tk2") && !strings.HasSuffix(line, "Draw the edges") {
+			t.Errorf("open child = %q", line)
+		}
+	}
+}

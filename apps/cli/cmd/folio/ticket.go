@@ -23,7 +23,7 @@ func ticketCommand() *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&flagProject, "project", "p", "", "project id or slug")
 	cmd.AddCommand(
 		ticketListCommand(), ticketGetCommand(), ticketBriefCommand(), ticketCreateCommand(),
-		ticketUpdateCommand(), ticketDeleteCommand(), ticketFrontierCommand(),
+		ticketUpdateCommand(), ticketResolveCommand(), ticketDeleteCommand(), ticketFrontierCommand(),
 	)
 
 	return cmd
@@ -163,7 +163,11 @@ func renderBrief(b client.TicketBrief) error {
 
 	children := make([]string, 0, len(b.Children))
 	for _, t := range b.Children {
-		children = append(children, fmt.Sprintf("%s  %-6s %-12s %-6s %s", t.ID, t.Kind, t.Status, t.Priority, t.Title))
+		row := fmt.Sprintf("%s  %-6s %-12s %-6s %s", t.ID, t.Kind, t.Status, t.Priority, t.Title)
+		if t.Resolution != "" {
+			row += ": " + t.Resolution
+		}
+		children = append(children, row)
 	}
 	section("children", children)
 
@@ -318,6 +322,64 @@ func ticketUpdateCommand() *cobra.Command {
 	return cmd
 }
 
+func ticketResolveCommand() *cobra.Command {
+	var detail string
+	var cancel bool
+
+	cmd := &cobra.Command{
+		Use:   "resolve <id-or-slug> <answer>",
+		Short: "Close a ticket with its answer; a slug needs --project",
+		Long: `Record the answer and close the ticket in one call. A research, prototype,
+grilling or task ticket cannot close without one.
+
+The answer is the one line a map lists; --detail holds the reasoning and is
+kept as a resolution entry linked from the ticket. --cancel rules the ticket
+out of scope instead of marking it done.
+
+  folio ticket resolve tree-or-graph "A graph." --detail - <<'EOF'
+  The tree hides blockers, the board hides depth.
+  EOF
+  folio ticket resolve $ID "Out of scope: no map needs it." --cancel`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(_ *cobra.Command, args []string) error {
+			text, err := bodyFrom(detail)
+			if err != nil {
+				return err
+			}
+
+			folio, err := api()
+			if err != nil {
+				return err
+			}
+
+			ticket, err := bySlugOrID(args[0], folio.GetTicketBySlug, folio.GetTicket)
+			if err != nil {
+				return err
+			}
+
+			status := "done"
+			if cancel {
+				status = "cancelled"
+			}
+			resolved, err := folio.ResolveTicket(ticket.ProjectID, ticket.ID, client.Resolution{
+				Answer: args[1], Detail: text, Status: status,
+			})
+			if err != nil {
+				return err
+			}
+			if flagJSON {
+				return encode(resolved)
+			}
+			return renderTicketDetail(resolved)
+		},
+	}
+
+	cmd.Flags().StringVar(&detail, "detail", "", "the reasoning behind the answer; - reads stdin")
+	cmd.Flags().BoolVar(&cancel, "cancel", false, "close as cancelled: ruled out of scope")
+
+	return cmd
+}
+
 func ticketFrontierCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "frontier <id>",
@@ -444,6 +506,9 @@ func renderTicketDetail(ticket client.Ticket) error {
 	}
 	if len(ticket.Tags) > 0 {
 		fmt.Println("tags: " + strings.Join(ticket.Tags, ", "))
+	}
+	if ticket.Resolution != "" {
+		fmt.Println("resolution: " + ticket.Resolution)
 	}
 	if ticket.Body != "" {
 		fmt.Println()
