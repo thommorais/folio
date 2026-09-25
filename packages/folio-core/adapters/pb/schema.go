@@ -5,6 +5,8 @@ import (
 	"slices"
 
 	"github.com/pocketbase/pocketbase/core"
+
+	"folio/folio-core/domain/rules"
 )
 
 // Membership is modelled as its own collection rather than a multi-relation
@@ -42,11 +44,11 @@ func ensureClients(app core.App) error {
 	}
 	c := core.NewBaseCollection(ColClients)
 	c.Fields.Add(
-		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
-		&core.TextField{Name: "name", Required: true, Max: 120, Presentable: true},
+		&core.TextField{Name: "slug", Required: true, Max: rules.SlugMaxLen, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
+		&core.TextField{Name: "name", Required: true, Max: rules.NameMaxLen, Presentable: true},
 		&core.TextField{Name: "site", Max: 300},
 		&core.TextField{Name: "logo", Max: 300},
-		&core.TextField{Name: "descr", Max: 2000},
+		&core.TextField{Name: "descr", Max: rules.DescrMaxLen},
 	)
 	c.Fields.Add(autodates()...)
 	c.AddIndex("idx_journ_clients_slug", true, "slug", "")
@@ -66,9 +68,9 @@ func ensureDomains(app core.App) error {
 	c := core.NewBaseCollection(ColDomains)
 	c.Fields.Add(
 		&core.RelationField{Name: "client", Required: true, CollectionId: clients.Id, CascadeDelete: true, MaxSelect: 1},
-		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
-		&core.TextField{Name: "name", Required: true, Max: 120, Presentable: true},
-		&core.TextField{Name: "descr", Max: 2000},
+		&core.TextField{Name: "slug", Required: true, Max: rules.SlugMaxLen, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
+		&core.TextField{Name: "name", Required: true, Max: rules.NameMaxLen, Presentable: true},
+		&core.TextField{Name: "descr", Max: rules.DescrMaxLen},
 	)
 	c.Fields.Add(autodates()...)
 	c.AddIndex("idx_journ_domains_slug", true, "client, slug", "")
@@ -83,9 +85,9 @@ func ensureProjects(app core.App) error {
 	}
 	c := core.NewBaseCollection(ColProjects)
 	c.Fields.Add(
-		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
-		&core.TextField{Name: "name", Required: true, Max: 120, Presentable: true},
-		&core.TextField{Name: "descr", Max: 2000},
+		&core.TextField{Name: "slug", Required: true, Max: rules.SlugMaxLen, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
+		&core.TextField{Name: "name", Required: true, Max: rules.NameMaxLen, Presentable: true},
+		&core.TextField{Name: "descr", Max: rules.DescrMaxLen},
 		&core.BoolField{Name: "archived"},
 	)
 	c.Fields.Add(autodates()...)
@@ -138,8 +140,8 @@ func ensurePlans(app core.App) error {
 	c := core.NewBaseCollection(ColPlans)
 	c.Fields.Add(
 		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
-		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
-		&core.TextField{Name: "goal", Max: 2000},
+		&core.TextField{Name: "title", Required: true, Max: rules.TitleMaxLen, Presentable: true},
+		&core.TextField{Name: "goal", Max: rules.DescrMaxLen},
 		&core.SelectField{Name: "status", Required: true, MaxSelect: 1, Values: []string{"draft", "active", "done", "abandoned"}},
 		&core.JSONField{Name: "tags", MaxSize: 4000},
 		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
@@ -202,9 +204,9 @@ func ensureIssues(app core.App) error {
 		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
 		&core.SelectField{Name: "kind", Required: true, MaxSelect: 1, Values: []string{"ticket", "todo"}},
 		&core.RelationField{Name: "plan", CollectionId: plans.Id, CascadeDelete: false, MaxSelect: 1},
-		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
-		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
-		&core.EditorField{Name: "body", MaxSize: 500000},
+		&core.TextField{Name: "slug", Required: true, Max: rules.SlugMaxLen, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
+		&core.TextField{Name: "title", Required: true, Max: rules.TitleMaxLen, Presentable: true},
+		&core.EditorField{Name: "body", MaxSize: rules.BodyMaxLen},
 		&core.SelectField{Name: "status", Required: true, MaxSelect: 1, Values: issueStatuses},
 		&core.SelectField{Name: "priority", Required: true, MaxSelect: 1, Values: []string{"low", "medium", "high"}},
 		&core.NumberField{Name: "size", OnlyInt: true},
@@ -213,7 +215,7 @@ func ensureIssues(app core.App) error {
 		&core.NumberField{Name: "position", OnlyInt: true},
 		&core.DateField{Name: "due_date"},
 		&core.SelectField{Name: "wayfinder", MaxSelect: 1, Values: wayfinderValues},
-		&core.TextField{Name: "external_ref", Max: 200},
+		&core.TextField{Name: "external_ref", Max: rules.RefMaxLen},
 		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
 	)
 	c.Fields.Add(autodates()...)
@@ -292,12 +294,12 @@ func ensureEntries(app core.App) error {
 		&core.RelationField{Name: "issue", CollectionId: issues.Id, CascadeDelete: false, MaxSelect: 1},
 		&core.RelationField{Name: "plan", CollectionId: plans.Id, CascadeDelete: false, MaxSelect: 1},
 		&core.RelationField{Name: "cycle", CollectionId: cycles.Id, CascadeDelete: false, MaxSelect: 1},
-		&core.TextField{Name: "slug", Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
-		&core.TextField{Name: "title", Max: 200, Presentable: true},
-		&core.EditorField{Name: "body", MaxSize: 500000},
-		&core.TextField{Name: "branch", Max: 200},
-		&core.TextField{Name: "pr", Max: 200},
-		&core.TextField{Name: "external_ref", Max: 200},
+		&core.TextField{Name: "slug", Max: rules.SlugMaxLen, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
+		&core.TextField{Name: "title", Max: rules.TitleMaxLen, Presentable: true},
+		&core.EditorField{Name: "body", MaxSize: rules.BodyMaxLen},
+		&core.TextField{Name: "branch", Max: rules.RefMaxLen},
+		&core.TextField{Name: "pr", Max: rules.RefMaxLen},
+		&core.TextField{Name: "external_ref", Max: rules.RefMaxLen},
 		&core.JSONField{Name: "meta", MaxSize: 100000},
 		&core.JSONField{Name: "tags", MaxSize: 4000},
 		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
@@ -351,7 +353,7 @@ func ensureIssueResolution(app core.App) error {
 	}
 
 	if c.Fields.GetByName("resolution") == nil {
-		c.Fields.Add(&core.TextField{Name: "resolution", Max: 200})
+		c.Fields.Add(&core.TextField{Name: "resolution", Max: rules.TitleMaxLen})
 	}
 	c.Fields.Add(&core.RelationField{Name: "resolution_entry", CollectionId: entries.Id, CascadeDelete: false, MaxSelect: 1})
 
@@ -370,7 +372,7 @@ func ensureTags(app core.App) error {
 	c := core.NewBaseCollection(ColTags)
 	c.Fields.Add(
 		&core.RelationField{Name: "domain", Required: true, CollectionId: domains.Id, CascadeDelete: true, MaxSelect: 1},
-		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
+		&core.TextField{Name: "slug", Required: true, Max: rules.SlugMaxLen, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`, Presentable: true},
 		&core.TextField{Name: "name", Required: true, Max: 60, Presentable: true},
 	)
 	c.Fields.Add(autodates()...)
@@ -450,7 +452,7 @@ func ensureShares(app core.App) error {
 		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
 		&core.RelationField{Name: "issue", CollectionId: issues.Id, CascadeDelete: true, MaxSelect: 1},
 		&core.RelationField{Name: "plan", CollectionId: plans.Id, CascadeDelete: true, MaxSelect: 1},
-		&core.TextField{Name: "label", Required: true, Max: 120, Presentable: true},
+		&core.TextField{Name: "label", Required: true, Max: rules.NameMaxLen, Presentable: true},
 		&core.TextField{Name: "token", Required: true, Min: 43, Max: 43, AutogeneratePattern: "[a-zA-Z0-9]{43}"},
 		&core.RelationField{Name: "created_by", Required: true, CollectionId: users.Id, MaxSelect: 1},
 		&core.DateField{Name: "last_accessed_at"},
@@ -485,7 +487,7 @@ func ensureCycles(app core.App) error {
 		&core.RelationField{Name: "issue", Required: true, CollectionId: issues.Id, CascadeDelete: true, MaxSelect: 1},
 		&core.NumberField{Name: "ordinal", Required: true},
 		&core.SelectField{Name: "phase", Required: true, MaxSelect: 1, Values: []string{"plan", "do", "check", "act"}},
-		&core.TextField{Name: "resolution", Max: 2000},
+		&core.TextField{Name: "resolution", Max: rules.ResolutionMaxLen},
 		&core.DateField{Name: "closed_at"},
 		&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
 	)
@@ -679,9 +681,9 @@ func ensureKnowledge(app core.App) error {
 		// project it was learned on, so deleting one detaches rather than
 		// destroys, the way deleting a ticket detaches its contents.
 		&core.RelationField{Name: "project", CollectionId: projects.Id, CascadeDelete: false, MaxSelect: 1},
-		&core.TextField{Name: "slug", Required: true, Max: 60, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
-		&core.TextField{Name: "title", Required: true, Max: 200, Presentable: true},
-		&core.EditorField{Name: "body", MaxSize: 500000},
+		&core.TextField{Name: "slug", Required: true, Max: rules.SlugMaxLen, Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`},
+		&core.TextField{Name: "title", Required: true, Max: rules.TitleMaxLen, Presentable: true},
+		&core.EditorField{Name: "body", MaxSize: rules.BodyMaxLen},
 		&core.JSONField{Name: "tags", MaxSize: 4000},
 		&core.RelationField{Name: "created_by", Required: true, CollectionId: users.Id, MaxSelect: 1},
 	)

@@ -94,3 +94,28 @@ func TestValidateResolutionEntry(t *testing.T) {
 		t.Fatal("a resolution without a body says nothing")
 	}
 }
+
+func TestApplyIssueStatus(t *testing.T) {
+	answered := domain.Issue{Status: domain.IssueDone, Resolution: "A graph.", ResolutionEntry: "e1"}
+
+	t.Run("reopening clears the answer", func(t *testing.T) {
+		got := rules.ApplyIssueStatus(answered, domain.IssueOpen)
+		if got.Status != domain.IssueOpen || got.Resolution != "" || got.ResolutionEntry != "" {
+			t.Fatalf("got %+v", got)
+		}
+	})
+
+	t.Run("staying closed keeps the answer", func(t *testing.T) {
+		got := rules.ApplyIssueStatus(answered, domain.IssueCancelled)
+		if got.Status != domain.IssueCancelled || got.Resolution != "A graph." || got.ResolutionEntry != "e1" {
+			t.Fatalf("got %+v", got)
+		}
+	})
+
+	t.Run("an open issue keeps what it carries", func(t *testing.T) {
+		open := domain.Issue{Status: domain.IssueOpen, Resolution: "draft"}
+		if got := rules.ApplyIssueStatus(open, domain.IssueDone); got.Status != domain.IssueDone || got.Resolution != "draft" {
+			t.Fatalf("got %+v", got)
+		}
+	})
+}

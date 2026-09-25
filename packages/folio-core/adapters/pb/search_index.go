@@ -7,6 +7,7 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 
+	"folio/folio-core/domain"
 	"folio/folio-core/ports"
 )
 
@@ -132,6 +133,10 @@ const (
 	scopeGlobal  = "global"
 )
 
+func quote[K ~string](v K) string {
+	return "'" + string(v) + "'"
+}
+
 // sources is the whole searchable surface. Adding a kind here gives it an
 // index, triggers and a backfill; nothing else needs to change.
 var sources = []indexed{
@@ -139,8 +144,9 @@ var sources = []indexed{
 		Collection: ColEntries,
 		// A log has no title of its own, so the index supplies one; a journal
 		// entry or doc that was saved without one falls back the same way.
-		Kind:      `CASE {a}.kind WHEN 'log' THEN 'worklog' WHEN 'resolution' THEN 'decision' ELSE {a}.kind END`,
-		Title:     `CASE WHEN {a}.title != '' THEN {a}.title WHEN {a}.kind = 'resolution' THEN 'Resolution' ELSE 'Work log' END`,
+		Kind: `CASE {a}.kind WHEN ` + quote(domain.EntryLog) + ` THEN ` + quote(domain.SearchKindWorkLog) +
+			` WHEN ` + quote(domain.EntryResolution) + ` THEN ` + quote(domain.SearchKindDecision) + ` ELSE {a}.kind END`,
+		Title:     `CASE WHEN {a}.title != '' THEN {a}.title WHEN {a}.kind = ` + quote(domain.EntryResolution) + ` THEN 'Resolution' ELSE 'Work log' END`,
 		Body:      `{a}.body`,
 		Slug:      `{a}.slug`,
 		TagTarget: ports.TagEntry,
@@ -155,7 +161,7 @@ var sources = []indexed{
 	},
 	{
 		Collection: ColPlans,
-		Kind:       `'plan'`,
+		Kind:       quote(domain.SearchKindPlan),
 		Title:      `{a}.title`,
 		Body:       `{a}.goal`,
 		Slug:       noSlug,
@@ -165,7 +171,7 @@ var sources = []indexed{
 	},
 	{
 		Collection: ColCycles,
-		Kind:       `'resolution'`,
+		Kind:       quote(domain.SearchKindCycle),
 		// The ordinal is what names a cycle, and the index is the only place
 		// that can read it at write time, so it is baked into the title.
 		Title: `'Cycle ' || {a}.ordinal || ' resolution'`,
@@ -177,7 +183,7 @@ var sources = []indexed{
 	},
 	{
 		Collection: ColKnowledge,
-		Kind:       `'knowledge'`,
+		Kind:       quote(domain.SearchKindKnowledge),
 		Title:      `{a}.title`,
 		Body:       `{a}.body`,
 		Slug:       `{a}.slug`,

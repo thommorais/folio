@@ -341,11 +341,7 @@ func (s *IssueService) UpdateIssue(ctx context.Context, actor ports.Actor, id do
 				return domain.Issue{}, err
 			}
 		}
-		if issue.Status.IsTerminal() && !in.Status.IsTerminal() {
-			issue.Resolution = ""
-			issue.ResolutionEntry = ""
-		}
-		issue.Status = *in.Status
+		issue = rules.ApplyIssueStatus(issue, *in.Status)
 	}
 	if in.Kind != nil {
 		issue.Kind = *in.Kind

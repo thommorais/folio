@@ -141,6 +141,15 @@ func ValidateIssue(i domain.Issue) error {
 	return optional("resolution", i.Resolution, TitleMaxLen)
 }
 
+func ApplyIssueStatus(i domain.Issue, to domain.IssueStatus) domain.Issue {
+	if i.Status.IsTerminal() && !to.IsTerminal() {
+		i.Resolution = ""
+		i.ResolutionEntry = ""
+	}
+	i.Status = to
+	return i
+}
+
 func CheckResolvedIssue(i domain.Issue, to domain.IssueStatus) error {
 	if !to.IsTerminal() || i.Wayfinder == "" || i.Wayfinder == domain.WayfinderMap {
 		return nil
