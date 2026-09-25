@@ -147,9 +147,10 @@ func Seed(ctx context.Context, uc SeedUseCases, actor ports.Actor) (SeedReport, 
 	return report, nil
 }
 
-// seedWayfinder writes a map ticket and the graph under it. Keys resolve to
-// ids as it goes, so a node can name a parent or blocker declared above it;
-// the spec is ordered so that always holds.
+// seedWayfinder writes a work ticket, the map that plans it and the graph
+// under the map. Keys resolve to ids as it goes, so a node can name a parent
+// or blocker declared above it; the spec is ordered so that always holds.
+// Cycles wait until every node exists, since a round can name its map.
 func seedWayfinder(
 	ctx context.Context,
 	uc SeedUseCases,
@@ -159,6 +160,7 @@ func seedWayfinder(
 	report *SeedReport,
 ) error {
 	ids := make(map[string]domain.IssueID, len(spec.nodes)+1)
+	var written []wayfinderNode
 
 	for _, node := range append([]wayfinderNode{spec.root}, spec.nodes...) {
 		in := node.issue
@@ -220,7 +222,11 @@ func seedWayfinder(
 			return err
 		}
 
-		if err := seedCycles(ctx, uc, actor, project, created.ID, node, report); err != nil {
+		written = append(written, node)
+	}
+
+	for _, node := range written {
+		if err := seedCycles(ctx, uc, actor, project, ids, node, report); err != nil {
 			return err
 		}
 	}
@@ -275,16 +281,23 @@ func seedCycles(
 	uc SeedUseCases,
 	actor ports.Actor,
 	project domain.ProjectID,
-	ticket domain.IssueID,
+	ids map[string]domain.IssueID,
 	node wayfinderNode,
 	report *SeedReport,
 ) error {
+	ticket := ids[node.key]
 	for _, round := range node.cycles {
 		cycle, err := uc.Cycles.OpenCycle(ctx, actor, ticket)
 		if err != nil {
 			return fmt.Errorf("wayfinder %q: open cycle: %w", node.key, err)
 		}
 		report.Cycles++
+
+		if round.mapKey != "" {
+			if cycle, err = uc.Cycles.SetCycleMap(ctx, actor, cycle.ID, ids[round.mapKey]); err != nil {
+				return fmt.Errorf("wayfinder %q: plan with %q: %w", node.key, round.mapKey, err)
+			}
+		}
 
 		for _, phase := range phaseOrder[1:] {
 			if cycle.Phase == round.phase {

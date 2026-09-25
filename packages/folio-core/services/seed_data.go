@@ -15,15 +15,15 @@ type seedSpec struct {
 	// done advances the first todos of plan i to the given statuses, so the
 	// demo shows plans in progress rather than every one at 0%.
 	done [][]domain.IssueStatus
-	// wayfinder is a map ticket and the decisions under it. Parents and
-	// blockers are named by key rather than id, since ids only exist once the
-	// seed has written the records.
+	// wayfinder is a work ticket, its map and the decisions under it. Parents
+	// and blockers are named by key rather than id, since ids only exist once
+	// the seed has written the records.
 	wayfinder *wayfinderSpec
 }
 
-// wayfinderSpec describes a map and its children as a graph. Keys are local to
-// the spec and resolve to issue ids as each node is written, so a child can
-// name a blocker declared above it.
+// wayfinderSpec describes a work ticket, its map and the map's children as a
+// graph. Keys are local to the spec and resolve to issue ids as each node is
+// written, so a child can name a blocker declared above it.
 type wayfinderSpec struct {
 	root  wayfinderNode
 	nodes []wayfinderNode
@@ -41,7 +41,7 @@ type wayfinderNode struct {
 	cycles []cycleSpec
 	logs   []ports.WriteEntryInput
 	// todos are steps filed directly under this ticket rather than under a
-	// plan, which is how work on a map ticket usually accumulates.
+	// plan, which is how work on a ticket usually accumulates.
 	todos []ports.CreateIssueInput
 }
 
@@ -50,6 +50,7 @@ type cycleSpec struct {
 	// to reach it, the way the API requires.
 	phase      domain.Phase
 	resolution string
+	mapKey     string
 	// logs are work log entries stamped with this cycle.
 	logs []ports.WriteEntryInput
 }
@@ -202,19 +203,16 @@ the timestamps are trustworthy.`,
 			},
 			wayfinder: &wayfinderSpec{
 				root: wayfinderNode{
-					key: "map",
+					key: "work",
 					issue: ports.CreateIssueInput{
-						Slug:      "make-the-work-legible",
-						Title:     "Make the work legible",
-						Status:    domain.IssueInProgress,
-						Priority:  domain.PriorityHigh,
-						Wayfinder: domain.WayfinderMap,
-						Tags:      []string{"design", "web"},
+						Slug:     "make-the-work-legible",
+						Title:    "Make the work legible",
+						Status:   domain.IssueInProgress,
+						Priority: domain.PriorityHigh,
+						Tags:     []string{"design", "web"},
 						Body: `Tickets carry a wayfinder type, a parent, blockers and PDCA cycles, and
 none of it shows anywhere. The lists render a flat badge, so the shape of
-the work and what is actually takeable right now are invisible.
-
-This map holds the decisions that get us to a view worth looking at.`,
+the work and what is actually takeable right now are invisible.`,
 					},
 					todos: []ports.CreateIssueInput{
 						{
@@ -280,7 +278,8 @@ about drawing the relations rather than listing them.`},
 							},
 						},
 						{
-							phase: domain.PhaseDo,
+							phase:  domain.PhasePlan,
+							mapKey: "map",
 							logs: []ports.WriteEntryInput{
 								{Body: `Ranking, edges and the subtree walk are pure functions in the domain now,
 tested without a renderer. Layout is longest-path over parent and blocker
@@ -292,6 +291,19 @@ picture survives dark mode and colourblindness. Status is the fill.`},
 					},
 				},
 				nodes: []wayfinderNode{
+					{
+						key:    "map",
+						parent: "work",
+						issue: ports.CreateIssueInput{
+							Slug:      "plan-the-graph-view",
+							Title:     "Plan the graph view",
+							Status:    domain.IssueInProgress,
+							Priority:  domain.PriorityHigh,
+							Wayfinder: domain.WayfinderMap,
+							Tags:      []string{"design", "web"},
+							Body:      `The decisions that get cycle 2 to a view worth looking at.`,
+						},
+					},
 					{
 						key:    "shape",
 						parent: "map",
