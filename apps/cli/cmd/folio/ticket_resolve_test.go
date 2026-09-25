@@ -68,6 +68,21 @@ func runTicket(t *testing.T, stdin string, args ...string) error {
 	return cmd.Execute()
 }
 
+func silenced(t *testing.T, fn func() error) error {
+	t.Helper()
+	stdout := os.Stdout
+	devnull, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = devnull
+	defer func() {
+		os.Stdout = stdout
+		_ = devnull.Close()
+	}()
+	return fn()
+}
+
 func TestTicketResolveClosesWithTheDetail(t *testing.T) {
 	got := resolveServer(t)
 

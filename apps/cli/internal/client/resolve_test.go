@@ -99,3 +99,31 @@ func TestResolveTicketDeletesTheDetailWhenTheCloseIsRefused(t *testing.T) {
 		t.Errorf("cleanup = %+v", del)
 	}
 }
+
+func TestOpenCycleWithMapDeletesTheMapWhenTheLinkIsRefused(t *testing.T) {
+	var calls []call
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, call{method: r.Method, path: r.URL.Path})
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/api/folio/issues/tk1/cycles":
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(`{"id":"cy1","phase":"plan"}`))
+		case r.Method == http.MethodPost:
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(`{"id":"m1","wayfinder":"map"}`))
+		case r.Method == http.MethodPatch:
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"message":"refused"}`))
+		default:
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}))
+	defer server.Close()
+
+	if _, _, err := New(server.URL, "tok").OpenCycleWithMap("pr1", "tk1", "Plan it"); err == nil {
+		t.Fatal("want the refusal back")
+	}
+	if last := calls[len(calls)-1]; last.method != http.MethodDelete || last.path != "/api/folio/issues/m1" {
+		t.Errorf("cleanup = %+v", last)
+	}
+}

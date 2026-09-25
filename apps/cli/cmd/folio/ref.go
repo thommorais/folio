@@ -16,3 +16,11 @@ func bySlugOrID[T any](ref string, bySlug func(project, slug string) (T, error),
 	}
 	return found, err
 }
+
+func ticketID(folio *client.Client, ref string) (string, error) {
+	if config.Project(flagProject) == "" {
+		return ref, nil
+	}
+	ticket, err := bySlugOrID(ref, folio.GetTicketBySlug, folio.GetTicket)
+	return ticket.ID, err
+}
