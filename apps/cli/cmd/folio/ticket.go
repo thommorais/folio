@@ -214,9 +214,13 @@ func ticketCreateCommand() *cobra.Command {
 				return err
 			}
 
+			text, err := bodyFrom(body)
+			if err != nil {
+				return err
+			}
 			in := client.TicketInput{Title: &args[0]}
 			setIf(&in.Slug, slug)
-			setIf(&in.Body, body)
+			setIf(&in.Body, text)
 			setIf(&in.Status, status)
 			setIf(&in.Priority, priority)
 			if err := setSize(&in.Size, size); err != nil {
@@ -245,7 +249,7 @@ func ticketCreateCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&slug, "slug", "", "defaults to a slug derived from the title")
-	cmd.Flags().StringVar(&body, "body", "", "what the ticket is about")
+	cmd.Flags().StringVar(&body, "body", "", "what the ticket is about; - reads stdin")
 	cmd.Flags().StringVar(&status, "status", "", "defaults to open")
 	cmd.Flags().StringVar(&priority, "priority", "", "low, medium or high; defaults to medium")
 	cmd.Flags().StringVar(&size, "size", "", "effort: 1, 2, 3, 5 or 8")
@@ -270,10 +274,14 @@ func ticketUpdateCommand() *cobra.Command {
 		Short: "Update a ticket, leaving unset fields alone",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
+			text, err := bodyFrom(body)
+			if err != nil {
+				return err
+			}
 			in := client.TicketInput{}
 			setIf(&in.Slug, slug)
 			setIf(&in.Title, title)
-			setIf(&in.Body, body)
+			setIf(&in.Body, text)
 			setIf(&in.Status, status)
 			setIf(&in.Priority, priority)
 			if err := setSize(&in.Size, size); err != nil {
@@ -307,7 +315,7 @@ func ticketUpdateCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&slug, "slug", "", "new slug")
 	cmd.Flags().StringVar(&title, "title", "", "new title")
-	cmd.Flags().StringVar(&body, "body", "", "new body")
+	cmd.Flags().StringVar(&body, "body", "", "new body; - reads stdin")
 	cmd.Flags().StringVar(&status, "status", "", "open, in_progress, blocked, done or cancelled")
 	cmd.Flags().StringVar(&priority, "priority", "", "low, medium or high")
 	cmd.Flags().StringVar(&size, "size", "", "effort: 1, 2, 3, 5 or 8")

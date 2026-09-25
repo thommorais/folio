@@ -67,7 +67,8 @@ Tagged and pushed. The migration ran clean.
 EOF
 ```
 
-`--body -` works on `journal write`, `journal update`, `doc create`, `doc update`;
+`--body -` works on `journal write`, `journal update`, `doc create`, `doc update`,
+`ticket create`, `ticket update`;
 `journal append --section -` adds to an existing entry without rewriting it.
 
 ## Tickets and todos are the same record
@@ -181,9 +182,9 @@ The wayfinder skill asks the tracker for these. In folio:
 | Wayfinder | folio |
 |---|---|
 | Create the map | `folio cycle open <work> --map "<title>"` when it plans a cycle, else `folio ticket create "<title>" --wayfinder map --parent <work>` |
-| Map body: Destination, Notes, Not yet specified, Out of scope | `folio ticket update <map> --body "..."` |
+| Map body: Destination, Notes, Not yet specified, Out of scope | `folio ticket update <map> --body -` with the markdown on stdin |
 | Decisions so far | derived: `folio ticket brief <map>` prints each closed child as `title: answer`; keep no such section in the body |
-| Create a ticket | `folio ticket create "<title>" --parent <map> --wayfinder <type> --body "## Question ..."` |
+| Create a ticket | `folio ticket create "<title>" --parent <map> --wayfinder <type> --body -` with `## Question` on stdin |
 | Wire blocking (second pass) | `folio ticket update <id> --depends-on <ids>` |
 | Frontier | `folio ticket frontier <map>` |
 | Claim | `folio ticket update <id> --assignee <your-user-id>` |

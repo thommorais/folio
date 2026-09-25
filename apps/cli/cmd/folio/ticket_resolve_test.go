@@ -152,3 +152,21 @@ func TestBriefShowsEachChildsAnswer(t *testing.T) {
 		}
 	}
 }
+
+func TestTicketBodyReadsStdin(t *testing.T) {
+	for _, args := range [][]string{
+		{"create", "Tree or graph", "--body", "-"},
+		{"update", "tk1", "--body", "-"},
+	} {
+		t.Run(args[0], func(t *testing.T) {
+			got := cycleServer(t, "folio")
+			if err := runTicket(t, "## Question\n\nTree or graph?\n", args...); err != nil {
+				t.Fatal(err)
+			}
+			last := (*got)[len(*got)-1]
+			if last.body["body"] != "## Question\n\nTree or graph?\n" {
+				t.Errorf("body = %q", last.body["body"])
+			}
+		})
+	}
+}
