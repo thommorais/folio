@@ -85,8 +85,8 @@ const Row = ({
 						)}
 
 						<Link
-							to='/$client/$domain/$slug/tickets/$ticket'
-							params={{ client, domain, slug: project, ticket: issue.slug }}
+							to={kind === ISSUE_KIND.TODO ? '/$client/$domain/$slug/todos/$todo' : '/$client/$domain/$slug/tickets/$ticket'}
+							params={{ client, domain, slug: project, ticket: issue.slug, todo: issue.slug }}
 							className={cn(
 								'text-sm font-medium hover:underline',
 								(isTerminal(issue.status) || row.isContext) && 'text-dim',

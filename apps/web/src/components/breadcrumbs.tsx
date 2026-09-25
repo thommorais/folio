@@ -32,14 +32,15 @@ const Separator = () => (
 // A record's title only exists after its fetch resolves, so a leaf crumb falls
 // back to the slug already in the URL rather than collapsing the trail.
 const useLeafLabel = (project: string | undefined, params: LeafParams) => {
-	const ticket = useIssue(project ?? '', params.ticket ?? '')
+	const issueSlug = params.ticket ?? params.todo
+	const issue = useIssue(project ?? '', issueSlug ?? '')
 	const entry = useEntry(project ?? '', params.entry ?? '')
 	const plan = usePlan(project ?? '', params.plan)
 
 	if (project === undefined) return undefined
 
-	if (params.ticket !== undefined) {
-		return ticket.status === Status.Ready ? ticket.issue.title : params.ticket
+	if (issueSlug !== undefined) {
+		return issue.status === Status.Ready ? issue.issue.title : issueSlug
 	}
 	if (params.entry !== undefined) {
 		return entry.status === Status.Ready ? entry.entry.title : params.entry
@@ -55,6 +56,7 @@ const useLeafLabel = (project: string | undefined, params: LeafParams) => {
 
 type LeafParams = {
 	readonly ticket: string | undefined
+	readonly todo: string | undefined
 	readonly entry: string | undefined
 	readonly plan: string | undefined
 }
@@ -67,6 +69,7 @@ export const Breadcrumbs = () => {
 	const slug = typeof params.slug === 'string' ? params.slug : undefined
 	const leaf: LeafParams = {
 		ticket: typeof params.ticket === 'string' ? params.ticket : undefined,
+		todo: typeof params.todo === 'string' ? params.todo : undefined,
 		entry: typeof params.entry === 'string' ? params.entry : undefined,
 		plan: typeof params.plan === 'string' ? params.plan : undefined,
 	}

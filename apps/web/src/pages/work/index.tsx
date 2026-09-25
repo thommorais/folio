@@ -34,8 +34,8 @@ const todoItem = (scope: Scope, todo: Issue): WorkItem => ({
 	muted: isTerminal(todo.status),
 	checked: todo.status === ISSUE_STATUS.DONE,
 	meta: [todo.priority, ...todo.tags],
-	to: '/$client/$domain/$slug/tickets/$ticket',
-	params: { ...scope, ticket: todo.slug },
+	to: '/$client/$domain/$slug/todos/$todo',
+	params: { ...scope, todo: todo.slug },
 })
 
 const planItem = (scope: Scope, plan: Plan): WorkItem => ({

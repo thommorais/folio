@@ -123,4 +123,4 @@ const IssueDetails = ({ project, todoId }: Props) => {
 	return <Body todo={state.issue} project={project} />
 }
 
-export { IssueDetails }
+export { Body as TodoBody, IssueDetails }
