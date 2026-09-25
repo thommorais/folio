@@ -24,24 +24,26 @@ var _ ports.IssueRepository = (*IssueRepository)(nil)
 
 func toIssue(rec *core.Record) domain.Issue {
 	return domain.Issue{
-		ID:          domain.IssueID(rec.Id),
-		Kind:        domain.IssueKind(rec.GetString("kind")),
-		ProjectID:   domain.ProjectID(rec.GetString("project")),
-		PlanID:      domain.PlanID(rec.GetString("plan")),
-		Slug:        rec.GetString("slug"),
-		Title:       rec.GetString("title"),
-		Body:        rec.GetString("body"),
-		Status:      domain.IssueStatus(rec.GetString("status")),
-		Priority:    domain.Priority(rec.GetString("priority")),
-		Size:        domain.Size(rec.GetInt("size")),
-		Assignee:    domain.UserID(rec.GetString("assignee")),
-		Position:    rec.GetInt("position"),
-		DueDate:     timePtr(rec.GetDateTime("due_date")),
-		Wayfinder:   domain.WayfinderType(rec.GetString("wayfinder")),
-		ExternalRef: rec.GetString("external_ref"),
-		CreatedBy:   domain.UserID(rec.GetString("created_by")),
-		CreatedAt:   rec.GetDateTime("created").Time(),
-		UpdatedAt:   rec.GetDateTime("updated").Time(),
+		ID:              domain.IssueID(rec.Id),
+		Kind:            domain.IssueKind(rec.GetString("kind")),
+		ProjectID:       domain.ProjectID(rec.GetString("project")),
+		PlanID:          domain.PlanID(rec.GetString("plan")),
+		Slug:            rec.GetString("slug"),
+		Title:           rec.GetString("title"),
+		Body:            rec.GetString("body"),
+		Status:          domain.IssueStatus(rec.GetString("status")),
+		Priority:        domain.Priority(rec.GetString("priority")),
+		Size:            domain.Size(rec.GetInt("size")),
+		Assignee:        domain.UserID(rec.GetString("assignee")),
+		Position:        rec.GetInt("position"),
+		DueDate:         timePtr(rec.GetDateTime("due_date")),
+		Wayfinder:       domain.WayfinderType(rec.GetString("wayfinder")),
+		ExternalRef:     rec.GetString("external_ref"),
+		Resolution:      rec.GetString("resolution"),
+		ResolutionEntry: domain.EntryID(rec.GetString("resolution_entry")),
+		CreatedBy:       domain.UserID(rec.GetString("created_by")),
+		CreatedAt:       rec.GetDateTime("created").Time(),
+		UpdatedAt:       rec.GetDateTime("updated").Time(),
 	}
 }
 
@@ -60,6 +62,8 @@ func applyIssue(rec *core.Record, i domain.Issue) {
 	setDate(rec, "due_date", i.DueDate)
 	rec.Set("wayfinder", string(i.Wayfinder))
 	rec.Set("external_ref", i.ExternalRef)
+	rec.Set("resolution", i.Resolution)
+	rec.Set("resolution_entry", string(i.ResolutionEntry))
 	if i.CreatedBy != "" {
 		rec.Set("created_by", string(i.CreatedBy))
 	}

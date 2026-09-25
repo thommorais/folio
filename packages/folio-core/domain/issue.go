@@ -73,25 +73,27 @@ type IssueLink struct {
 }
 
 type Issue struct {
-	ID          IssueID
-	Kind        IssueKind
-	ProjectID   ProjectID
-	PlanID      PlanID
-	Slug        string
-	Title       string
-	Body        string
-	Status      IssueStatus
-	Priority    Priority
-	Size        Size
-	Assignee    UserID
-	Tags        []string
-	Position    int
-	DueDate     *time.Time
-	Wayfinder   WayfinderType
-	ExternalRef string
-	CreatedBy   UserID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID              IssueID
+	Kind            IssueKind
+	ProjectID       ProjectID
+	PlanID          PlanID
+	Slug            string
+	Title           string
+	Body            string
+	Status          IssueStatus
+	Priority        Priority
+	Size            Size
+	Assignee        UserID
+	Tags            []string
+	Position        int
+	DueDate         *time.Time
+	Wayfinder       WayfinderType
+	ExternalRef     string
+	Resolution      string
+	ResolutionEntry EntryID
+	CreatedBy       UserID
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 
 	// Derived on read, never persisted.
 	ParentID  IssueID

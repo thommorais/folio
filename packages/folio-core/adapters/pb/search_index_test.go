@@ -65,6 +65,10 @@ func TestIndexCoversEveryKind(t *testing.T) {
 		"project": s.project.Id, "issue": s.ticket.Id, "ordinal": 2,
 		"phase": "act", "resolution": "realtime settled",
 	})
+	decision := newRecord(t, s.app, pb.ColEntries, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "resolution",
+		"issue": s.ticket.Id, "body": "realtime over polling",
+	})
 
 	hits := search(t, s.app, s.project.Id, domain.SearchQuery{Text: "realtime"})
 
@@ -78,6 +82,7 @@ func TestIndexCoversEveryKind(t *testing.T) {
 		{"doc", doc.Id, domain.SearchKindDoc},
 		{"work log", log.Id, domain.SearchKindWorkLog},
 		{"cycle resolution", cycle.Id, domain.SearchKindCycle},
+		{"decision", decision.Id, domain.SearchKindDecision},
 	} {
 		t.Run(want.name, func(t *testing.T) {
 			hit, ok := find(hits, want.id)
@@ -104,10 +109,18 @@ func TestWorkLogGetsATitleAndACycleKeepsItsOrdinal(t *testing.T) {
 		"phase": "act", "resolution": "pagination settled",
 	})
 
+	decision := newRecord(t, s.app, pb.ColEntries, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "resolution",
+		"issue": s.ticket.Id, "body": "cursor pagination",
+	})
+
 	hits := search(t, s.app, s.project.Id, domain.SearchQuery{Text: "pagination"})
 
 	if hit, ok := find(hits, log.Id); !ok || hit.Title != "Work log" {
 		t.Errorf("log title = %q (found %v), want %q", hit.Title, ok, "Work log")
+	}
+	if hit, ok := find(hits, decision.Id); !ok || hit.Title != "Resolution" {
+		t.Errorf("decision title = %q (found %v), want %q", hit.Title, ok, "Resolution")
 	}
 	if hit, ok := find(hits, cycle.Id); !ok || hit.Title != "Cycle 3 resolution" {
 		t.Errorf("cycle title = %q (found %v), want %q", hit.Title, ok, "Cycle 3 resolution")

@@ -139,8 +139,8 @@ var sources = []indexed{
 		Collection: ColEntries,
 		// A log has no title of its own, so the index supplies one; a journal
 		// entry or doc that was saved without one falls back the same way.
-		Kind:      `CASE {a}.kind WHEN 'log' THEN 'worklog' ELSE {a}.kind END`,
-		Title:     `CASE WHEN {a}.title = '' THEN 'Work log' ELSE {a}.title END`,
+		Kind:      `CASE {a}.kind WHEN 'log' THEN 'worklog' WHEN 'resolution' THEN 'decision' ELSE {a}.kind END`,
+		Title:     `CASE WHEN {a}.title != '' THEN {a}.title WHEN {a}.kind = 'resolution' THEN 'Resolution' ELSE 'Work log' END`,
 		Body:      `{a}.body`,
 		Slug:      `{a}.slug`,
 		TagTarget: ports.TagEntry,

@@ -1,6 +1,9 @@
 package pb
 
 import (
+	"fmt"
+	"slices"
+
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -310,7 +313,50 @@ func ensureEntries(app core.App) error {
 	return app.Save(c)
 }
 
-var entryKinds = []string{"journal", "doc", "log"}
+var entryKinds = []string{"journal", "doc", "log", "resolution"}
+
+func ensureEntryKinds(app core.App) error {
+	c, err := app.FindCollectionByNameOrId(ColEntries)
+	if err != nil {
+		return err
+	}
+	field, ok := c.Fields.GetByName("kind").(*core.SelectField)
+	if !ok {
+		return fmt.Errorf("%s.kind is not a select field", ColEntries)
+	}
+	missing := false
+	for _, kind := range entryKinds {
+		if !slices.Contains(field.Values, kind) {
+			field.Values = append(field.Values, kind)
+			missing = true
+		}
+	}
+	if !missing {
+		return nil
+	}
+	return app.Save(c)
+}
+
+func ensureIssueResolution(app core.App) error {
+	c, err := app.FindCollectionByNameOrId(ColIssues)
+	if err != nil {
+		return err
+	}
+	if c.Fields.GetByName("resolution_entry") != nil {
+		return nil
+	}
+	entries, err := app.FindCollectionByNameOrId(ColEntries)
+	if err != nil {
+		return err
+	}
+
+	if c.Fields.GetByName("resolution") == nil {
+		c.Fields.Add(&core.TextField{Name: "resolution", Max: 200})
+	}
+	c.Fields.Add(&core.RelationField{Name: "resolution_entry", CollectionId: entries.Id, CascadeDelete: false, MaxSelect: 1})
+
+	return app.Save(c)
+}
 
 func ensureTags(app core.App) error {
 	if _, ok := find(app, ColTags); ok {

@@ -2,6 +2,7 @@ package rules
 
 import (
 	"sort"
+	"strings"
 
 	"folio/folio-core/domain"
 )
@@ -136,6 +137,16 @@ func ValidateIssue(i domain.Issue) error {
 	}
 	if i.Size != 0 && !i.Size.Valid() {
 		return domain.Invalid("size", "must be one of 1, 2, 3, 5, 8")
+	}
+	return optional("resolution", i.Resolution, TitleMaxLen)
+}
+
+func CheckResolvedIssue(i domain.Issue, to domain.IssueStatus) error {
+	if !to.IsTerminal() || i.Wayfinder == "" || i.Wayfinder == domain.WayfinderMap {
+		return nil
+	}
+	if strings.TrimSpace(i.Resolution) == "" {
+		return domain.Invalid("resolution", "is required to close a "+string(i.Wayfinder)+" ticket: record the answer")
 	}
 	return nil
 }

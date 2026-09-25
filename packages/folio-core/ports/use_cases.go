@@ -92,25 +92,28 @@ type CreateIssueInput struct {
 	DependsOn   []domain.IssueID
 	Wayfinder   domain.WayfinderType
 	ExternalRef string
+	Resolution  string
 }
 
 type UpdateIssueInput struct {
-	Kind        *domain.IssueKind
-	ParentID    *domain.IssueID
-	PlanID      *domain.PlanID
-	Slug        *string
-	Title       *string
-	Body        *string
-	Status      *domain.IssueStatus
-	Priority    *domain.Priority
-	Size        *domain.Size
-	Assignee    *domain.UserID
-	Tags        *[]string
-	Position    *int
-	DueDate     *string
-	DependsOn   *[]domain.IssueID
-	Wayfinder   *domain.WayfinderType
-	ExternalRef *string
+	Kind            *domain.IssueKind
+	ParentID        *domain.IssueID
+	PlanID          *domain.PlanID
+	Slug            *string
+	Title           *string
+	Body            *string
+	Status          *domain.IssueStatus
+	Priority        *domain.Priority
+	Size            *domain.Size
+	Assignee        *domain.UserID
+	Tags            *[]string
+	Position        *int
+	DueDate         *string
+	DependsOn       *[]domain.IssueID
+	Wayfinder       *domain.WayfinderType
+	Resolution      *string
+	ResolutionEntry *domain.EntryID
+	ExternalRef     *string
 }
 
 type BriefOptions struct {

@@ -55,6 +55,12 @@ func Register(app core.App) error {
 	if err := ensureEntries(app); err != nil {
 		return fmt.Errorf("entries: %w", err)
 	}
+	if err := ensureEntryKinds(app); err != nil {
+		return fmt.Errorf("entry kinds: %w", err)
+	}
+	if err := ensureIssueResolution(app); err != nil {
+		return fmt.Errorf("issue resolution: %w", err)
+	}
 	if err := ensureKnowledge(app); err != nil {
 		return fmt.Errorf("knowledge: %w", err)
 	}

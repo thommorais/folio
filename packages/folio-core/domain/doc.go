@@ -32,13 +32,14 @@ type DocFilter struct {
 type SearchKind string
 
 const (
-	SearchKindJournal SearchKind = "journal"
-	SearchKindDoc     SearchKind = "doc"
-	SearchKindTodo    SearchKind = "todo"
-	SearchKindPlan    SearchKind = "plan"
-	SearchKindTicket  SearchKind = "ticket"
-	SearchKindWorkLog SearchKind = "worklog"
-	SearchKindCycle   SearchKind = "resolution"
+	SearchKindJournal  SearchKind = "journal"
+	SearchKindDoc      SearchKind = "doc"
+	SearchKindTodo     SearchKind = "todo"
+	SearchKindPlan     SearchKind = "plan"
+	SearchKindTicket   SearchKind = "ticket"
+	SearchKindWorkLog  SearchKind = "worklog"
+	SearchKindCycle    SearchKind = "resolution"
+	SearchKindDecision SearchKind = "decision"
 	// SearchKindKnowledge is the one kind not fenced by a project: a note
 	// answers any caller's search.
 	SearchKindKnowledge SearchKind = "knowledge"

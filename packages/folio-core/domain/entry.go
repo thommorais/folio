@@ -7,7 +7,8 @@ type EntryKind string
 const (
 	EntryJournal EntryKind = "journal"
 	EntryDoc     EntryKind = "doc"
-	EntryLog     EntryKind = "log"
+	EntryLog        EntryKind = "log"
+	EntryResolution EntryKind = "resolution"
 )
 
 func (k EntryKind) Addressable() bool {

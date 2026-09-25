@@ -183,11 +183,15 @@ func (s *IssueService) create(ctx context.Context, actor ports.Actor, in ports.C
 		DueDate:     due,
 		Wayfinder:   in.Wayfinder,
 		ExternalRef: in.ExternalRef,
+		Resolution:  strings.TrimSpace(in.Resolution),
 		CreatedBy:   actor.UserID,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
 	if err := rules.ValidateIssue(issue); err != nil {
+		return domain.Issue{}, err
+	}
+	if err := rules.CheckResolvedIssue(issue, issue.Status); err != nil {
 		return domain.Issue{}, err
 	}
 	if err := s.slugFree(ctx, issue.ProjectID, issue.Slug, ""); err != nil {
@@ -317,6 +321,13 @@ func (s *IssueService) UpdateIssue(ctx context.Context, actor ports.Actor, id do
 		return domain.Issue{}, err
 	}
 
+	if in.Resolution != nil {
+		issue.Resolution = strings.TrimSpace(*in.Resolution)
+	}
+	if in.ResolutionEntry != nil {
+		issue.ResolutionEntry = *in.ResolutionEntry
+	}
+
 	if in.Status != nil {
 		if err := rules.CanTransitionIssue(issue.Status, *in.Status); err != nil {
 			return domain.Issue{}, err
@@ -329,6 +340,10 @@ func (s *IssueService) UpdateIssue(ctx context.Context, actor ports.Actor, id do
 			if err := rules.CheckClosableIssue(*in.Status, cycles); err != nil {
 				return domain.Issue{}, err
 			}
+		}
+		if issue.Status.IsTerminal() && !in.Status.IsTerminal() {
+			issue.Resolution = ""
+			issue.ResolutionEntry = ""
 		}
 		issue.Status = *in.Status
 	}
@@ -381,6 +396,11 @@ func (s *IssueService) UpdateIssue(ctx context.Context, actor ports.Actor, id do
 
 	if err := rules.ValidateIssue(issue); err != nil {
 		return domain.Issue{}, err
+	}
+	if in.Status != nil || in.Resolution != nil || in.Wayfinder != nil {
+		if err := rules.CheckResolvedIssue(issue, issue.Status); err != nil {
+			return domain.Issue{}, err
+		}
 	}
 	if in.Slug != nil {
 		if err := s.slugFree(ctx, issue.ProjectID, issue.Slug, issue.ID); err != nil {

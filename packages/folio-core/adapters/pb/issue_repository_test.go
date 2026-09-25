@@ -233,3 +233,29 @@ func TestBlockedIsDerivedFromLinks(t *testing.T) {
 		t.Error("issue is still blocked after its blocker closed")
 	}
 }
+
+func TestIssueKeepsItsResolution(t *testing.T) {
+	s := setup(t)
+	repo := pb.NewIssueRepository(s.app)
+
+	issue := newIssue(t, s, domain.IssueTicket, "tree-or-graph")
+	detail := newRecord(t, s.app, pb.ColEntries, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "resolution",
+		"issue": string(issue.ID), "body": "The tree hides blockers.",
+	})
+
+	issue.Status = domain.IssueDone
+	issue.Resolution = "A graph."
+	issue.ResolutionEntry = domain.EntryID(detail.Id)
+	if _, err := repo.Update(t.Context(), issue); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := repo.GetByID(t.Context(), issue.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Resolution != "A graph." || got.ResolutionEntry != domain.EntryID(detail.Id) {
+		t.Fatalf("resolution = %q, entry = %q", got.Resolution, got.ResolutionEntry)
+	}
+}
