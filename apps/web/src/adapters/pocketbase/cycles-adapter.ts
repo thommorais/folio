@@ -18,6 +18,7 @@ type CycleRecord = JournCyclesResponse
 type CycleColumns = {
 	'project.slug': string
 	issue: string
+	map: string
 }
 
 const message = (error: unknown): string => (error instanceof Error ? error.message : 'Unknown error')
@@ -40,6 +41,7 @@ const columns = (project: string, filter: CycleFilter) =>
 	filterFor<CycleColumns>()([
 		{ field: 'project.slug', comparator: 'eq', value: project },
 		{ field: 'issue', comparator: 'eq', value: filter.ticketId },
+		{ field: 'map', comparator: 'eq', value: filter.mapId },
 	])
 
 export const createCyclesAdapter = (): CyclesPort => {

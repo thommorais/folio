@@ -18,6 +18,7 @@ import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels';
 import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels';
 import { useScope } from '_/routing/use-scope';
 import { useSlugSync } from '_/routing/use-slug-sync';
+import { Answer } from './answer';
 import { CycleTimeline } from './cycle-timeline';
 import { MapFrontier } from './map-frontier';
 import { SHARE_KIND } from '_/core/domain/share';
@@ -35,7 +36,7 @@ const statusLabels: Record<IssueStatus, string> = {
 // than the project's whole list.
 const Section = ({ title, children }: { readonly title: string; readonly children: React.ReactNode }) => (
 	<section className='space-y-2'>
-		<h2 className='text-dim text-xs tracking-wide uppercase'>{title}</h2>
+		<h2 className='text-base font-medium'>{title}</h2>
 		{children}
 	</section>
 )
@@ -97,6 +98,11 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	const todos = useIssues(project, { kind: ISSUE_KIND.TODO, parentId: ticketId })
 	const journal = useEntries(project, { kinds: ADDRESSABLE_KINDS, issueId: ticketId })
 	const cycles = useCycles(project, { ticketId })
+	const planning = useCycles(project, { mapId: ticketId })
+	const planned = planning.status === Status.Ready ? newestFirst(planning.cycles).at(0) : undefined
+	const childTickets = useIssues(project, { kind: ISSUE_KIND.TICKET, parentId: ticketId })
+	const maps =
+		childTickets.status === Status.Ready ? childTickets.issues.filter(child => child.wayfinder === 'map') : []
 	const workLog = useEntries(project, { kind: ENTRY_KIND.LOG, issueId: ticketId })
 
 	// A log stamped with a cycle is shown on that round in the timeline, so
@@ -137,11 +143,13 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 
 				{ticket.body && <Markdown>{ticket.body}</Markdown>}
 
+				{ticket.resolution && <Answer project={project} ticket={ticket} />}
+
 				{(parent !== undefined || ticket.dependsOn.length > 0) && (
 					<div className='text-dimmer flex flex-wrap items-center gap-3 text-xs'>
 						{parent !== undefined && (
 							<span>
-								under{' '}
+								{planned !== undefined && planned.ticketId === parent.id ? `plans cycle ${planned.ordinal} of ` : 'under '}
 								<Link
 									to='/$client/$domain/$slug/tickets/$ticket'
 									params={{ client, domain, slug: project, ticket: parent.slug }}
@@ -160,7 +168,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 
 			{cycles.status === Status.Ready && cycles.cycles.length > 0 && (
 				<Section title='Cycles'>
-					<CycleTimeline project={project} cycles={cycles.cycles} />
+					<CycleTimeline project={project} cycles={cycles.cycles} maps={maps} />
 				</Section>
 			)}
 

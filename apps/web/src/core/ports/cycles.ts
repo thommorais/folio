@@ -5,6 +5,7 @@ import type { Unsubscribe } from './subscription'
 
 export type CycleFilter = {
 	readonly ticketId?: string
+	readonly mapId?: string
 	readonly limit?: number
 	readonly offset?: number
 }

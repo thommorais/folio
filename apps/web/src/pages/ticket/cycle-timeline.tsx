@@ -1,5 +1,11 @@
+import { Link } from '@tanstack/react-router'
 import { cn } from '@thom/libs/cn'
+import { Badge } from '@thom/ui/badge'
 import { useEntries } from '_/app/use-entries'
+import { useIssues } from '_/app/use-issues'
+import { ISSUE_KIND, type Issue } from '_/core/domain/issue'
+import { mapLedger, planHold } from '_/core/domain/map-ledger'
+import { useScope } from '_/routing/use-scope'
 import type { Cycle } from '_/core/domain/cycle'
 import { isResolved } from '_/core/domain/cycle'
 import { cycleProgress, newestFirst } from '_/core/domain/cycle-progress'
@@ -9,6 +15,40 @@ import { ENTRY_KIND } from '_/core/domain/entry'
 type Props = {
 	readonly project: string
 	readonly cycles: readonly Cycle[]
+	readonly maps: readonly Issue[]
+}
+
+const CyclePlan = ({
+	project,
+	cycle,
+	map,
+}: {
+	readonly project: string
+	readonly cycle: Cycle
+	readonly map: Issue
+}) => {
+	const { client, domain } = useScope()
+	const children = useIssues(project, { kind: ISSUE_KIND.TICKET, parentId: map.id })
+
+	if (children.status !== Status.Ready) return null
+
+	const holding = planHold(cycle, children.issues)
+	const { decided } = mapLedger(children.issues)
+
+	return (
+		<Link
+			to='/$client/$domain/$slug/tickets/$ticket'
+			params={{ client, domain, slug: project, ticket: map.slug }}
+			className='border-border hover:bg-accent/40 flex max-w-xl items-center gap-4 border px-4 py-2.5 transition-colors'
+		>
+			<span className='flex min-w-0 flex-1 flex-col'>
+				<span className='text-dim text-xs'>Planned by</span>
+				<span className='truncate text-sm'>{map.title}</span>
+			</span>
+			<span className='text-dim shrink-0 text-xs'>{decided.length} decided</span>
+			{holding > 0 && <Badge color='neutral'>{holding} open, plan holds</Badge>}
+		</Link>
+	)
 }
 
 const PhaseRail = ({ cycle }: { readonly cycle: Cycle }) => (
@@ -34,9 +74,18 @@ const PhaseRail = ({ cycle }: { readonly cycle: Cycle }) => (
 
 // Work logs are stamped with the cycle that was open when they landed, so each
 // round loads its own rather than the ticket's whole log being split up here.
-const CycleBlock = ({ project, cycle }: { readonly project: string; readonly cycle: Cycle }) => {
+const CycleBlock = ({
+	project,
+	cycle,
+	maps,
+}: {
+	readonly project: string
+	readonly cycle: Cycle
+	readonly maps: readonly Issue[]
+}) => {
 	const logs = useEntries(project, { kind: ENTRY_KIND.LOG, cycleId: cycle.id })
 	const resolved = isResolved(cycle)
+	const map = cycle.mapId === undefined ? undefined : maps.find(candidate => candidate.id === cycle.mapId)
 
 	return (
 		<li className='relative pl-6'>
@@ -55,6 +104,8 @@ const CycleBlock = ({ project, cycle }: { readonly project: string; readonly cyc
 					{!resolved && <span className='text-dim text-xs'>open</span>}
 				</div>
 
+				{map !== undefined && <CyclePlan project={project} cycle={cycle} map={map} />}
+
 				{cycle.resolution && <p className='text-sm'>{cycle.resolution}</p>}
 
 				{logs.status === Status.Ready && logs.entries.length > 0 && (
@@ -72,7 +123,7 @@ const CycleBlock = ({ project, cycle }: { readonly project: string; readonly cyc
 	)
 }
 
-const CycleTimeline = ({ project, cycles }: Props) => {
+const CycleTimeline = ({ project, cycles, maps }: Props) => {
 	if (cycles.length === 0) return null
 
 	return (
@@ -80,7 +131,7 @@ const CycleTimeline = ({ project, cycles }: Props) => {
 		// with a long work log does not break the line.
 		<ol className='before:bg-border relative before:absolute before:top-2 before:bottom-4 before:left-[3px] before:w-px'>
 			{newestFirst(cycles).map(cycle => (
-				<CycleBlock key={cycle.id} project={project} cycle={cycle} />
+				<CycleBlock key={cycle.id} project={project} cycle={cycle} maps={maps} />
 			))}
 		</ol>
 	)
