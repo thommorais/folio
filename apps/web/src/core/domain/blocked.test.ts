@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { withBlocked } from './blocked'
+import { openBlockers, withBlocked } from './blocked'
 import type { Issue, IssueId } from './issue'
 
 const issue = (id: string, over: Partial<Issue> = {}): Issue =>
@@ -79,5 +79,25 @@ describe('withBlocked', () => {
 		const issues = [issue('a'), issue('b')]
 
 		expect(withBlocked(issues)[0]).toBe(issues[0])
+	})
+})
+
+describe('openBlockers', () => {
+	const waiting = issue('w', { dependsOn: ['a', 'b', 'c', 'gone'] as IssueId[] })
+
+	it('counts the blockers still open, leaving out the done and cancelled ones', () => {
+		const known = [issue('a'), issue('b', { status: 'done' }), issue('c', { status: 'cancelled' })]
+
+		expect(openBlockers(waiting, known)).toBe(1)
+	})
+
+	it('does not count a blocker it cannot see, the same rule blocked follows', () => {
+		expect(openBlockers(waiting, [])).toBe(0)
+	})
+
+	it('counts in progress and blocked blockers as open', () => {
+		const known = [issue('a', { status: 'in_progress' }), issue('b', { status: 'blocked' })]
+
+		expect(openBlockers(waiting, known)).toBe(2)
 	})
 })

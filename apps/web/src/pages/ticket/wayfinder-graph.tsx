@@ -7,6 +7,7 @@ import { LINK_KIND, type Issue, type IssueId } from '_/core/domain/issue'
 import { useScope } from '_/routing/use-scope'
 import { NODE, place, type Line } from './graph-geometry'
 import { GraphNode } from './graph-node'
+import { openBlockers } from '_/core/domain/blocked'
 
 type Props = {
 	readonly project: string
@@ -104,7 +105,14 @@ const WayfinderGraph = ({ project, mapId, issues }: Props) => {
 							})
 						}
 					>
-						<GraphNode issue={box.issue} x={box.x} y={box.y} dimmed={dims(box.id)} onFocus={setFocus} />
+						<GraphNode
+							issue={box.issue}
+							x={box.x}
+							y={box.y}
+							dimmed={dims(box.id)}
+							waiting={openBlockers(box.issue, issues)}
+							onFocus={setFocus}
+						/>
 					</g>
 				))}
 			</svg>

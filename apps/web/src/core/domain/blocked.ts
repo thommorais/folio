@@ -8,14 +8,22 @@ import { isTerminal } from './issue'
 //
 // A blocker outside the set cannot be judged and so does not block, the same
 // rule the adapter applies when it first loads a list.
+const statusOf = (issues: readonly Issue[]): ReadonlyMap<Issue['id'], Issue['status']> =>
+	new Map(issues.map(issue => [issue.id, issue.status]))
+
+const openAmong = (issue: Issue, status: ReadonlyMap<Issue['id'], Issue['status']>): number =>
+	issue.dependsOn.filter(blocker => {
+		const state = status.get(blocker)
+		return state !== undefined && !isTerminal(state)
+	}).length
+
+export const openBlockers = (issue: Issue, known: readonly Issue[]): number => openAmong(issue, statusOf(known))
+
 export const withBlocked = (issues: readonly Issue[]): readonly Issue[] => {
-	const status = new Map(issues.map(issue => [issue.id, issue.status]))
+	const status = statusOf(issues)
 
 	return issues.map(issue => {
-		const blocked = issue.dependsOn.some(blocker => {
-			const state = status.get(blocker)
-			return state !== undefined && !isTerminal(state)
-		})
+		const blocked = openAmong(issue, status) > 0
 
 		// Returned unchanged when the flag already agrees, so a render is only
 		// triggered for the rows that actually moved.

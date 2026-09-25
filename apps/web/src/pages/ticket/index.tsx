@@ -10,6 +10,7 @@ import { usePlans } from '_/app/use-plans';
 import { Markdown } from '_/components/markdown';
 import { RecordGone } from '_/components/record/record-gone';
 import { ShareSheet } from '_/components/share/share-sheet';
+import { openBlockers } from '_/core/domain/blocked';
 import { newestFirst } from '_/core/domain/cycle-progress';
 import { ADDRESSABLE_KINDS, ENTRY_KIND } from '_/core/domain/entry';
 import { ISSUE_KIND, ISSUE_STATUS, type Issue, type IssueStatus } from '_/core/domain/issue';
@@ -110,11 +111,12 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	const unstamped = workLog.status === Status.Ready ? workLog.entries.filter(entry => entry.cycleId === undefined) : []
 
 	const current = cycles.status === Status.Ready ? newestFirst(cycles.cycles).at(0) : undefined
-	const siblings = useIssues(project, { kind: ISSUE_KIND.TICKET })
+	const siblings = useIssues(project)
 	const parent =
 		ticket.parentId !== undefined && siblings.status === Status.Ready
 			? siblings.issues.find(candidate => candidate.id === ticket.parentId)
 			: undefined
+	const waiting = siblings.status === Status.Ready ? openBlockers(ticket, siblings.issues) : 0
 
 	return (
 		<div className='space-y-8'>
@@ -145,7 +147,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 
 				{ticket.resolution && <Answer project={project} ticket={ticket} />}
 
-				{(parent !== undefined || ticket.dependsOn.length > 0) && (
+				{(parent !== undefined || waiting > 0) && (
 					<div className='text-dimmer flex flex-wrap items-center gap-3 text-xs'>
 						{parent !== undefined && (
 							<span>
@@ -159,7 +161,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 								</Link>
 							</span>
 						)}
-						{ticket.dependsOn.length > 0 && <span>waits on {ticket.dependsOn.length}</span>}
+						{waiting > 0 && <span>waits on {waiting}</span>}
 					</div>
 				)}
 			</header>

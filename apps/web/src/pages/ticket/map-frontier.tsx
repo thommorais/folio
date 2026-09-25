@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
 import { useIssues } from '_/app/use-issues'
+import { openBlockers } from '_/core/domain/blocked'
 import { partitionChildren } from '_/core/domain/frontier'
 import { mapLedger } from '_/core/domain/map-ledger'
 import { ISSUE_KIND, type Issue } from '_/core/domain/issue'
@@ -16,10 +17,12 @@ type Props = {
 const Group = ({
 	title,
 	tickets,
+	known,
 	project,
 }: {
 	readonly title: string
 	readonly tickets: readonly Issue[]
+	readonly known: readonly Issue[]
 	readonly project: string
 }) => {
 	const { client, domain } = useScope()
@@ -33,21 +36,23 @@ const Group = ({
 				<span className='text-dimmer ml-1 text-xs font-normal'>({tickets.length})</span>
 			</h3>
 			<ul className='border-border divide-border divide-y border'>
-				{tickets.map(child => (
-					<li key={child.id}>
-						<Link
-							to='/$client/$domain/$slug/tickets/$ticket'
-							params={{ client, domain, slug: project, ticket: child.slug }}
-							className='hover:bg-accent/40 flex items-center gap-3 px-4 py-3 transition-colors'
-						>
-							<span className='flex-1 truncate text-sm'>{child.title}</span>
-							{child.wayfinder && <Badge color='muted'>{child.wayfinder}</Badge>}
-							{child.dependsOn.length > 0 && (
-								<span className='text-dimmer shrink-0 text-xs'>waits on {child.dependsOn.length}</span>
-							)}
-						</Link>
-					</li>
-				))}
+				{tickets.map(child => {
+					const waiting = openBlockers(child, known)
+
+					return (
+						<li key={child.id}>
+							<Link
+								to='/$client/$domain/$slug/tickets/$ticket'
+								params={{ client, domain, slug: project, ticket: child.slug }}
+								className='hover:bg-accent/40 flex items-center gap-3 px-4 py-3 transition-colors'
+							>
+								<span className='flex-1 truncate text-sm'>{child.title}</span>
+								{child.wayfinder && <Badge color='muted'>{child.wayfinder}</Badge>}
+								{waiting > 0 && <span className='text-dimmer shrink-0 text-xs'>waits on {waiting}</span>}
+							</Link>
+						</li>
+					)
+				})}
 			</ul>
 		</div>
 	)
@@ -115,9 +120,9 @@ const MapFrontier = ({ project, map }: Props) => {
 			    answer what to pick up next. Neither replaces the other. */}
 			<WayfinderGraph project={project} mapId={map.id} issues={[map, ...children.issues]} />
 
-			<Group title='Takeable' tickets={frontier} project={project} />
-			<Group title='Blocked' tickets={blocked} project={project} />
-			<Group title='Claimed' tickets={claimed} project={project} />
+			<Group title='Takeable' tickets={frontier} known={children.issues} project={project} />
+			<Group title='Blocked' tickets={blocked} known={children.issues} project={project} />
+			<Group title='Claimed' tickets={claimed} known={children.issues} project={project} />
 			<Ledger title='Decisions so far' tickets={decided} project={project} />
 			<Ledger title='Out of scope' tickets={outOfScope} project={project} />
 		</section>

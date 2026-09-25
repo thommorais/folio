@@ -20,10 +20,11 @@ type Props = {
 	readonly x: number
 	readonly y: number
 	readonly dimmed: boolean
+	readonly waiting: number
 	readonly onFocus: (id: Issue['id'] | undefined) => void
 }
 
-const GraphNode = ({ issue, x, y, dimmed, onFocus }: Props) => {
+const GraphNode = ({ issue, x, y, dimmed, waiting, onFocus }: Props) => {
 	const terminal = isTerminal(issue.status)
 
 	return (
@@ -54,7 +55,7 @@ const GraphNode = ({ issue, x, y, dimmed, onFocus }: Props) => {
 					</span>
 					<span className='text-dimmer truncate text-[10px]'>
 						{issue.wayfinder ?? 'ticket'}
-						{issue.dependsOn.length > 0 && ` · waits on ${issue.dependsOn.length}`}
+						{waiting > 0 && ` · waits on ${waiting}`}
 					</span>
 				</div>
 			</foreignObject>
