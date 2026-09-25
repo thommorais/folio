@@ -31,6 +31,7 @@ func (h *Handler) openCycle(e *core.RequestEvent) error {
 type cycleBody struct {
 	Phase      *string `json:"phase"`
 	Resolution *string `json:"resolution"`
+	MapID      *string `json:"map_id"`
 }
 
 func (h *Handler) updateCycle(e *core.RequestEvent) error {
@@ -40,6 +41,15 @@ func (h *Handler) updateCycle(e *core.RequestEvent) error {
 	}
 	id := domain.CycleID(e.Request.PathValue("cycle"))
 
+	if body.MapID != nil {
+		cycle, err := h.cycles.SetCycleMap(e.Request.Context(), actorOf(e), id, domain.IssueID(*body.MapID))
+		if err != nil {
+			return fail(e, err)
+		}
+		if body.Phase == nil && body.Resolution == nil {
+			return e.JSON(http.StatusOK, toCycleView(cycle))
+		}
+	}
 	if body.Resolution != nil {
 		cycle, err := h.cycles.ResolveCycle(e.Request.Context(), actorOf(e), id, *body.Resolution)
 		if err != nil {
@@ -54,5 +64,5 @@ func (h *Handler) updateCycle(e *core.RequestEvent) error {
 		}
 		return e.JSON(http.StatusOK, toCycleView(cycle))
 	}
-	return e.BadRequestError("nothing to update: pass phase or resolution", nil)
+	return e.BadRequestError("nothing to update: pass phase, resolution or map_id", nil)
 }

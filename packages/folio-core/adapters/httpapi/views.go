@@ -83,6 +83,7 @@ type cycleView struct {
 	Ordinal    int    `json:"ordinal"`
 	Phase      string `json:"phase"`
 	Resolution string `json:"resolution,omitempty"`
+	MapID      string `json:"map_id,omitempty"`
 	CreatedBy  string `json:"created_by,omitempty"`
 	CreatedAt  string `json:"created_at"`
 	UpdatedAt  string `json:"updated_at"`
@@ -92,7 +93,7 @@ type cycleView struct {
 func toCycleView(c domain.Cycle) cycleView {
 	out := cycleView{
 		ID: string(c.ID), ProjectID: string(c.ProjectID), IssueID: string(c.IssueID),
-		Ordinal: c.Ordinal, Phase: string(c.Phase), Resolution: c.Resolution,
+		Ordinal: c.Ordinal, Phase: string(c.Phase), Resolution: c.Resolution, MapID: string(c.MapID),
 		CreatedBy: string(c.CreatedBy),
 		CreatedAt: rfc3339(c.CreatedAt), UpdatedAt: rfc3339(c.UpdatedAt),
 	}
