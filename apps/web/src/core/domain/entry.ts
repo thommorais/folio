@@ -12,9 +12,10 @@ export const ENTRY_KIND = {
 	JOURNAL: 'journal',
 	DOC: 'doc',
 	LOG: 'log',
+	RESOLUTION: 'resolution',
 } as const
 
-export const ENTRY_KINDS = [ENTRY_KIND.JOURNAL, ENTRY_KIND.DOC, ENTRY_KIND.LOG] as const
+export const ENTRY_KINDS = [ENTRY_KIND.JOURNAL, ENTRY_KIND.DOC, ENTRY_KIND.LOG, ENTRY_KIND.RESOLUTION] as const
 
 export type EntryKind = (typeof ENTRY_KINDS)[number]
 

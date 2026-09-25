@@ -29,6 +29,7 @@ const toCycle = (record: CycleRecord): Cycle => ({
 	ordinal: record.ordinal ?? 0,
 	phase: record.phase as Phase,
 	resolution: record.resolution ?? '',
+	mapId: record.map ? toIssueId(record.map) : undefined,
 	createdBy: record.created_by ? toUserId(record.created_by) : undefined,
 	createdAt: new Date(record.created),
 	updatedAt: new Date(record.updated),

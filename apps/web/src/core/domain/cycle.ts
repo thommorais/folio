@@ -24,6 +24,7 @@ export type Cycle = {
 	readonly ordinal: number
 	readonly phase: Phase
 	readonly resolution: string
+	readonly mapId: IssueId | undefined
 	readonly createdBy: UserId | undefined
 	readonly createdAt: Date
 	readonly updatedAt: Date

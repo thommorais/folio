@@ -4,4 +4,5 @@ export const ENTRY_KIND_LABELS: Record<EntryKind, string> = {
 	journal: 'Journal',
 	doc: 'Doc',
 	log: 'Log',
+	resolution: 'Resolution',
 }

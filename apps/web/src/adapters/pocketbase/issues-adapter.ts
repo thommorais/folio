@@ -4,6 +4,7 @@ import { planId as toPlanId } from '_/core/domain/plan'
 import type { Issue, IssueKind, IssueStatus, Priority, Size, WayfinderType } from '_/core/domain/issue'
 import { isSize, issueId as toIssueId } from '_/core/domain/issue'
 import { withBlocked } from '_/core/domain/blocked'
+import { entryId as toEntryId } from '_/core/domain/entry'
 import type { Unsubscribe } from '_/core/ports/subscription'
 import type { IssueFilter, IssuesPort } from '_/core/ports/issues'
 import { err, ok, type Result } from '_/lib/result'
@@ -52,6 +53,8 @@ const toIssue = (record: IssueRecord): Issue => ({
 	dueDate: record.due_date ? new Date(record.due_date) : undefined,
 	wayfinder: record.wayfinder ? (record.wayfinder as WayfinderType) : undefined,
 	externalRef: record.external_ref ?? '',
+	resolution: record.resolution ?? '',
+	resolutionEntry: record.resolution_entry ? toEntryId(record.resolution_entry) : undefined,
 	createdBy: record.created_by ? toUserId(record.created_by) : undefined,
 	createdAt: new Date(record.created),
 	updatedAt: new Date(record.updated),

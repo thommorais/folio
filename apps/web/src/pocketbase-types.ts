@@ -130,6 +130,7 @@ export type JournCyclesRecord = {
 	created_by?: RecordIdString
 	id: string
 	issue: RecordIdString
+	map?: RecordIdString
 	ordinal: number
 	phase: JournCyclesPhaseOptions
 	project: RecordIdString
@@ -151,6 +152,7 @@ export const JournEntriesKindOptions = {
 	"journal": "journal",
 	"doc": "doc",
 	"log": "log",
+	"resolution": "resolution",
 } as const
 export type JournEntriesKindOptions = typeof JournEntriesKindOptions[keyof typeof JournEntriesKindOptions]
 export type JournEntriesRecord<Tmeta = unknown, Ttags = unknown> = {
@@ -250,6 +252,8 @@ export type JournIssuesRecord<Ttags = unknown> = {
 	position?: number
 	priority: JournIssuesPriorityOptions
 	project: RecordIdString
+	resolution?: string
+	resolution_entry?: RecordIdString
 	size?: number
 	slug: string
 	status: JournIssuesStatusOptions

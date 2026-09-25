@@ -1,4 +1,5 @@
 import type { Branded } from './branded';
+import type { EntryId } from './entry';
 import type { PlanId } from './plan';
 import type { ProjectId, UserId } from './project';
 
@@ -88,6 +89,8 @@ export type Issue = {
 	readonly dueDate: Date | undefined
 	readonly wayfinder: WayfinderType | undefined
 	readonly externalRef: string
+	readonly resolution: string
+	readonly resolutionEntry: EntryId | undefined
 	readonly createdBy: UserId | undefined
 	readonly createdAt: Date
 	readonly updatedAt: Date
