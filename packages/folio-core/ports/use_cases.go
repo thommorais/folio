@@ -164,6 +164,7 @@ type CycleUseCase interface {
 	OpenCycle(ctx context.Context, actor Actor, issue domain.IssueID) (domain.Cycle, error)
 	AdvancePhase(ctx context.Context, actor Actor, id domain.CycleID, phase domain.Phase) (domain.Cycle, error)
 	ResolveCycle(ctx context.Context, actor Actor, id domain.CycleID, resolution string) (domain.Cycle, error)
+	SetCycleMap(ctx context.Context, actor Actor, id domain.CycleID, mapID domain.IssueID) (domain.Cycle, error)
 }
 
 // BatchResult reports a partial success: what was written, and why the rest

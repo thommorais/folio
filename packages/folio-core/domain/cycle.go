@@ -18,6 +18,7 @@ type Cycle struct {
 	Ordinal    int
 	Phase      Phase
 	Resolution string
+	MapID      IssueID
 	CreatedBy  UserID
 	CreatedAt  time.Time
 	UpdatedAt  time.Time

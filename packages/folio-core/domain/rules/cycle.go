@@ -84,3 +84,35 @@ func CheckClosableIssue(status domain.IssueStatus, cycles []domain.Cycle) error 
 	}
 	return nil
 }
+
+func CheckCycleMap(c domain.Cycle, m domain.Issue) error {
+	if m.Kind != domain.IssueTicket || m.Wayfinder != domain.WayfinderMap {
+		return domain.Invalid("map", "must be a ticket with wayfinder map")
+	}
+	if m.ProjectID != c.ProjectID {
+		return domain.Invalid("map", "belongs to a different project")
+	}
+	if m.ID == c.IssueID {
+		return domain.Invalid("map", "cannot be the ticket the cycle runs on")
+	}
+	if c.IsClosed() || c.Phase != domain.PhasePlan {
+		return domain.Invalid("map", "can only be set while the cycle is in plan")
+	}
+	return nil
+}
+
+func CheckPlanClear(c domain.Cycle, to domain.Phase, children []domain.Issue) error {
+	if c.MapID == "" || c.Phase != domain.PhasePlan || to == domain.PhasePlan {
+		return nil
+	}
+	open := 0
+	for _, child := range children {
+		if child.Kind == domain.IssueTicket && !child.Status.IsTerminal() {
+			open++
+		}
+	}
+	if open > 0 {
+		return domain.Invalid("phase", "plan holds while "+strconv.Itoa(open)+" decision(s) on the map are open")
+	}
+	return nil
+}

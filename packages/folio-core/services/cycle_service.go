@@ -89,6 +89,15 @@ func (s *CycleService) AdvancePhase(ctx context.Context, actor ports.Actor, id d
 	if err := rules.CanTransitionPhase(cycle.Phase, phase); err != nil {
 		return domain.Cycle{}, err
 	}
+	if cycle.MapID != "" && cycle.Phase == domain.PhasePlan {
+		children, err := s.issues.ListByParent(ctx, cycle.MapID)
+		if err != nil {
+			return domain.Cycle{}, err
+		}
+		if err := rules.CheckPlanClear(cycle, phase, children); err != nil {
+			return domain.Cycle{}, err
+		}
+	}
 	cycle.Phase = phase
 	cycle.UpdatedAt = s.clock.Now()
 	if err := rules.ValidateCycle(cycle); err != nil {
@@ -118,5 +127,28 @@ func (s *CycleService) ResolveCycle(ctx context.Context, actor ports.Actor, id d
 	if err := rules.ValidateCycle(cycle); err != nil {
 		return domain.Cycle{}, err
 	}
+	return s.repo.Update(ctx, cycle)
+}
+
+func (s *CycleService) SetCycleMap(ctx context.Context, actor ports.Actor, id domain.CycleID, mapID domain.IssueID) (domain.Cycle, error) {
+	cycle, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return domain.Cycle{}, err
+	}
+	if _, err := s.guard.EnsureWrite(ctx, actor, cycle.ProjectID); err != nil {
+		return domain.Cycle{}, err
+	}
+	found, err := s.issues.GetByID(ctx, mapID)
+	if err != nil {
+		if notFound(err) {
+			return domain.Cycle{}, domain.Invalid("map", "does not exist")
+		}
+		return domain.Cycle{}, err
+	}
+	if err := rules.CheckCycleMap(cycle, found); err != nil {
+		return domain.Cycle{}, err
+	}
+	cycle.MapID = mapID
+	cycle.UpdatedAt = s.clock.Now()
 	return s.repo.Update(ctx, cycle)
 }

@@ -28,6 +28,7 @@ func toCycle(rec *core.Record) domain.Cycle {
 		Ordinal:    rec.GetInt("ordinal"),
 		Phase:      domain.Phase(rec.GetString("phase")),
 		Resolution: rec.GetString("resolution"),
+		MapID:      domain.IssueID(rec.GetString("map")),
 		CreatedBy:  domain.UserID(rec.GetString("created_by")),
 		CreatedAt:  rec.GetDateTime("created").Time(),
 		UpdatedAt:  rec.GetDateTime("updated").Time(),
@@ -41,6 +42,7 @@ func applyCycle(rec *core.Record, c domain.Cycle) {
 	rec.Set("ordinal", c.Ordinal)
 	rec.Set("phase", string(c.Phase))
 	rec.Set("resolution", c.Resolution)
+	rec.Set("map", string(c.MapID))
 	setDate(rec, "closed_at", c.ClosedAt)
 	if c.CreatedBy != "" {
 		rec.Set("created_by", string(c.CreatedBy))

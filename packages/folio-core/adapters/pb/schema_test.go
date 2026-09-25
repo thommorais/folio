@@ -17,6 +17,7 @@ func TestSchemaKeepsTheRelationsTheRepositoriesRead(t *testing.T) {
 	for _, want := range []struct{ collection, field string }{
 		{pb.ColPlans, "issue"},
 		{pb.ColCycles, "issue"},
+		{pb.ColCycles, "map"},
 		{pb.ColEntries, "issue"},
 		{pb.ColEntries, "plan"},
 		{pb.ColEntries, "cycle"},

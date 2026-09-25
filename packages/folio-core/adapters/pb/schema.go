@@ -360,6 +360,22 @@ func ensureIssueResolution(app core.App) error {
 	return app.Save(c)
 }
 
+func ensureCycleMap(app core.App) error {
+	c, err := app.FindCollectionByNameOrId(ColCycles)
+	if err != nil {
+		return err
+	}
+	if c.Fields.GetByName("map") != nil {
+		return nil
+	}
+	issues, err := app.FindCollectionByNameOrId(ColIssues)
+	if err != nil {
+		return err
+	}
+	c.Fields.Add(&core.RelationField{Name: "map", CollectionId: issues.Id, CascadeDelete: false, MaxSelect: 1})
+	return app.Save(c)
+}
+
 func ensureTags(app core.App) error {
 	if _, ok := find(app, ColTags); ok {
 		return nil
