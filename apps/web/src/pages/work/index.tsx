@@ -27,8 +27,6 @@ const issueItem = (scope: Scope, issue: Issue): WorkItem => ({
 	params: { ...scope, ticket: issue.slug },
 })
 
-// A todo has no page of its own: the todos list opens it in the preview sheet,
-// so the link carries the id as a search param there instead.
 const todoItem = (scope: Scope, todo: Issue): WorkItem => ({
 	id: todo.id,
 	title: todo.title,
@@ -36,8 +34,8 @@ const todoItem = (scope: Scope, todo: Issue): WorkItem => ({
 	muted: isTerminal(todo.status),
 	checked: todo.status === ISSUE_STATUS.DONE,
 	meta: [todo.priority, ...todo.tags],
-	to: '/$client/$domain/$slug/todos',
-	params: scope,
+	to: '/$client/$domain/$slug/tickets/$ticket',
+	params: { ...scope, ticket: todo.slug },
 })
 
 const planItem = (scope: Scope, plan: Plan): WorkItem => ({

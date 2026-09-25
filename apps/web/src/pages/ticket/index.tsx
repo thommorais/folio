@@ -208,9 +208,8 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 						{todos.issues.map(todo => (
 							<li key={todo.id}>
 								<Link
-									to='/$client/$domain/$slug/todos'
-									params={{ client, domain, slug: project }}
-									search={{ todo: todo.id }}
+									to='/$client/$domain/$slug/tickets/$ticket'
+									params={{ client, domain, slug: project, ticket: todo.slug }}
 									className='hover:bg-accent/40 flex w-full items-center gap-3 px-4 py-3 transition-colors'
 								>
 									<span

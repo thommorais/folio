@@ -5,7 +5,6 @@ import { Issues } from '_/pages/issues';
 import { asMember, asMembers, asSort, asString, asStrings } from '_/routes/search-params';
 
 export type TodosSearch = {
-	readonly todo?: string
 	readonly ticket?: string
 	readonly plan?: string
 	readonly statuses?: readonly IssueStatus[]
@@ -17,7 +16,6 @@ export type TodosSearch = {
 
 export const Route = createFileRoute('/_authenticated/$client/$domain/$slug/todos')({
 	validateSearch: (search: Record<string, unknown>): TodosSearch => ({
-		todo: asString(search.todo),
 		ticket: asString(search.ticket),
 		plan: asString(search.plan),
 		statuses: asMembers(ISSUE_STATUSES, search.statuses),
