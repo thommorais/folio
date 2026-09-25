@@ -123,3 +123,12 @@ func CheckCycleOwner(i domain.Issue) error {
 	}
 	return domain.Invalid("issue", "a "+string(i.Wayfinder)+" ticket is part of a plan; open the cycle on the ticket the plan is for")
 }
+
+func NextPhase(from domain.Phase) (domain.Phase, error) {
+	for i, p := range phaseOrder {
+		if p == from && i+1 < len(phaseOrder) {
+			return phaseOrder[i+1], nil
+		}
+	}
+	return "", domain.Invalid("phase", "act is the last phase; resolve the cycle instead")
+}

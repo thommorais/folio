@@ -155,3 +155,30 @@ func (s *CycleService) SetCycleMap(ctx context.Context, actor ports.Actor, id do
 	cycle.UpdatedAt = s.clock.Now()
 	return s.repo.Update(ctx, cycle)
 }
+
+func (s *CycleService) CurrentCycle(ctx context.Context, actor ports.Actor, ticket domain.IssueID) (domain.Cycle, error) {
+	cycles, err := s.ListCycles(ctx, actor, ticket)
+	if err != nil {
+		return domain.Cycle{}, err
+	}
+	current, ok := rules.CurrentCycle(cycles)
+	if !ok {
+		return domain.Cycle{}, domain.ErrNotFound
+	}
+	return current, nil
+}
+
+func (s *CycleService) NextPhase(ctx context.Context, actor ports.Actor, id domain.CycleID) (domain.Cycle, error) {
+	cycle, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return domain.Cycle{}, err
+	}
+	if _, err := s.guard.EnsureWrite(ctx, actor, cycle.ProjectID); err != nil {
+		return domain.Cycle{}, err
+	}
+	next, err := rules.NextPhase(cycle.Phase)
+	if err != nil {
+		return domain.Cycle{}, err
+	}
+	return s.AdvancePhase(ctx, actor, id, next)
+}

@@ -83,3 +83,45 @@ func TestDecisionTicketCannotOpenACycle(t *testing.T) {
 		t.Fatalf("want validation error, got %v", err)
 	}
 }
+
+func TestCurrentCycleAndNextPhase(t *testing.T) {
+	f := newTicketFixture(t)
+	ctx := t.Context()
+	work := f.ticket(t, f.project, "Mobile nav")
+
+	if _, err := f.cycleSvc.CurrentCycle(ctx, f.owner, work.ID); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("no cycle yet: want not found, got %v", err)
+	}
+
+	first, err := f.cycleSvc.OpenCycle(ctx, f.owner, work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []domain.Phase{domain.PhaseDo, domain.PhaseCheck, domain.PhaseAct} {
+		got, err := f.cycleSvc.NextPhase(ctx, f.owner, first.ID)
+		if err != nil || got.Phase != want {
+			t.Fatalf("got %s, %v; want %s", got.Phase, err, want)
+		}
+	}
+	if _, err := f.cycleSvc.NextPhase(ctx, f.owner, first.ID); !errors.Is(err, domain.ErrValidation) {
+		t.Fatalf("past act: want validation error, got %v", err)
+	}
+	if _, err := f.cycleSvc.NextPhase(ctx, f.outside, first.ID); errors.Is(err, domain.ErrValidation) || err == nil {
+		t.Fatalf("an outsider must be refused before the phase is judged, got %v", err)
+	}
+
+	if _, err := f.cycleSvc.ResolveCycle(ctx, f.owner, first.ID, "Shipped"); err != nil {
+		t.Fatal(err)
+	}
+	second, err := f.cycleSvc.OpenCycle(ctx, f.owner, work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	current, err := f.cycleSvc.CurrentCycle(ctx, f.owner, work.ID)
+	if err != nil || current.ID != second.ID {
+		t.Fatalf("current = %+v, %v; want cycle 2", current, err)
+	}
+	if _, err := f.cycleSvc.CurrentCycle(ctx, f.outside, work.ID); err == nil {
+		t.Fatal("an outsider must not read the cycle")
+	}
+}

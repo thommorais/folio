@@ -171,3 +171,17 @@ func TestCheckClosable(t *testing.T) {
 		}
 	})
 }
+
+func TestNextPhase(t *testing.T) {
+	for from, want := range map[domain.Phase]domain.Phase{
+		domain.PhasePlan: domain.PhaseDo, domain.PhaseDo: domain.PhaseCheck, domain.PhaseCheck: domain.PhaseAct,
+	} {
+		got, err := rules.NextPhase(from)
+		if err != nil || got != want {
+			t.Errorf("after %s: got %s, %v; want %s", from, got, err, want)
+		}
+	}
+	if _, err := rules.NextPhase(domain.PhaseAct); !errors.Is(err, domain.ErrValidation) {
+		t.Error("act is the last phase and has no next")
+	}
+}

@@ -78,6 +78,9 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	// slug lookup is not shadowed by it.
 	g.GET("/issues/{issue}/cycles", h.listCycles)
 	g.POST("/issues/{issue}/cycles", h.openCycle)
+	g.GET("/issues/{issue}/cycles/current", h.currentCycle)
+	g.PATCH("/issues/{issue}/cycles/current", h.updateCurrentCycle)
+	g.POST("/issues/{issue}/cycles/current/next", h.nextPhase)
 	g.PATCH("/cycles/{cycle}", h.updateCycle)
 
 	g.GET("/projects/{project}/issues", h.listIssues)

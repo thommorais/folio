@@ -102,4 +102,38 @@ func TestCycleMapOverTheAPI(t *testing.T) {
 	if res := do(http.MethodPatch, "/api/folio/cycles/"+cycle, `{"phase":"do"}`); res.Code != http.StatusBadRequest {
 		t.Fatalf("leave plan with an open decision = %d %s, want 400", res.Code, res.Body)
 	}
+
+	other := idOf(do(http.MethodPost, "/api/folio/projects/redesign/issues", `{"kind":"ticket","title":"Mobile nav"}`), http.StatusCreated)
+	if res := do(http.MethodGet, "/api/folio/issues/"+other+"/cycles/current", ""); res.Code != http.StatusNotFound {
+		t.Fatalf("current with no cycle = %d %s, want 404", res.Code, res.Body)
+	}
+	current := idOf(do(http.MethodPost, "/api/folio/issues/"+other+"/cycles", ``), http.StatusCreated)
+
+	phase := func(res *httptest.ResponseRecorder) string {
+		t.Helper()
+		if res.Code != http.StatusOK {
+			t.Fatalf("status = %d %s", res.Code, res.Body)
+		}
+		var out struct {
+			ID    string `json:"id"`
+			Phase string `json:"phase"`
+		}
+		if err := json.Unmarshal(res.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		if out.ID != current {
+			t.Fatalf("addressed cycle %q, want %q", out.ID, current)
+		}
+		return out.Phase
+	}
+
+	if got := phase(do(http.MethodGet, "/api/folio/issues/"+other+"/cycles/current", "")); got != "plan" {
+		t.Fatalf("phase = %q, want plan", got)
+	}
+	if got := phase(do(http.MethodPost, "/api/folio/issues/"+other+"/cycles/current/next", "")); got != "do" {
+		t.Fatalf("after next = %q, want do", got)
+	}
+	if got := phase(do(http.MethodPatch, "/api/folio/issues/"+other+"/cycles/current", `{"resolution":"Shipped"}`)); got != "do" {
+		t.Fatalf("after resolve = %q, want do", got)
+	}
 }
