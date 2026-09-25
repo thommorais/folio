@@ -39,6 +39,7 @@ type wayfinderNode struct {
 	// last must carry a resolution, since a new one cannot open over an
 	// unresolved round.
 	cycles []cycleSpec
+	logs   []ports.WriteEntryInput
 	// todos are steps filed directly under this ticket rather than under a
 	// plan, which is how work on a map ticket usually accumulates.
 	todos []ports.CreateIssueInput
@@ -305,18 +306,12 @@ picture survives dark mode and colourblindness. Status is the fill.`},
 							Body: `A tree, a board and a graph all fit the data. Pick one before anything
 gets drawn, because the layout code differs completely.`,
 						},
-						cycles: []cycleSpec{
-							{
-								phase:      domain.PhaseAct,
-								resolution: "A graph. The tree hides blockers, the board hides depth.",
-								logs: []ports.WriteEntryInput{
-									{Body: `Grilled the three options against one question: can you see, without
+						logs: []ports.WriteEntryInput{
+							{Body: `Grilled the three options against one question: can you see, without
 clicking, why the thing you want to work on is not startable?
 
 Tree: no, a blocker is a sibling somewhere else. Board: no, depth is gone.
 Graph: yes, that is exactly what an edge is.`},
-								},
-							},
 						},
 					},
 					{
@@ -333,17 +328,12 @@ Graph: yes, that is exactly what an edge is.`},
 at two hundred. Find where it stops being readable before committing to
 no layout library.`,
 						},
-						cycles: []cycleSpec{
-							{
-								phase: domain.PhaseCheck,
-								logs: []ports.WriteEntryInput{
-									{Body: `Generated maps at 10, 50 and 200 children. Up to ~40 the barycentre pass
+						logs: []ports.WriteEntryInput{
+							{Body: `Generated maps at 10, 50 and 200 children. Up to ~40 the barycentre pass
 keeps edges nearly vertical. Past that the crossings win and it wants a
 proper Sugiyama ordering sweep.`},
-									{Body: `Real maps in this workspace top out around 12 children, so ~40 is headroom
+							{Body: `Real maps in this workspace top out around 12 children, so ~40 is headroom
 enough. Revisit only if someone builds a map that big.`},
-								},
-							},
 						},
 					},
 					{

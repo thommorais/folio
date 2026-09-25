@@ -116,3 +116,10 @@ func CheckPlanClear(c domain.Cycle, to domain.Phase, children []domain.Issue) er
 	}
 	return nil
 }
+
+func CheckCycleOwner(i domain.Issue) error {
+	if i.Wayfinder == "" || i.Wayfinder == domain.WayfinderMap {
+		return nil
+	}
+	return domain.Invalid("issue", "a "+string(i.Wayfinder)+" ticket is part of a plan; open the cycle on the ticket the plan is for")
+}

@@ -74,3 +74,12 @@ func TestSetCycleMapRefusesWhatIsNotAMap(t *testing.T) {
 		t.Fatalf("a viewer cannot link a map, got %v", err)
 	}
 }
+
+func TestDecisionTicketCannotOpenACycle(t *testing.T) {
+	f := newTicketFixture(t)
+	question := f.decision(t, domain.WayfinderResearch, "How dense does the graph get")
+
+	if _, err := f.cycleSvc.OpenCycle(t.Context(), f.owner, question.ID); !errors.Is(err, domain.ErrValidation) {
+		t.Fatalf("want validation error, got %v", err)
+	}
+}

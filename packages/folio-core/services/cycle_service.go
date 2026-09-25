@@ -50,6 +50,9 @@ func (s *CycleService) OpenCycle(ctx context.Context, actor ports.Actor, ticket 
 	if _, err := s.guard.EnsureWrite(ctx, actor, owner.ProjectID); err != nil {
 		return domain.Cycle{}, err
 	}
+	if err := rules.CheckCycleOwner(owner); err != nil {
+		return domain.Cycle{}, err
+	}
 	existing, err := s.repo.ListByIssue(ctx, ticket)
 	if err != nil {
 		return domain.Cycle{}, err

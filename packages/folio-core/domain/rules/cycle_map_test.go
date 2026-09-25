@@ -96,3 +96,16 @@ func TestCheckPlanClear(t *testing.T) {
 		}
 	})
 }
+
+func TestCheckCycleOwner(t *testing.T) {
+	for _, w := range []domain.WayfinderType{domain.WayfinderResearch, domain.WayfinderPrototype, domain.WayfinderGrilling, domain.WayfinderTask} {
+		if !errors.Is(rules.CheckCycleOwner(domain.Issue{Kind: domain.IssueTicket, Wayfinder: w}), domain.ErrValidation) {
+			t.Errorf("a %s ticket is part of a plan and should not run its own cycle", w)
+		}
+	}
+	for _, w := range []domain.WayfinderType{"", domain.WayfinderMap} {
+		if err := rules.CheckCycleOwner(domain.Issue{Kind: domain.IssueTicket, Wayfinder: w}); err != nil {
+			t.Errorf("wayfinder %q: want nil, got %v", w, err)
+		}
+	}
+}
