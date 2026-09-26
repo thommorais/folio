@@ -35,17 +35,17 @@ export const ProjectCounts = ({ client, domain, slug }: Props) => {
 	}
 
 	return (
-		<div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+		<div className='grid grid-cols-4 gap-2 sm:gap-4'>
 			{entities.map((entity, index) => (
 				<StaggerItem key={entity} index={index}>
 					<Link to={routes[entity]} params={{ client, domain, slug }} className='block'>
 						<Card interactive>
-							<CardHeader>
-								<span className='text-dim text-xs'>{labels[entity]}</span>
+							<CardHeader className='space-y-0.5 p-3 sm:space-y-1.5 sm:p-6'>
+								<span className='text-dim truncate text-[11px] sm:text-xs'>{labels[entity]}</span>
 								{state.status === Status.Loading ? (
-									<Skeleton className='mt-1 h-8 w-10' />
+									<Skeleton className='mt-1 h-6 w-8 sm:h-8 sm:w-10' />
 								) : (
-									<span className='font-serif text-2xl tabular-nums'>
+									<span className='font-serif text-xl tabular-nums sm:text-2xl'>
 										<AnimatedNumber value={state.counts[entity]} />
 									</span>
 								)}
