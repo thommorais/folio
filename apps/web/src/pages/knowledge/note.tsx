@@ -13,8 +13,8 @@ export const KnowledgeNote = () => {
 	const { note: ref } = useParams({ from: '/_authenticated/knowledge/$note' })
 	const state = useKnowledge(ref)
 
-	if (state.status === Status.Idle || state.status === Status.Loading) return <p className='text-dim text-sm'>Loading…</p>
-	if (state.status === Status.Failed) return <p className='text-sm text-red-500'>{state.message}</p>
+	if (state.status === Status.Idle || state.status === Status.Loading) return null
+	if (state.status === Status.Failed) return <p className='text-destructive text-sm'>{state.message}</p>
 	if (state.status === Status.Gone) {
 		return (
 			<RecordGone title={state.title}>
@@ -30,7 +30,7 @@ export const KnowledgeNote = () => {
 	return (
 		<article className='space-y-8'>
 			<header className='space-y-3'>
-				<Link to='/knowledge' className='text-dimmer hover:text-accent text-xs'>
+				<Link to='/knowledge' className='text-dimmer hover:text-foreground text-xs transition-colors'>
 					← Knowledge
 				</Link>
 

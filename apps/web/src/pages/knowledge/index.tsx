@@ -1,16 +1,54 @@
-import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
-import { Tag } from '_/components/issue/tag'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Heading } from '@thom/ui/heading'
-import { Status } from '_/lib/async-status'
 import { useKnowledgeList } from '_/app/use-knowledge'
+import { Tags } from '_/components/issue/tag'
+import { FilterBar } from '_/components/list/filter-bar'
+import { StaggerItem } from '_/components/motion/stagger'
+import { Status } from '_/lib/async-status'
+import type { KnowledgeSearch } from '_/routes/_authenticated/knowledge'
 
-const formatDate = (date: Date): string =>
-	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' })
 
 export const KnowledgeList = () => {
-	const [term, setTerm] = useState('')
-	const state = useKnowledgeList(term)
+	const search = useSearch({ from: '/_authenticated/knowledge/' })
+	const navigate = useNavigate()
+	const state = useKnowledgeList(search.q ?? '')
+
+	const list = (() => {
+		if (state.status === Status.Loading) return null
+
+		if (state.status === Status.Failed) {
+			return <p className='text-destructive text-sm'>{state.message}</p>
+		}
+
+		if (state.notes.length === 0) {
+			return (
+				<p className='text-dim text-sm'>
+					{search.q !== undefined ? 'No notes match.' : 'Nothing here yet. Add one with `folio kb add`.'}
+				</p>
+			)
+		}
+
+		return (
+			<div className='border-border divide-border divide-y border'>
+				{state.notes.map((note, index) => (
+					<StaggerItem key={note.id} index={index}>
+						<Link
+							to='/knowledge/$note'
+							params={{ note: note.slug }}
+							className='hover:bg-accent/40 active:bg-accent/60 flex h-11 items-center gap-3 px-4 transition-colors'
+						>
+							<span className='min-w-0 flex-1 truncate text-sm'>{note.title}</span>
+							<Tags tags={note.tags} className='hidden shrink-0 flex-nowrap sm:flex' />
+							<span className='text-dimmer w-12 shrink-0 text-right text-xs tabular-nums'>
+								{dayMonth.format(note.updatedAt)}
+							</span>
+						</Link>
+					</StaggerItem>
+				))}
+			</div>
+		)
+	})()
 
 	return (
 		<section className='space-y-6'>
@@ -21,42 +59,17 @@ export const KnowledgeList = () => {
 				</p>
 			</header>
 
-			<input
-				className='border-line bg-surface w-full rounded-md border px-3 py-2 text-sm'
-				placeholder='Filter by title or body'
-				value={term}
-				onChange={event => setTerm(event.target.value)}
-			/>
-
-			{state.status === Status.Loading && <p className='text-dim text-sm'>Loading…</p>}
-			{state.status === Status.Failed && <p className='text-sm text-red-500'>{state.message}</p>}
-
-			{state.status === Status.Ready && state.notes.length === 0 && (
-				<p className='text-dim text-sm'>Nothing here yet. Add one with `folio kb add`.</p>
-			)}
-
-			{state.status === Status.Ready && state.notes.length > 0 && (
-				<ul className='divide-line divide-y'>
-					{state.notes.map(note => (
-						<li key={note.id} className='py-3'>
-							<Link
-								to='/knowledge/$note'
-								params={{ note: note.slug }}
-								className='hover:text-accent flex flex-col gap-1'
-							>
-								<span className='font-medium'>{note.title}</span>
-								<span className='text-dimmer flex flex-wrap items-center gap-2 text-xs'>
-									<span className='font-mono'>{note.slug}</span>
-									<span>{formatDate(note.updatedAt)}</span>
-									{note.tags.map(tag => (
-										<Tag key={tag} tag={tag} />
-									))}
-								</span>
-							</Link>
-						</li>
-					))}
-				</ul>
-			)}
+			<div className='space-y-4'>
+				<FilterBar
+					placeholder='Search knowledge...'
+					term={search.q}
+					chips={[]}
+					onSearch={q => {
+						void navigate({ from: '/knowledge/', to: '.', search: (prev: KnowledgeSearch) => ({ ...prev, q }) })
+					}}
+				/>
+				{list}
+			</div>
 		</section>
 	)
 }
