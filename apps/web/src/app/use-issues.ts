@@ -1,6 +1,7 @@
 import { foldUpdates } from '_/adapters/pocketbase/fold-updates';
 import { withBlocked } from '_/core/domain/blocked';
 import type { Issue } from '_/core/domain/issue';
+import { sortIssues } from '_/core/domain/order';
 import type { IssueFilter } from '_/core/ports/issues';
 import { Status } from '_/lib/async-status';
 import { useContainer } from './container';
@@ -16,10 +17,15 @@ export const useIssues = (project: string, filter?: IssueFilter): IssuesState =>
 	const { issues, connection } = useContainer()
 	const key = useFilterKey(filter)
 
+	const current = JSON.parse(key) as IssueFilter | undefined
+
 	const state = useLiveList<Issue>({
-		load: () => issues.list(project, JSON.parse(key) as IssueFilter),
-		subscribe: update => issues.subscribeToList(project, update, JSON.parse(key) as IssueFilter),
-		fold: (rows, row, action) => withBlocked(foldUpdates(rows, row, action)),
+		load: async () => {
+			const result = await issues.list(project, current)
+			return result.success ? { ...result, value: sortIssues(result.value, current?.sort) } : result
+		},
+		subscribe: update => issues.subscribeToList(project, update, current),
+		fold: (rows, row, action) => sortIssues(withBlocked(foldUpdates(rows, row, action)), current?.sort),
 		connection,
 		deps: [project, key, issues],
 	})

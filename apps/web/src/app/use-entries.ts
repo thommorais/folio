@@ -1,5 +1,6 @@
 import { foldUpdates } from '_/adapters/pocketbase/fold-updates'
 import type { Entry } from '_/core/domain/entry'
+import { sortEntries } from '_/core/domain/order'
 import type { EntryFilter } from '_/core/ports/entries'
 import { useFilterKey } from './realtime/use-filter-key'
 import { useLiveList } from './realtime/use-live-list'
@@ -15,10 +16,15 @@ export const useEntries = (project: string, filter?: EntryFilter): EntriesState 
 	const { entries, connection } = useContainer()
 	const key = useFilterKey(filter)
 
+	const current = JSON.parse(key) as EntryFilter | undefined
+
 	const state = useLiveList<Entry>({
-		load: () => entries.list(project, JSON.parse(key) as EntryFilter),
-		subscribe: update => entries.subscribeToList(project, update, JSON.parse(key) as EntryFilter),
-		fold: foldUpdates,
+		load: async () => {
+			const result = await entries.list(project, current)
+			return result.success ? { ...result, value: sortEntries(result.value, current?.sort) } : result
+		},
+		subscribe: update => entries.subscribeToList(project, update, current),
+		fold: (rows, row, action) => sortEntries(foldUpdates(rows, row, action), current?.sort),
 		connection,
 		deps: [project, key, entries],
 	})
