@@ -36,7 +36,7 @@ const snippetLen = 200
 // bm25Weights scores title far above body, because a query that names a record
 // is almost always looking for that record. The eight leading zeros are the
 // UNINDEXED columns, which contribute nothing but still occupy a position.
-const bm25Weights = "0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0"
+const bm25Weights = "0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 20.0"
 
 type searchRow struct {
 	Kind        string `db:"kind"`

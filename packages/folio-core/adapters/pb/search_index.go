@@ -36,6 +36,7 @@ const indexColumns = `(
 	created UNINDEXED,
 	title,
 	body,
+	refs,
 	tokenize='porter unicode61 remove_diacritics 2 tokenchars ''_-'''
 )`
 
@@ -57,6 +58,7 @@ type indexed struct {
 	Title      string
 	Body       string
 	Slug       string
+	Refs       string
 	Tags       string
 	// Where is an extra predicate, in the same `{a}` form, that a row must
 	// satisfy to be indexed at all.
@@ -110,6 +112,13 @@ func (s indexed) scopeExpr() string {
 	return "'" + scopeProject + "'"
 }
 
+func (s indexed) refsExpr() string {
+	if s.Refs != "" {
+		return s.Refs
+	}
+	return noRefs
+}
+
 // projectExpr defaults to the row's own project column.
 func (s indexed) projectExpr() string {
 	if s.Project != "" {
@@ -125,6 +134,7 @@ func expand(fragment, alias string) string {
 
 const (
 	noSlug = "''"
+	noRefs = "''"
 	noTags = "'[]'"
 
 	// scopeProject is fenced by membership; scopeGlobal is readable by every
@@ -149,6 +159,7 @@ var sources = []indexed{
 		Title:     `CASE WHEN {a}.title != '' THEN {a}.title WHEN {a}.kind = ` + quote(domain.EntryResolution) + ` THEN 'Resolution' ELSE 'Work log' END`,
 		Body:      `{a}.body`,
 		Slug:      `{a}.slug`,
+		Refs:      `{a}.slug || ' ' || {a}.external_ref`,
 		TagTarget: ports.TagEntry,
 	},
 	{
@@ -157,6 +168,7 @@ var sources = []indexed{
 		Title:      `{a}.title`,
 		Body:       `{a}.body`,
 		Slug:       `{a}.slug`,
+		Refs:       `{a}.slug || ' ' || {a}.external_ref`,
 		TagTarget:  ports.TagIssue,
 	},
 	{
@@ -187,6 +199,7 @@ var sources = []indexed{
 		Title:      `{a}.title`,
 		Body:       `{a}.body`,
 		Slug:       `{a}.slug`,
+		Refs:       `{a}.slug`,
 		// The one global source: a note is readable by every signed-in user,
 		// so it must answer a search whether or not it names a project, and
 		// whichever project the caller happens to be scoped to.
@@ -243,11 +256,11 @@ func ensureSearchIndex(app core.App) error {
 
 // indexColumnList is the insert target, shared by the triggers and the
 // backfill so the two cannot drift apart.
-const indexColumnList = "source, kind, rec_id, slug, project, scope, tags, created, title, body"
+const indexColumnList = "source, kind, rec_id, slug, project, scope, tags, created, title, body, refs"
 
 // selectFor builds the SELECT that produces one index row from a source row.
 func (s indexed) selectFor(alias string) string {
-	return fmt.Sprintf(`SELECT '%s', %s, %s.id, %s, %s, %s, %s, %s.created, %s, %s`,
+	return fmt.Sprintf(`SELECT '%s', %s, %s.id, %s, %s, %s, %s, %s.created, %s, %s, %s`,
 		s.Collection,
 		expand(s.Kind, alias),
 		alias,
@@ -258,6 +271,7 @@ func (s indexed) selectFor(alias string) string {
 		alias,
 		expand(s.Title, alias),
 		expand(s.Body, alias),
+		expand(s.refsExpr(), alias),
 	)
 }
 

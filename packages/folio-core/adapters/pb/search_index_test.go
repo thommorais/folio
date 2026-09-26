@@ -242,6 +242,61 @@ func TestIdentifiersSurviveTokenizing(t *testing.T) {
 	}
 }
 
+// A pasted tracker key or slug names exactly one record, so both are indexed
+// and either finds it, whatever case it arrives in.
+func TestExternalRefAndSlugFindTheRecord(t *testing.T) {
+	s := setup(t)
+
+	todo := newRecord(t, s.app, pb.ColIssues, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "todo",
+		"slug": "search-ranking-ignores-recency", "title": "Search ranking ignores recency",
+		"status": "open", "priority": "high", "external_ref": "FOLIO-31",
+	})
+	entry := newRecord(t, s.app, pb.ColEntries, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "journal",
+		"slug": "deploy-day", "title": "Deploy day", "external_ref": "XWWP-4501",
+	})
+
+	for _, c := range []struct {
+		term string
+		id   string
+	}{
+		{"FOLIO-31", todo.Id},
+		{"folio-31", todo.Id},
+		{"search-ranking-ignores-recency", todo.Id},
+		{"XWWP-4501", entry.Id},
+		{"deploy-day", entry.Id},
+	} {
+		t.Run(c.term, func(t *testing.T) {
+			if _, ok := find(search(t, s.app, s.project.Id, domain.SearchQuery{Text: c.term}), c.id); !ok {
+				t.Errorf("%q does not find its record", c.term)
+			}
+		})
+	}
+}
+
+// A record that carries the key outranks one that only mentions it in prose.
+func TestExternalRefOutranksAMention(t *testing.T) {
+	s := setup(t)
+
+	owner := newRecord(t, s.app, pb.ColIssues, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "ticket",
+		"slug": "consent-banner", "title": "Consent banner", "status": "open",
+		"priority": "low", "external_ref": "XWWP-4501",
+	})
+	// Created second, so recency alone would rank it first.
+	newRecord(t, s.app, pb.ColEntries, map[string]any{
+		"domain": s.domain.Id, "project": s.project.Id, "kind": "doc",
+		"slug": "banner-notes", "title": "Banner notes", "body": "follow-up to XWWP-4501",
+	})
+
+	got := ids(search(t, s.app, s.project.Id, domain.SearchQuery{Text: "XWWP-4501"}))
+
+	if len(got) == 0 || got[0] != owner.Id {
+		t.Errorf("ranked %v, want the record carrying the key (%s) first", got, owner.Id)
+	}
+}
+
 // Filters narrow a ranked result rather than being applied to a separate scan.
 //
 // The records are written through the repository rather than by setting the
