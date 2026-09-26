@@ -10,5 +10,9 @@ export const Route = createFileRoute('/_authenticated/knowledge/')({
 	validateSearch: (search: Record<string, unknown>): KnowledgeSearch => ({
 		q: asString(search.q),
 	}),
-	component: KnowledgeList,
+	component: () => (
+		<div className='mx-auto w-full max-w-5xl'>
+			<KnowledgeList />
+		</div>
+	),
 })
