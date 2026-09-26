@@ -1,24 +1,17 @@
 import { Check, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useCopy } from '_/app/use-copy'
 import { getHighlighter, resolveLanguage, THEMES } from './highlighter'
 
 const CopyButton = ({ code }: { readonly code: string }) => {
-	const [copied, setCopied] = useState(false)
-
-	useEffect(() => {
-		if (!copied) return
-
-		const timer = setTimeout(() => setCopied(false), 2000)
-
-		return () => clearTimeout(timer)
-	}, [copied])
+	const { copied, copy } = useCopy()
 
 	return (
 		<button
 			type='button'
 			aria-label={copied ? 'Copied' : 'Copy code'}
 			onClick={() => {
-				void navigator.clipboard.writeText(code).then(() => setCopied(true))
+				void copy(code)
 			}}
 			className='text-dim hover:text-foreground absolute top-2 right-2 cursor-pointer p-1 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100'
 		>
