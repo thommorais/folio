@@ -354,15 +354,20 @@ func renderProjectDetail(project client.Project) error {
 	if project.Descr != "" {
 		fmt.Printf("\n%s\n", project.Descr)
 	}
-	if len(project.Members) > 0 {
-		fmt.Println("\nmembers:")
-		for _, member := range project.Members {
-			who := member.Email
-			if member.Name != "" {
-				who = member.Name + " <" + member.Email + ">"
-			}
-			fmt.Printf("  %-8s %s\n", member.Role, who)
-		}
-	}
+	renderMembers(project.Members)
 	return nil
+}
+
+func renderMembers(members []client.Member) {
+	if len(members) == 0 {
+		return
+	}
+	fmt.Println("\nmembers:")
+	for _, member := range members {
+		who := member.Email
+		if member.Name != "" {
+			who = member.Name + " <" + member.Email + ">"
+		}
+		fmt.Printf("  %-8s %s\n", member.Role, who)
+	}
 }

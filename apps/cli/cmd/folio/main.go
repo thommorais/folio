@@ -65,6 +65,7 @@ func main() {
 		configCommand(),
 		cycleCommand(),
 		docCommand(),
+		domainCommand(),
 		journalCommand(),
 		knowledgeCommand(),
 		loginCommand(),
