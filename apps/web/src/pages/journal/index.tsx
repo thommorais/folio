@@ -11,6 +11,7 @@ import { JournalFilters } from './journal-filters'
 import { ENTRY_KIND_LABELS } from './kind-labels'
 import { Status } from '_/lib/async-status'
 import { LoadError } from '_/components/load-error'
+import { ExternalRef } from '_/components/issue/external-ref'
 
 const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' })
 
@@ -65,7 +66,7 @@ const Journal = () => {
 
 							<div className='flex flex-wrap items-center gap-2 pt-1'>
 								{entry.branch && <span className='text-dimmer font-mono text-xs'>{entry.branch}</span>}
-								{entry.externalRef && <span className='text-dimmer font-mono text-xs'>{entry.externalRef}</span>}
+								{entry.externalRef && <ExternalRef value={entry.externalRef} />}
 								{entry.pr && <span className='text-dimmer font-mono text-xs'>#{entry.pr}</span>}
 								{entry.tags.map(tag => (
 									<Tag key={tag} tag={tag} />

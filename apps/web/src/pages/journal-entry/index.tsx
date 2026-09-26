@@ -12,6 +12,7 @@ import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels'
 import { useScope } from '_/routing/use-scope'
 import { Status } from '_/lib/async-status'
 import { LoadError } from '_/components/load-error'
+import { ExternalRef } from '_/components/issue/external-ref'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
@@ -35,7 +36,7 @@ const EntryBody = ({ project, entry }: { readonly project: string; readonly entr
 					<span>{formatDate(entry.createdAt)}</span>
 					{entry.branch && <span className='font-mono'>{entry.branch}</span>}
 					{entry.pr && <span className='font-mono'>#{entry.pr}</span>}
-					{entry.externalRef && <span className='font-mono'>{entry.externalRef}</span>}
+					{entry.externalRef && <ExternalRef value={entry.externalRef} />}
 					{entry.tags.map(tag => (
 						<Tag key={tag} tag={tag} />
 					))}

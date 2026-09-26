@@ -11,6 +11,7 @@ import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels'
 import { ISSUE_STATUS } from '_/core/domain/issue'
 import { PLAN_STATUS } from '_/core/domain/plan'
+import { ExternalRef } from '_/components/issue/external-ref'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
@@ -83,7 +84,7 @@ const IssueView = ({ item }: { readonly item: Extract<SharedItem, { kind: typeof
 				<div className='flex flex-wrap items-center gap-2'>
 					<span className='text-dim text-xs'>{ISSUE_STATUS_LABELS[issue.status]}</span>
 					<span className='text-dimmer font-mono text-xs'>{issue.priority}</span>
-					{issue.externalRef && <span className='text-dimmer font-mono text-xs'>{issue.externalRef}</span>}
+					{issue.externalRef && <ExternalRef value={issue.externalRef} />}
 					<Tags tags={issue.tags} />
 				</div>
 				{issue.body && <Markdown>{issue.body}</Markdown>}

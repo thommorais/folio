@@ -14,6 +14,7 @@ import { useScope } from '_/routing/use-scope';
 import { EmptyState } from '_/components/empty-state';
 import { IssueFilters } from './issue-filters';
 import { LoadError } from '_/components/load-error';
+import { ExternalRef } from '_/components/issue/external-ref';
 
 type IssuesSearch = {
 	readonly statuses?: readonly IssueStatus[]
@@ -96,7 +97,7 @@ const Row = ({
 						!row.isContext && (
 							<>
 								{issue.wayfinder && <Badge color='muted'>{issue.wayfinder}</Badge>}
-								{issue.externalRef && <span className='text-dimmer font-mono text-xs'>{issue.externalRef}</span>}
+								{issue.externalRef && <ExternalRef value={issue.externalRef} />}
 							</>
 						)
 					}

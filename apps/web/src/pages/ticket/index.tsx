@@ -28,6 +28,7 @@ import { CycleTimeline } from './cycle-timeline';
 import { MapFrontier } from './map-frontier';
 import { SHARE_KIND } from '_/core/domain/share';
 import { LoadError } from '_/components/load-error';
+import { ExternalRef } from '_/components/issue/external-ref';
 
 const statusLabels: Record<IssueStatus, string> = {
 	open: 'Open',
@@ -142,7 +143,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 					</span>
 					{ticket.wayfinder && <Badge color='neutral'>{ticket.wayfinder}</Badge>}
 					{current && <CycleChip cycle={current} />}
-					{ticket.externalRef && <span className='text-dimmer font-mono text-xs'>{ticket.externalRef}</span>}
+					{ticket.externalRef && <ExternalRef value={ticket.externalRef} />}
 					{ticket.tags.map(tag => (
 						<Tag key={tag} tag={tag} />
 					))}
