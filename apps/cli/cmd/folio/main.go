@@ -66,6 +66,7 @@ func main() {
 		cycleCommand(),
 		docCommand(),
 		domainCommand(),
+		interviewCommand(),
 		journalCommand(),
 		knowledgeCommand(),
 		loginCommand(),
