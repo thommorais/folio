@@ -1,8 +1,9 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { DropdownMenuItem } from '@thom/ui/dropdown-menu'
 import { useIssues } from '_/app/use-issues'
-import { ISSUE_STATUSES, PRIORITIES, ISSUE_KIND, type IssueStatus, type Priority } from '_/core/domain/issue'
-import { PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan'
+import { DEFAULT_ISSUE_STATUSES, ISSUE_STATUSES, PRIORITIES, ISSUE_KIND, type IssueStatus, type Priority } from '_/core/domain/issue'
+import { DEFAULT_PLAN_STATUSES, PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan'
+import { defaultChip } from '_/components/list/default-chip'
 import { WORK_SORT_FIELDS, type WorkSortField } from '_/core/ports/sort'
 import { chipPerValue, ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar'
 import { SortMenu } from '_/components/list/sort-menu'
@@ -48,6 +49,16 @@ const WorkFilters = () => {
 			},
 		})
 	}
+	const hidingIssues = defaultChip(FILTER_KEY.STATUSES, search.statuses, ISSUE_STATUSES, DEFAULT_ISSUE_STATUSES, status => ISSUE_STATUS_LABELS[status].toLowerCase(), all => {
+		setFilter({ statuses: all })
+	})
+	if (hidingIssues) chips.push(hidingIssues)
+
+	const hidingPlans = defaultChip(FILTER_KEY.PLAN_STATUSES, search.planStatuses, PLAN_STATUSES, DEFAULT_PLAN_STATUSES, status => PLAN_STATUS_LABELS[status].toLowerCase(), all => {
+		setFilter({ planStatuses: all })
+	})
+	if (hidingPlans) chips.push({ ...hidingPlans, label: `${hidingPlans.label} plans` })
+
 	chips.push(
 		...chipPerValue(FILTER_KEY.STATUSES, search.statuses, status => ISSUE_STATUS_LABELS[status], statuses => {
 			setFilter({ statuses })

@@ -128,9 +128,10 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 
 	const filtered =
 		search.q !== undefined ||
-		statuses !== undefined ||
+		search.statuses !== undefined ||
 		search.tags !== undefined ||
 		search.priority !== undefined
+	const narrowed = filtered || statuses !== undefined
 
 	const everything = useIssues(slug, { kind, sort: search.sort })
 
@@ -147,7 +148,7 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 			return <EmptyState message={`No ${emptyLabel} yet.`} command={`folio ${kind} create "<title>" -p ${slug}`} />
 		}
 
-		const context = filtered && everything.status === Status.Ready ? everything.issues : []
+		const context = narrowed && everything.status === Status.Ready ? everything.issues : []
 		const rows = buildIssueTree(state.issues, { context })
 
 		return (

@@ -6,7 +6,8 @@ import { useEffect, useEffectEvent, useState } from 'react';
 import { useContainer } from './container';
 import { collectCounts, type CountsState } from './counts';
 import { useSubscription } from './realtime/use-subscription';
-import { ISSUE_KIND } from '_/core/domain/issue';
+import { DEFAULT_ISSUE_STATUSES, ISSUE_KIND } from '_/core/domain/issue';
+import { DEFAULT_PLAN_STATUSES } from '_/core/domain/plan';
 
 export const useCounts = (project: string): CountsState => {
 	const { entries, issues, plans, connection } = useContainer()
@@ -14,9 +15,9 @@ export const useCounts = (project: string): CountsState => {
 
 	const load = useEffectEvent(async () => {
 		const results = await Promise.all([
-			issues.count(project, { kind: ISSUE_KIND.TICKET }),
-			plans.count(project),
-			issues.count(project, { kind: ISSUE_KIND.TODO }),
+			issues.count(project, { kind: ISSUE_KIND.TICKET, status: DEFAULT_ISSUE_STATUSES }),
+			plans.count(project, { status: DEFAULT_PLAN_STATUSES }),
+			issues.count(project, { kind: ISSUE_KIND.TODO, status: DEFAULT_ISSUE_STATUSES }),
 			// The journal lists both kinds, so its tile counts both.
 			entries.count(project, { kinds: ADDRESSABLE_KINDS }),
 		])

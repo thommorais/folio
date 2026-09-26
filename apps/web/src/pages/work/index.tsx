@@ -4,8 +4,8 @@ import { usePlans } from '_/app/use-plans';
 import { cn } from '@thom/libs/cn';
 import { IssueLine } from '_/components/issue/issue-line';
 import { Tags } from '_/components/issue/tag';
-import { ISSUE_KIND, ISSUE_STATUS, type Issue } from '_/core/domain/issue';
-import { isTerminal as isPlanTerminal, PLAN_STATUS, type Plan } from '_/core/domain/plan';
+import { DEFAULT_ISSUE_STATUSES, ISSUE_KIND, type Issue } from '_/core/domain/issue';
+import { DEFAULT_PLAN_STATUSES, isTerminal as isPlanTerminal, type Plan } from '_/core/domain/plan';
 import { Status } from '_/lib/async-status';
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels';
 import { useScope } from '_/routing/use-scope';
@@ -70,7 +70,7 @@ const Work = () => {
 	const tickets = useIssues(slug, {
 		kind: ISSUE_KIND.TICKET,
 		search: term,
-		status: search.statuses || [ISSUE_STATUS.IN_PROGRESS, ISSUE_STATUS.OPEN, ISSUE_STATUS.BLOCKED],
+		status: search.statuses ?? DEFAULT_ISSUE_STATUSES,
 		priority: search.priority,
 		tags: search.tags,
 		sort: search.sort,
@@ -79,7 +79,7 @@ const Work = () => {
 	const todos = useIssues(slug, {
 		kind: ISSUE_KIND.TODO,
 		search: term,
-		status: search.statuses || [ISSUE_STATUS.IN_PROGRESS, ISSUE_STATUS.OPEN, ISSUE_STATUS.BLOCKED],
+		status: search.statuses ?? DEFAULT_ISSUE_STATUSES,
 		priority: search.priority,
 		tags: search.tags,
 		parentId: search.ticket,
@@ -88,7 +88,7 @@ const Work = () => {
 
 	const plans = usePlans(slug, {
 		search: term,
-		status: search.planStatuses || [PLAN_STATUS.ACTIVE],
+		status: search.planStatuses ?? DEFAULT_PLAN_STATUSES,
 		tags: search.tags,
 		ticketId: search.ticket,
 		sort: search.sort,

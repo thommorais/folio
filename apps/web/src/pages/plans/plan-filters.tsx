@@ -4,6 +4,7 @@ import { useIssues } from '_/app/use-issues';
 import { chipPerValue, ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar';
 import { SortMenu } from '_/components/list/sort-menu';
 import { DEFAULT_PLAN_STATUSES, PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan';
+import { defaultChip } from '_/components/list/default-chip';
 import { PLAN_SORT_FIELDS, type PlanSortField } from '_/core/ports/sort';
 import { Status } from '_/lib/async-status';
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary';
@@ -46,6 +47,11 @@ const PlanFilters = () => {
 			},
 		})
 	}
+	const hiding = defaultChip(FILTER_KEY.STATUSES, search.statuses, PLAN_STATUSES, DEFAULT_PLAN_STATUSES, status => PLAN_STATUS_LABELS[status].toLowerCase(), all => {
+		setFilter({ statuses: all })
+	})
+	if (hiding) chips.push(hiding)
+
 	chips.push(
 		...chipPerValue(FILTER_KEY.STATUSES, search.statuses, status => PLAN_STATUS_LABELS[status], statuses => {
 			setFilter({ statuses })

@@ -34,9 +34,7 @@ export const ISSUE_STATUSES = [
 
 export type IssueStatus = (typeof ISSUE_STATUSES)[number]
 
-export const DEFAULT_TICKET_STATUSES: readonly IssueStatus[] = ISSUE_STATUSES.filter(status => status !== ISSUE_STATUS.DONE && status !== ISSUE_STATUS.CANCELLED)
-
-export const DEFAULT_TODO_STATUSES: readonly IssueStatus[] = ISSUE_STATUSES.filter(status => status !== ISSUE_STATUS.CANCELLED)
+export const DEFAULT_ISSUE_STATUSES: readonly IssueStatus[] = ISSUE_STATUSES.filter(status => status !== ISSUE_STATUS.DONE && status !== ISSUE_STATUS.CANCELLED)
 
 export const PRIORITY = {
 	LOW: 'low',

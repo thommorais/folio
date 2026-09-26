@@ -1,5 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { chipPerValue, ActiveFilter, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle, FILTER_KEY } from '_/components/list/filter-bar';
+import { defaultChip } from '_/components/list/default-chip';
+import { ActiveFilter, chipPerValue, FILTER_KEY, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar';
 import { SortMenu } from '_/components/list/sort-menu';
 import { ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue';
 import { ISSUE_SORT_FIELDS, type IssueSortField, type SortDirection } from '_/core/ports/sort';
@@ -35,6 +36,13 @@ const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly
 
 	const chips: ActiveFilter[] = []
 
+	const hiding =
+		defaultStatuses &&
+		defaultChip(FILTER_KEY.STATUSES, search.statuses, ISSUE_STATUSES, defaultStatuses, status => ISSUE_STATUS_LABELS[status].toLowerCase(), all => {
+			setFilter({ statuses: all })
+		})
+	if (hiding) chips.push(hiding)
+
 	chips.push(
 		...chipPerValue(FILTER_KEY.STATUSES, search.statuses, status => ISSUE_STATUS_LABELS[status], statuses => {
 			setFilter({ statuses })
@@ -61,7 +69,7 @@ const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly
 
 	return (
 		<FilterBar
-			placeholder='Search issues...'
+			placeholder='Search...'
 			term={search.q}
 			onSearch={q => {
 				setFilter({ q })
