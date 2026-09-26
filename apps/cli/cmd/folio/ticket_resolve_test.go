@@ -233,3 +233,33 @@ func TestAssigneeMeResolvesTheSignedInUser(t *testing.T) {
 		}
 	})
 }
+
+func TestBriefShowsTheCurrentPlan(t *testing.T) {
+	stdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	t.Cleanup(func() { os.Stdout = stdout })
+
+	err = renderBrief(client.TicketBrief{
+		Ticket: client.Ticket{ID: "work", Title: "Make the work legible"},
+		Map: &client.MapBrief{
+			Ticket:   client.Ticket{ID: "map1", Title: "Plan the graph view"},
+			Open:     3,
+			Frontier: []client.Ticket{{ID: "tk2", Wayfinder: "research", Title: "How dense"}},
+		},
+	})
+	_ = w.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, _ := io.ReadAll(r)
+
+	for _, want := range []string{"cycle plan", "map1  Plan the graph view  3 open", "next  tk2  research  How dense"} {
+		if !strings.Contains(string(out), want) {
+			t.Errorf("brief is missing %q:\n%s", want, out)
+		}
+	}
+}

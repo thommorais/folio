@@ -199,6 +199,13 @@ type TicketBrief struct {
 	Journal  []JournalEntry `json:"journal"`
 	Cycles   []Cycle        `json:"cycles"`
 	Docs     []Doc          `json:"docs"`
+	Map      *MapBrief      `json:"map,omitempty"`
+}
+
+type MapBrief struct {
+	Ticket   Ticket   `json:"issue"`
+	Open     int      `json:"open"`
+	Frontier []Ticket `json:"frontier"`
 }
 
 func (c *Client) GetTicketBrief(id string, recentJournal int) (TicketBrief, error) {

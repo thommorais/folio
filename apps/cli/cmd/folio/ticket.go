@@ -158,6 +158,18 @@ func renderBrief(b client.TicketBrief) error {
 		}
 	}
 
+	if b.Map != nil {
+		state := fmt.Sprintf("%d open", b.Map.Open)
+		if b.Map.Open == 0 {
+			state = "the way is clear"
+		}
+		rows := []string{fmt.Sprintf("%s  %s  %s", b.Map.Ticket.ID, b.Map.Ticket.Title, state)}
+		for _, next := range b.Map.Frontier {
+			rows = append(rows, fmt.Sprintf("next  %s  %s  %s", next.ID, next.Wayfinder, next.Title))
+		}
+		section("cycle plan", rows)
+	}
+
 	plans := make([]string, 0, len(b.Plans))
 	for _, p := range b.Plans {
 		plans = append(plans, fmt.Sprintf("%s  %-8s %d/%d  %s", p.ID, p.Status, p.Progress.Done, p.Progress.Total, p.Title))

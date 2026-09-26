@@ -109,7 +109,9 @@ findable only by title. Tag todos you create.
 journal and docs in one call. This is what to run when opening a session on a
 known ticket. Children come back open first, so the next step is the first row,
 and each row names its kind; journal entries are the 10 most recent,
-`--recent-journal` overrides.
+`--recent-journal` overrides. When the current cycle is planned by a map, a
+`cycle plan` section names the map, how many decisions are open, and the
+takeable ones as `next` rows, so the next decision needs no second call.
 
 `folio search` hits journal, docs, todos and plans in one call, newest first, each
 hit with a snippet. Reach for it when you do not know where something lives;
