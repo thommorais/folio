@@ -92,6 +92,7 @@ func (s *CycleService) AdvancePhase(ctx context.Context, actor ports.Actor, id d
 	if err := rules.CanTransitionPhase(cycle.Phase, phase); err != nil {
 		return domain.Cycle{}, err
 	}
+	leavesPlan := rules.HeldByMap(cycle) && phase != domain.PhasePlan
 	if rules.HeldByMap(cycle) {
 		children, err := s.issues.ListByParent(ctx, cycle.MapID)
 		if err != nil {
@@ -106,7 +107,38 @@ func (s *CycleService) AdvancePhase(ctx context.Context, actor ports.Actor, id d
 	if err := rules.ValidateCycle(cycle); err != nil {
 		return domain.Cycle{}, err
 	}
-	return s.repo.Update(ctx, cycle)
+	saved, err := s.repo.Update(ctx, cycle)
+	if err != nil {
+		return domain.Cycle{}, err
+	}
+	if leavesPlan {
+		s.closeMap(ctx, saved.MapID)
+	}
+	return saved, nil
+}
+
+func (s *CycleService) closeMap(ctx context.Context, mapID domain.IssueID) {
+	theMap, err := s.issues.GetByID(ctx, mapID)
+	if err != nil {
+		s.log.Warn("map not closed", map[string]any{"map": string(mapID), "error": err.Error()})
+		return
+	}
+	if theMap.Status.IsTerminal() {
+		return
+	}
+	own, err := s.repo.ListByIssue(ctx, theMap.ID)
+	if err != nil {
+		s.log.Warn("map not closed", map[string]any{"map": string(mapID), "error": err.Error()})
+		return
+	}
+	if rules.CheckClosableIssue(domain.IssueDone, own) != nil {
+		return
+	}
+	theMap.Status = domain.IssueDone
+	theMap.UpdatedAt = s.clock.Now()
+	if _, err := s.issues.Update(ctx, theMap); err != nil {
+		s.log.Warn("map not closed", map[string]any{"map": string(mapID), "error": err.Error()})
+	}
 }
 
 func (s *CycleService) ResolveCycle(ctx context.Context, actor ports.Actor, id domain.CycleID, resolution string) (domain.Cycle, error) {

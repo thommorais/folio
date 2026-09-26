@@ -169,6 +169,7 @@ Rules the server holds you to:
 - A new cycle opens only once the current one is resolved.
 - A cycle planned by a map stays in plan, and cannot be resolved, while any
   decision on the map is open. The refusal names how many are left.
+  Leaving plan marks the map done: its job was to clear the way.
 - Decisions never run cycles of their own; open the cycle on the work ticket
   the decision serves.
 - Closing a ticket needs a resolution on its **current** cycle. A ticket that

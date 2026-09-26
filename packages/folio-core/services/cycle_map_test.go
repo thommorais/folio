@@ -199,3 +199,68 @@ func TestBriefCarriesTheCurrentCyclesPlan(t *testing.T) {
 		t.Errorf("frontier = %v, want the two unblocked decisions, oldest first", titles)
 	}
 }
+
+func TestLeavingPlanClosesTheMap(t *testing.T) {
+	f := newTicketFixture(t)
+	ctx := t.Context()
+	work := f.ticket(t, f.project, "Wayfinder view")
+	theMap := f.child(t, work.ID, domain.WayfinderMap, "Plan the wayfinder view")
+	question := f.child(t, theMap.ID, domain.WayfinderGrilling, "Tree or graph")
+
+	cycle, err := f.cycleSvc.OpenCycle(ctx, f.owner, work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.cycleSvc.SetCycleMap(ctx, f.owner, cycle.ID, theMap.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.issueSvc.UpdateIssue(ctx, f.owner, question.ID, ports.UpdateIssueInput{
+		Status: ptr(domain.IssueDone), Resolution: ptr("A graph."),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.cycleSvc.AdvancePhase(ctx, f.owner, cycle.ID, domain.PhaseDo); err != nil {
+		t.Fatal(err)
+	}
+	closed, err := f.issueSvc.GetIssue(ctx, f.owner, theMap.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if closed.Status != domain.IssueDone {
+		t.Fatalf("map status = %s, want done once its cycle left plan", closed.Status)
+	}
+
+	if _, err := f.cycleSvc.AdvancePhase(ctx, f.owner, cycle.ID, domain.PhaseCheck); err != nil {
+		t.Fatalf("later phases do not touch the map: %v", err)
+	}
+}
+
+func TestAMapWithItsOwnOpenCycleStaysOpen(t *testing.T) {
+	f := newTicketFixture(t)
+	ctx := t.Context()
+	work := f.ticket(t, f.project, "Wayfinder view")
+	theMap := f.child(t, work.ID, domain.WayfinderMap, "Plan the wayfinder view")
+
+	if _, err := f.cycleSvc.OpenCycle(ctx, f.owner, theMap.ID); err != nil {
+		t.Fatal(err)
+	}
+	cycle, err := f.cycleSvc.OpenCycle(ctx, f.owner, work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.cycleSvc.SetCycleMap(ctx, f.owner, cycle.ID, theMap.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.cycleSvc.AdvancePhase(ctx, f.owner, cycle.ID, domain.PhaseDo); err != nil {
+		t.Fatalf("the cycle still advances: %v", err)
+	}
+	kept, err := f.issueSvc.GetIssue(ctx, f.owner, theMap.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if kept.Status.IsTerminal() {
+		t.Fatalf("a map with an unresolved cycle of its own must not close, got %s", kept.Status)
+	}
+}
