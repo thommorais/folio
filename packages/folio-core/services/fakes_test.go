@@ -338,3 +338,19 @@ var (
 	_ ports.IDGenerator       = (*seqIDs)(nil)
 	_ ports.Logger            = nopLogger{}
 )
+
+type fakeDomains struct {
+	items map[domain.DomainID]domain.Domain
+}
+
+func newFakeDomains() *fakeDomains {
+	return &fakeDomains{items: map[domain.DomainID]domain.Domain{}}
+}
+
+func (r *fakeDomains) GetByID(_ context.Context, id domain.DomainID) (domain.Domain, error) {
+	d, ok := r.items[id]
+	if !ok {
+		return domain.Domain{}, domain.ErrNotFound
+	}
+	return d, nil
+}

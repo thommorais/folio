@@ -1,11 +1,13 @@
 package pb_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/pocketbase/pocketbase/core"
 
 	"folio/folio-core/adapters/pb"
+	"folio/folio-core/domain"
 )
 
 func trySave(app core.App, collection string, values map[string]any) error {
@@ -94,5 +96,28 @@ func TestBackfillSeedsClientOwnersAndDomainGrants(t *testing.T) {
 		grants[0].GetString("domain") != s.domain.Id || grants[0].GetString("user") != "" ||
 		grants[0].GetString("role") != "editor" {
 		t.Errorf("project grants = %v, want one editor grant from the project to its domain", grants)
+	}
+}
+
+func TestDomainRepositoryLoadsRosterAndClientOwners(t *testing.T) {
+	s := setup(t)
+	newRecord(t, s.app, pb.ColClientMembers, map[string]any{"client": s.client.Id, "user": s.stranger.Id, "role": "owner"})
+
+	d, err := pb.NewDomainRepository(s.app).GetByID(t.Context(), domain.DomainID(s.domain.Id))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(d.ClientID) != s.client.Id || d.Slug != "web" {
+		t.Errorf("domain = %+v, want web under acme", d)
+	}
+	if len(d.Members) != 3 {
+		t.Errorf("roster has %d members, want 3", len(d.Members))
+	}
+	if len(d.ClientOwners) != 1 || string(d.ClientOwners[0]) != s.stranger.Id {
+		t.Errorf("client owners = %v, want the stranger", d.ClientOwners)
+	}
+
+	if _, err := pb.NewDomainRepository(s.app).GetByID(t.Context(), "missing0000000"); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("missing domain = %v, want ErrNotFound", err)
 	}
 }

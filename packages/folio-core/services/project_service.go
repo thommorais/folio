@@ -11,15 +11,16 @@ import (
 )
 
 type ProjectService struct {
-	repo  ports.ProjectRepository
-	guard ports.Guard
-	clock ports.Clock
-	ids   ports.IDGenerator
-	log   ports.Logger
+	repo    ports.ProjectRepository
+	domains ports.DomainRepository
+	guard   ports.Guard
+	clock   ports.Clock
+	ids     ports.IDGenerator
+	log     ports.Logger
 }
 
-func NewProjectService(repo ports.ProjectRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *ProjectService {
-	return &ProjectService{repo: repo, guard: guard, clock: clock, ids: ids, log: log}
+func NewProjectService(repo ports.ProjectRepository, domains ports.DomainRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *ProjectService {
+	return &ProjectService{repo: repo, domains: domains, guard: guard, clock: clock, ids: ids, log: log}
 }
 
 var _ ports.ProjectUseCase = (*ProjectService)(nil)
@@ -50,6 +51,15 @@ func (s *ProjectService) resolve(ctx context.Context, ref string) (domain.Projec
 }
 
 func (s *ProjectService) CreateProject(ctx context.Context, actor ports.Actor, in ports.CreateProjectInput) (domain.Project, error) {
+	if in.DomainID != "" {
+		d, err := s.domains.GetByID(ctx, in.DomainID)
+		if err != nil {
+			return domain.Project{}, err
+		}
+		if !actor.Superuser && !rules.CanCreateProjectIn(d, actor.UserID) {
+			return domain.Project{}, domain.ErrNotFound
+		}
+	}
 	now := s.clock.Now()
 	project := domain.Project{
 		ID:       domain.ProjectID(s.ids.NewID()),

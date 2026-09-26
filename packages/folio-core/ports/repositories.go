@@ -30,6 +30,10 @@ type ProjectRepository interface {
 	FindUserByEmail(ctx context.Context, email string) (domain.UserID, error)
 }
 
+type DomainRepository interface {
+	GetByID(ctx context.Context, id domain.DomainID) (domain.Domain, error)
+}
+
 type PlanRepository interface {
 	List(ctx context.Context, project domain.ProjectID, statuses []domain.PlanStatus) ([]domain.Plan, error)
 	// ListByTicket returns every plan under a ticket, so deleting the ticket

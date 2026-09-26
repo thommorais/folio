@@ -87,3 +87,16 @@ func TestEffectiveRole(t *testing.T) {
 		})
 	}
 }
+
+func TestCanCreateProjectIn(t *testing.T) {
+	d := domain.Domain{
+		ClientOwners: []domain.UserID{"boss"},
+		Members:      []domain.Member{{UserID: "team", Role: domain.RoleViewer}},
+	}
+
+	for user, want := range map[domain.UserID]bool{"boss": true, "team": true, "stranger": false} {
+		if got := rules.CanCreateProjectIn(d, user); got != want {
+			t.Errorf("CanCreateProjectIn(%s) = %v, want %v", user, got, want)
+		}
+	}
+}

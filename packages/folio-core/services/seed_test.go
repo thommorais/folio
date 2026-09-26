@@ -19,7 +19,7 @@ func TestSeedWritesTheDemoAndReruns(t *testing.T) {
 
 	issueSvc := services.NewIssueService(issues, plans, entries, cycles, guard, clock, &seqIDs{prefix: "is"}, nopLogger{})
 	uc := services.SeedUseCases{
-		Projects: services.NewProjectService(projects, guard, clock, &seqIDs{prefix: "pr"}, nopLogger{}),
+		Projects: services.NewProjectService(projects, newFakeDomains(), guard, clock, &seqIDs{prefix: "pr"}, nopLogger{}),
 		Plans:    services.NewPlanService(plans, issues, issueSvc, guard, clock, &seqIDs{prefix: "pl"}, nopLogger{}),
 		Issues:   issueSvc,
 		Entries:  services.NewEntryService(entries, issues, plans, guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),

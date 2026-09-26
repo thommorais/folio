@@ -15,6 +15,7 @@ var testNow = time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
 
 type projectFixture struct {
 	repo    *fakeProjects
+	domains *fakeDomains
 	svc     *services.ProjectService
 	guard   ports.Guard
 	owner   ports.Actor
@@ -42,10 +43,11 @@ func newProjectFixture(t *testing.T) *projectFixture {
 	repo.items[project.ID] = project
 
 	guard := services.NewProjectGuard(repo)
-	svc := services.NewProjectService(repo, guard, &fakeClock{now: testNow}, &seqIDs{prefix: "p"}, nopLogger{})
+	domains := newFakeDomains()
+	svc := services.NewProjectService(repo, domains, guard, &fakeClock{now: testNow}, &seqIDs{prefix: "p"}, nopLogger{})
 
 	return &projectFixture{
-		repo: repo, svc: svc, guard: guard, project: project,
+		repo: repo, domains: domains, svc: svc, guard: guard, project: project,
 		owner:   ports.Actor{UserID: "u-owner"},
 		editor:  ports.Actor{UserID: "u-editor"},
 		viewer:  ports.Actor{UserID: "u-viewer"},

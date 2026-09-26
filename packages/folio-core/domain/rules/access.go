@@ -35,3 +35,10 @@ func EffectiveRole(access domain.ProjectAccess, user domain.UserID) (domain.Role
 	}
 	return best, best != ""
 }
+
+func CanCreateProjectIn(d domain.Domain, user domain.UserID) bool {
+	if slices.Contains(d.ClientOwners, user) {
+		return true
+	}
+	return slices.ContainsFunc(d.Members, func(m domain.Member) bool { return m.UserID == user })
+}

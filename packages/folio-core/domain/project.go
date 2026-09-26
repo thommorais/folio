@@ -58,16 +58,16 @@ type Client struct {
 	UpdatedAt time.Time
 }
 
-// Domain is the root of permissions: its members reach every project under it.
 type Domain struct {
-	ID        DomainID
-	ClientID  ClientID
-	Slug      string
-	Name      string
-	Descr     string
-	Members   []Member
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID           DomainID
+	ClientID     ClientID
+	Slug         string
+	Name         string
+	Descr        string
+	Members      []Member
+	ClientOwners []UserID
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 func (p Project) Access() ProjectAccess {
