@@ -108,6 +108,9 @@ func setup(t *testing.T) scenario {
 		newRecord(t, app, pb.ColMembers, map[string]any{
 			"domain": s.domain.Id, "project": s.project.Id, "user": user.Id, "role": role,
 		})
+		newRecord(t, app, pb.ColProjectGrants, map[string]any{
+			"project": s.project.Id, "user": user.Id, "role": role,
+		})
 	}
 
 	s.ticket = newRecord(t, app, pb.ColIssues, map[string]any{
@@ -192,9 +195,13 @@ func TestProjectRepositoryLoadsEveryGrant(t *testing.T) {
 		len(project.DomainGrants[0].Members) != 3 {
 		t.Errorf("domain grants = %+v, want one editor grant carrying the 3-member roster", project.DomainGrants)
 	}
-	if len(project.Members) != 1 || string(project.Members[0].UserID) != s.stranger.Id ||
-		project.Members[0].Email != "stranger@test.local" {
-		t.Errorf("personal grants = %+v, want the stranger as viewer with their email", project.Members)
+	if role, ok := project.RoleOf(domain.UserID(s.stranger.Id)); !ok || role != domain.RoleViewer {
+		t.Errorf("stranger's personal grant = %q (found=%v), want viewer", role, ok)
+	}
+	for _, m := range project.Members {
+		if string(m.UserID) == s.stranger.Id && m.Email != "stranger@test.local" {
+			t.Errorf("stranger's grant carries email %q", m.Email)
+		}
 	}
 }
 

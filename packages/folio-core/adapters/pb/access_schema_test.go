@@ -53,8 +53,10 @@ func TestProjectGrantIsUniquePerTarget(t *testing.T) {
 func TestProjectGrantsToDifferentUsersCoexist(t *testing.T) {
 	s := setup(t)
 
-	newRecord(t, s.app, pb.ColProjectGrants, map[string]any{"project": s.project.Id, "user": s.editor.Id, "role": "editor"})
-	if err := trySave(s.app, pb.ColProjectGrants, map[string]any{"project": s.project.Id, "user": s.viewer.Id, "role": "viewer"}); err != nil {
+	first := newUser(t, s.app, "first@test.local")
+	second := newUser(t, s.app, "second@test.local")
+	newRecord(t, s.app, pb.ColProjectGrants, map[string]any{"project": s.project.Id, "user": first.Id, "role": "editor"})
+	if err := trySave(s.app, pb.ColProjectGrants, map[string]any{"project": s.project.Id, "user": second.Id, "role": "viewer"}); err != nil {
 		t.Errorf("a grant to a second user was refused: %v", err)
 	}
 }

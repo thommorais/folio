@@ -9,25 +9,44 @@ import (
 	"folio/folio-core/domain/rules"
 )
 
-// Membership is modelled as its own collection rather than a multi-relation
-// on the project, because a member carries a role. That also lets every other
-// collection express its access rule as a single subquery against members,
-// so ownership is checked the same way everywhere.
-//
-// Rules traverse the back-relation from the record's project to its
-// membership rows (journ_members_via_project). An earlier version joined
-// @collection.journ_members with two separate conditions, which let one row
-// satisfy the project match and a different row satisfy the user match, and
-// made journ_members' own rule reference journ_members. Both read as empty
-// rather than as an error, so every direct collection listing returned [].
+// Rules traverse back-relations rather than aliased @collection joins: an
+// aliased join is rejected on create, where the record has no id yet, and
+// one that references its own collection reads as empty rather than failing.
+const me = "@request.auth.id"
+
+type reach int
+
 const (
-	// ?= because a domain has many membership rows and only one has to belong
-	// to the caller.
-	memberOfDomain = "project.domain.journ_members_via_domain.user ?= @request.auth.id"
-	// An aliased @collection join is rejected on create, where the record has
-	// no id yet, so writes traverse the same relations as reads.
-	writerOfDomain = "project.domain.journ_members_via_domain.user ?= @request.auth.id && project.domain.journ_members_via_domain.role ?!= 'viewer'"
+	toRead reach = iota
+	toWrite
+	toAdmin
 )
+
+func reachProject(prefix string, level reach) string {
+	grants := prefix + "journ_project_grants_via_project"
+	owners := prefix + "domain.client.journ_client_members_via_client"
+	role := ""
+	switch level {
+	case toWrite:
+		role = " && " + grants + ".role ?!= 'viewer'"
+	case toAdmin:
+		role = " && " + grants + ".role ?= 'owner'"
+	}
+	return "((" + owners + ".user ?= " + me + " && " + owners + ".role ?= 'owner')" +
+		" || (" + grants + ".user ?= " + me + role + ")" +
+		" || (" + grants + ".domain.journ_members_via_domain.user ?= " + me + role + "))"
+}
+
+func ownerOfClient(prefix string) string {
+	owners := prefix + "journ_client_members_via_client"
+	return "(" + owners + ".user ?= " + me + " && " + owners + ".role ?= 'owner')"
+}
+
+func domainVisible(prefix string) string {
+	return "(" + prefix + "journ_members_via_domain.user ?= " + me +
+		" || " + ownerOfClient(prefix+"client.") +
+		" || " + prefix + "journ_projects_via_domain.journ_project_grants_via_project.user ?= " + me + ")"
+}
 
 func strPtr(s string) *string { return &s }
 
@@ -583,28 +602,25 @@ func applyRules(app core.App) error {
 	if err != nil {
 		return err
 	}
-	// Creating a project is open to any authenticated user, who becomes its
-	// first owner through the membership row written alongside.
-	memberOfThis := "domain.journ_members_via_domain.user ?= @request.auth.id"
-	ownerOfThis := "domain.journ_members_via_domain.user ?= @request.auth.id && domain.journ_members_via_domain.role ?= 'owner'"
-	projects.ListRule = strPtr(memberOfThis)
-	projects.ViewRule = strPtr(memberOfThis)
-	projects.CreateRule = strPtr("@request.auth.id != ''")
-	projects.UpdateRule = strPtr(ownerOfThis)
-	projects.DeleteRule = strPtr(ownerOfThis)
+	projects.ListRule = strPtr(reachProject("", toRead))
+	projects.ViewRule = strPtr(reachProject("", toRead))
+	projects.CreateRule = strPtr(me + " != ''")
+	projects.UpdateRule = strPtr(reachProject("", toAdmin))
+	projects.DeleteRule = strPtr(reachProject("", toAdmin))
 	if err := app.Save(projects); err != nil {
 		return err
 	}
 
-	// The domain holds the membership rows, so it checks them directly.
 	clients, err := app.FindCollectionByNameOrId(ColClients)
 	if err != nil {
 		return err
 	}
-	clientVisible := "journ_domains_via_client.journ_members_via_domain.user ?= @request.auth.id"
+	clientVisible := "(journ_client_members_via_client.user ?= " + me +
+		" || journ_domains_via_client.journ_members_via_domain.user ?= " + me +
+		" || journ_domains_via_client.journ_projects_via_domain.journ_project_grants_via_project.user ?= " + me + ")"
 	clients.ListRule = strPtr(clientVisible)
 	clients.ViewRule = strPtr(clientVisible)
-	clients.CreateRule = strPtr("@request.auth.id != ''")
+	clients.CreateRule = strPtr(me + " != ''")
 	if err := app.Save(clients); err != nil {
 		return err
 	}
@@ -613,10 +629,9 @@ func applyRules(app core.App) error {
 	if err != nil {
 		return err
 	}
-	domainVisible := "journ_members_via_domain.user ?= @request.auth.id"
-	domains.ListRule = strPtr(domainVisible)
-	domains.ViewRule = strPtr(domainVisible)
-	domains.CreateRule = strPtr("@request.auth.id != ''")
+	domains.ListRule = strPtr(domainVisible(""))
+	domains.ViewRule = strPtr(domainVisible(""))
+	domains.CreateRule = strPtr(me + " != ''")
 	if err := app.Save(domains); err != nil {
 		return err
 	}
@@ -625,22 +640,33 @@ func applyRules(app core.App) error {
 	if err != nil {
 		return err
 	}
-	// A membership row already names its user, so reads need no join. Listing
-	// the rest of a project's roster goes through the folio API, which checks
-	// membership in the service layer.
-	ownRow := "user = @request.auth.id"
-	ownerOfOwnDomain := "domain.journ_members_via_domain.user ?= @request.auth.id && domain.journ_members_via_domain.role ?= 'owner'"
+	ownRow := "user = " + me
+	rosterAdmin := "((domain.journ_members_via_domain.user ?= " + me + " && domain.journ_members_via_domain.role ?= 'owner')" +
+		" || " + ownerOfClient("domain.client.") + ")"
 	members.ListRule = strPtr(ownRow)
 	members.ViewRule = strPtr(ownRow)
-	members.CreateRule = strPtr(ownerOfOwnDomain)
-	members.UpdateRule = strPtr(ownerOfOwnDomain)
-	members.DeleteRule = strPtr(ownerOfOwnDomain)
+	members.CreateRule = strPtr(rosterAdmin)
+	members.UpdateRule = strPtr(rosterAdmin)
+	members.DeleteRule = strPtr(rosterAdmin)
 	if err := app.Save(members); err != nil {
 		return err
 	}
 
-	// The join and link rows carry no project of their own, so they are
-	// reached through the row they attach to.
+	for _, name := range []string{ColClientMembers, ColProjectGrants} {
+		c, err := app.FindCollectionByNameOrId(name)
+		if err != nil {
+			return err
+		}
+		c.ListRule = strPtr(ownRow)
+		c.ViewRule = strPtr(ownRow)
+		c.CreateRule = nil
+		c.UpdateRule = nil
+		c.DeleteRule = nil
+		if err := app.Save(c); err != nil {
+			return err
+		}
+	}
+
 	for _, join := range []struct{ collection, via string }{
 		{ColLinks, "from"},
 		{ColIssueTags, "issue"},
@@ -650,8 +676,8 @@ func applyRules(app core.App) error {
 		if err != nil {
 			return err
 		}
-		read := join.via + ".project.domain.journ_members_via_domain.user ?= @request.auth.id"
-		write := read + " && " + join.via + ".project.domain.journ_members_via_domain.role ?!= 'viewer'"
+		read := reachProject(join.via+".project.", toRead)
+		write := reachProject(join.via+".project.", toWrite)
 		c.ListRule = strPtr(read)
 		c.ViewRule = strPtr(read)
 		c.CreateRule = strPtr(write)
@@ -666,10 +692,12 @@ func applyRules(app core.App) error {
 	if err != nil {
 		return err
 	}
-	tagVisible := "domain.journ_members_via_domain.user ?= @request.auth.id"
-	tagWritable := tagVisible + " && domain.journ_members_via_domain.role ?!= 'viewer'"
-	tags.ListRule = strPtr(tagVisible)
-	tags.ViewRule = strPtr(tagVisible)
+	projectGrants := "domain.journ_projects_via_domain.journ_project_grants_via_project"
+	tagWritable := "(" + ownerOfClient("domain.client.") +
+		" || (domain.journ_members_via_domain.user ?= " + me + " && domain.journ_members_via_domain.role ?!= 'viewer')" +
+		" || (" + projectGrants + ".user ?= " + me + " && " + projectGrants + ".role ?!= 'viewer'))"
+	tags.ListRule = strPtr(domainVisible("domain."))
+	tags.ViewRule = strPtr(domainVisible("domain."))
 	tags.CreateRule = strPtr(tagWritable)
 	tags.UpdateRule = strPtr(tagWritable)
 	tags.DeleteRule = strPtr(tagWritable)
@@ -677,16 +705,19 @@ func applyRules(app core.App) error {
 		return err
 	}
 
+	readContent := reachProject("project.", toRead)
+	writeContent := reachProject("project.", toWrite)
+
 	shares, err := app.FindCollectionByNameOrId(ColShares)
 	if err != nil {
 		return err
 	}
-	shares.ListRule = strPtr(memberOfDomain)
-	shares.ViewRule = strPtr(memberOfDomain)
-	shares.CreateRule = strPtr(writerOfDomain + " && created_by = @request.auth.id && @request.body.token:isset = false" +
+	shares.ListRule = strPtr(readContent)
+	shares.ViewRule = strPtr(readContent)
+	shares.CreateRule = strPtr(writeContent + " && created_by = " + me + " && @request.body.token:isset = false" +
 		" && ((issue != '' && plan = '' && issue.project = project) || (plan != '' && issue = '' && plan.project = project))")
 	shares.UpdateRule = nil
-	shares.DeleteRule = strPtr(writerOfDomain)
+	shares.DeleteRule = strPtr(writeContent)
 	if err := app.Save(shares); err != nil {
 		return err
 	}
@@ -696,11 +727,11 @@ func applyRules(app core.App) error {
 		if err != nil {
 			return err
 		}
-		c.ListRule = strPtr(memberOfDomain)
-		c.ViewRule = strPtr(memberOfDomain)
-		c.CreateRule = strPtr(writerOfDomain)
-		c.UpdateRule = strPtr(writerOfDomain)
-		c.DeleteRule = strPtr(writerOfDomain)
+		c.ListRule = strPtr(readContent)
+		c.ViewRule = strPtr(readContent)
+		c.CreateRule = strPtr(writeContent)
+		c.UpdateRule = strPtr(writeContent)
+		c.DeleteRule = strPtr(writeContent)
 		if err := app.Save(c); err != nil {
 			return err
 		}
@@ -711,8 +742,8 @@ func applyRules(app core.App) error {
 		if err != nil {
 			return err
 		}
-		c.ListRule = strPtr(memberOfDomain)
-		c.ViewRule = strPtr(memberOfDomain)
+		c.ListRule = strPtr(readContent)
+		c.ViewRule = strPtr(readContent)
 		c.CreateRule = nil
 		c.UpdateRule = nil
 		c.DeleteRule = nil
