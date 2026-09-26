@@ -86,6 +86,7 @@ const Row = ({
 						<Link
 							to={kind === ISSUE_KIND.TODO ? '/$client/$domain/$slug/todos/$todo' : '/$client/$domain/$slug/tickets/$ticket'}
 							params={{ client, domain, slug: project, ticket: issue.slug, todo: issue.slug }}
+							data-row
 							className='after:absolute after:inset-0'
 						>
 							{issue.title}

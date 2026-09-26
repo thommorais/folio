@@ -49,6 +49,7 @@ const Journal = () => {
 						<Link
 							to='/$client/$domain/$slug/journal/$entry'
 							params={{ client, domain, slug, entry: entry.slug }}
+							data-row
 							className='hover:bg-accent/40 active:bg-accent/60 relative block space-y-2 px-4 py-4 transition-colors'
 						>
 							<Flash on={entry.updatedAt.getTime()} />

@@ -20,6 +20,7 @@ const Row = ({ plan, project }: { readonly plan: Plan; readonly project: string 
 		<Link
 			to='/$client/$domain/$slug/plans/$plan'
 			params={{ client, domain, slug: project, plan: plan.id }}
+			data-row
 			className='hover:bg-accent/40 active:bg-accent/60 relative block space-y-2 px-4 py-4 transition-colors'
 		>
 			<Flash on={plan.updatedAt.getTime()} />

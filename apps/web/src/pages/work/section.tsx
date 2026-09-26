@@ -52,6 +52,7 @@ export const Section = ({ title, items, message, emptyLabel, command, filtered, 
 						<Link
 							to={item.to}
 							params={item.params}
+							data-row
 							className='hover:bg-accent/40 active:bg-accent/60 relative block px-4 py-2.5 transition-colors'
 						>
 							<Flash on={item.changedAt} />

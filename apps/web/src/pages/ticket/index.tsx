@@ -217,6 +217,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 								<Link
 									to='/$client/$domain/$slug/todos/$todo'
 									params={{ client, domain, slug: project, todo: todo.slug }}
+									data-row
 									className='hover:bg-accent/40 active:bg-accent/60 relative block px-4 py-2.5 transition-colors'
 								>
 									<Flash on={todo.updatedAt.getTime()} />
@@ -237,6 +238,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 								<Link
 									to='/$client/$domain/$slug/journal/$entry'
 									params={{ client, domain, slug: project, entry: entry.slug }}
+									data-row
 									className='hover:bg-accent/40 active:bg-accent/60 flex items-center justify-between gap-4 px-4 py-3 text-sm transition-colors'
 								>
 									<span className='min-w-0 flex-1 truncate'>{entry.title}</span>

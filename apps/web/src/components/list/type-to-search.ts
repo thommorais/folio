@@ -8,7 +8,7 @@ type KeyLike = {
 	readonly target: { readonly closest: (selector: string) => unknown } | null
 }
 
-const OWNS_KEYS = 'input, textarea, select, [contenteditable], [role="menu"], [role="dialog"], [role="listbox"]'
+export const OWNS_KEYS = 'input, textarea, select, [contenteditable], [role="menu"], [role="dialog"], [role="listbox"]'
 
 export const capturedKey = (event: KeyLike): { readonly insert: string } | undefined => {
 	if (event.metaKey || event.ctrlKey || event.altKey) return undefined

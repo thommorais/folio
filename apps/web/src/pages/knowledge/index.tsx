@@ -37,6 +37,7 @@ export const KnowledgeList = () => {
 						<Link
 							to='/knowledge/$note'
 							params={{ note: note.slug }}
+							data-row
 							className='hover:bg-accent/40 active:bg-accent/60 relative flex h-11 items-center gap-3 px-4 transition-colors'
 						>
 							<Flash on={note.updatedAt.getTime()} />

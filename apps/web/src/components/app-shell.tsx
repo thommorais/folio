@@ -3,6 +3,7 @@ import { PreviewSheet } from './preview-sheet'
 import { OpenSearchButton } from './search/open-search-button'
 import { SearchModal } from './search/search-modal'
 import { UserMenu } from './user-menu'
+import { useRowNavigation } from '_/components/list/row-navigation'
 
 // Knowledge sits in the header rather than under a project, because it belongs
 // to none: there is no breadcrumb that would ever lead to it.
@@ -23,12 +24,16 @@ const Header = () => (
 	</header>
 )
 
-export const AppShell = ({ children }: { children: React.ReactNode }) => (
-	<div className='bg-background relative flex min-h-dvh w-full flex-col'>
-		<Header />
-		<main className='min-w-0 flex-1 px-4 py-8 md:px-6'>{children}</main>
+export const AppShell = ({ children }: { children: React.ReactNode }) => {
+	useRowNavigation()
 
-		<SearchModal />
-		<PreviewSheet />
-	</div>
-)
+	return (
+		<div className='bg-background relative flex min-h-dvh w-full flex-col'>
+			<Header />
+			<main className='min-w-0 flex-1 px-4 py-8 md:px-6'>{children}</main>
+
+			<SearchModal />
+			<PreviewSheet />
+		</div>
+	)
+}

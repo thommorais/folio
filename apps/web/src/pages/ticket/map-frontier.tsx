@@ -44,6 +44,7 @@ const Group = ({
 							<Link
 								to='/$client/$domain/$slug/tickets/$ticket'
 								params={{ client, domain, slug: project, ticket: child.slug }}
+								data-row
 								className='hover:bg-accent/40 active:bg-accent/60 flex items-center gap-3 px-4 py-3 transition-colors'
 							>
 								<span className='flex-1 truncate text-sm'>{child.title}</span>
@@ -83,6 +84,7 @@ const Ledger = ({
 						<Link
 							to='/$client/$domain/$slug/tickets/$ticket'
 							params={{ client, domain, slug: project, ticket: child.slug }}
+							data-row
 							className='hover:bg-accent/40 active:bg-accent/60 block space-y-1 px-4 py-3 transition-colors'
 						>
 							<span className='flex items-center gap-3'>
