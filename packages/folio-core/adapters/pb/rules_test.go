@@ -308,3 +308,31 @@ func TestMemberReadsIssuesAndEntriesOverRest(t *testing.T) {
 		})
 	}
 }
+
+func TestInterviewsAreWrittenOnlyThroughTheAPI(t *testing.T) {
+	s := setup(t)
+	interview := newRecord(t, s.app, pb.ColInterviews, map[string]any{
+		"project": s.project.Id, "issue": s.ticket.Id, "topic": "Tree or graph", "agent_status": "waiting",
+	})
+	event := newRecord(t, s.app, pb.ColInterviewEvents, map[string]any{
+		"project": s.project.Id, "interview": interview.Id, "seq": 1, "at": "2026-09-26 12:00:00.000Z",
+	})
+
+	for _, record := range []*core.Record{interview, event} {
+		name := record.Collection().Name
+		for _, user := range []*core.Record{s.owner, s.editor, s.viewer} {
+			if !canView(t, s.app, record, user) {
+				t.Errorf("%s cannot read %s", user.GetString("email"), name)
+			}
+		}
+		if canView(t, s.app, record, s.stranger) {
+			t.Errorf("stranger can read %s", name)
+		}
+		c := record.Collection()
+		for label, rule := range map[string]*string{"create": c.CreateRule, "update": c.UpdateRule, "delete": c.DeleteRule} {
+			if rule != nil {
+				t.Errorf("%s has a %s rule %q: a write over REST would skip the interview rules", name, label, *rule)
+			}
+		}
+	}
+}

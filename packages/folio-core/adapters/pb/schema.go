@@ -376,6 +376,63 @@ func ensureCycleMap(app core.App) error {
 	return app.Save(c)
 }
 
+func ensureInterviews(app core.App) error {
+	projects, err := app.FindCollectionByNameOrId(ColProjects)
+	if err != nil {
+		return err
+	}
+	issues, err := app.FindCollectionByNameOrId(ColIssues)
+	if err != nil {
+		return err
+	}
+	users, err := app.FindCollectionByNameOrId(ColUsers)
+	if err != nil {
+		return err
+	}
+
+	interviews, ok := find(app, ColInterviews)
+	if !ok {
+		c := core.NewBaseCollection(ColInterviews)
+		c.Fields.Add(
+			&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
+			&core.RelationField{Name: "issue", Required: true, CollectionId: issues.Id, CascadeDelete: true, MaxSelect: 1},
+			&core.TextField{Name: "topic", Required: true, Max: rules.TitleMaxLen},
+			&core.JSONField{Name: "state", MaxSize: interviewStateMaxBytes},
+			&core.SelectField{Name: "agent_status", Required: true, MaxSelect: 1, Values: []string{"waiting", "working"}},
+			&core.DateField{Name: "agent_since"},
+			&core.NumberField{Name: "handled", OnlyInt: true},
+			&core.DateField{Name: "finished_at"},
+			&core.RelationField{Name: "created_by", CollectionId: users.Id, MaxSelect: 1},
+		)
+		c.Fields.Add(autodates()...)
+		c.AddIndex("idx_journ_interviews_issue", false, "issue", "")
+		if err := app.Save(c); err != nil {
+			return err
+		}
+		interviews = c
+	}
+
+	if _, ok := find(app, ColInterviewEvents); ok {
+		return nil
+	}
+	c := core.NewBaseCollection(ColInterviewEvents)
+	c.Fields.Add(
+		&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.RelationField{Name: "interview", Required: true, CollectionId: interviews.Id, CascadeDelete: true, MaxSelect: 1},
+		&core.NumberField{Name: "seq", Required: true, OnlyInt: true},
+		&core.DateField{Name: "at", Required: true},
+		&core.JSONField{Name: "actions", MaxSize: interviewActionsMaxBytes},
+	)
+	c.Fields.Add(autodates()...)
+	c.AddIndex("idx_journ_interview_events_seq", true, "interview, seq", "")
+	return app.Save(c)
+}
+
+const (
+	interviewStateMaxBytes   = 5 << 20
+	interviewActionsMaxBytes = 1 << 20
+)
+
 func ensureTags(app core.App) error {
 	if _, ok := find(app, ColTags); ok {
 		return nil
@@ -644,6 +701,21 @@ func applyRules(app core.App) error {
 		c.CreateRule = strPtr(writerOfDomain)
 		c.UpdateRule = strPtr(writerOfDomain)
 		c.DeleteRule = strPtr(writerOfDomain)
+		if err := app.Save(c); err != nil {
+			return err
+		}
+	}
+
+	for _, name := range []string{ColInterviews, ColInterviewEvents} {
+		c, err := app.FindCollectionByNameOrId(name)
+		if err != nil {
+			return err
+		}
+		c.ListRule = strPtr(memberOfDomain)
+		c.ViewRule = strPtr(memberOfDomain)
+		c.CreateRule = nil
+		c.UpdateRule = nil
+		c.DeleteRule = nil
 		if err := app.Save(c); err != nil {
 			return err
 		}

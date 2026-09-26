@@ -55,6 +55,9 @@ func Register(app core.App) error {
 	if err := ensureCycleMap(app); err != nil {
 		return fmt.Errorf("cycle map: %w", err)
 	}
+	if err := ensureInterviews(app); err != nil {
+		return fmt.Errorf("interviews: %w", err)
+	}
 	if err := ensureEntries(app); err != nil {
 		return fmt.Errorf("entries: %w", err)
 	}

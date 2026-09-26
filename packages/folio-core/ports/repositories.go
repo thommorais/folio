@@ -82,6 +82,15 @@ type TagRepository interface {
 	IDsWithTags(ctx context.Context, target TagTarget, domainID domain.DomainID, names []string) ([]string, error)
 }
 
+type InterviewRepository interface {
+	Create(ctx context.Context, i domain.Interview) (domain.Interview, error)
+	GetByID(ctx context.Context, id domain.InterviewID) (domain.Interview, error)
+	ListByIssue(ctx context.Context, issue domain.IssueID) ([]domain.Interview, error)
+	Update(ctx context.Context, i domain.Interview) (domain.Interview, error)
+	AppendEvent(ctx context.Context, i domain.Interview, actions []domain.SendAction, at time.Time) (domain.InterviewEvent, error)
+	EventsAfter(ctx context.Context, id domain.InterviewID, seq int) ([]domain.InterviewEvent, error)
+}
+
 type CycleRepository interface {
 	ListByIssue(ctx context.Context, issue domain.IssueID) ([]domain.Cycle, error)
 	GetByID(ctx context.Context, id domain.CycleID) (domain.Cycle, error)
