@@ -109,6 +109,7 @@ const WorkFilters = () => {
 				<SortMenu
 					fields={WORK_SORT_FIELDS}
 					labels={SORT_LABELS}
+					defaultLabel='Default order'
 					sort={search.sort}
 					onChange={sort => {
 						setFilter({ sort })

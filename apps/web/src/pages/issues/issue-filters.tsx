@@ -2,8 +2,8 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { defaultChip } from '_/components/list/default-chip';
 import { ActiveFilter, chipPerValue, FILTER_KEY, FilterBar, FilterCheckboxItem, FilterMenuItem, toggle } from '_/components/list/filter-bar';
 import { SortMenu } from '_/components/list/sort-menu';
-import { ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue';
-import { ISSUE_SORT_FIELDS, type IssueSortField, type SortDirection } from '_/core/ports/sort';
+import { ISSUE_KIND, ISSUE_STATUSES, PRIORITIES, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
+import { TICKET_SORT_FIELDS, TODO_SORT_FIELDS, type IssueSortField, type Sort, type TicketSortField, type TodoSortField } from '_/core/ports/sort';
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary';
 import { ISSUE_STATUS_LABELS } from './status-labels';
 
@@ -22,10 +22,10 @@ type IssuesSearch = {
 	readonly priority?: Priority
 	readonly tags?: readonly string[]
 	readonly q?: string
-	readonly sort?: { readonly field: IssueSortField; readonly direction: SortDirection }
+	readonly sort?: Sort<TicketSortField | TodoSortField>
 }
 
-const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly IssueStatus[] }) => {
+const IssueFilters = ({ kind, defaultStatuses }: { readonly kind: IssueKind; readonly defaultStatuses?: readonly IssueStatus[] }) => {
 	const search = useSearch({ strict: false }) as IssuesSearch
 	const statuses = search.statuses ?? defaultStatuses
 	const navigate = useNavigate()
@@ -77,8 +77,9 @@ const IssueFilters = ({ defaultStatuses }: { readonly defaultStatuses?: readonly
 			chips={chips}
 			trailing={
 				<SortMenu
-					fields={ISSUE_SORT_FIELDS}
+					fields={kind === ISSUE_KIND.TICKET ? TICKET_SORT_FIELDS : TODO_SORT_FIELDS}
 					labels={SORT_LABELS}
+					defaultLabel={kind === ISSUE_KIND.TICKET ? 'Status, priority' : 'Position'}
 					sort={search.sort}
 					onChange={sort => {
 						setFilter({ sort })

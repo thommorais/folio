@@ -77,6 +77,7 @@ const JournalFilters = () => {
 				<SortMenu
 					fields={ENTRY_SORT_FIELDS}
 					labels={SORT_LABELS}
+					defaultLabel='Newest'
 					sort={search.sort}
 					onChange={sort => {
 						setFilter({ sort })
