@@ -10,9 +10,6 @@ import (
 	"folio/folio-core/ports"
 )
 
-// ProjectRepository stores projects and their grants. It runs
-// in-process against core.App, so it bypasses PocketBase's own API rules;
-// authorisation is the service layer's job (see services.ProjectGuard).
 type ProjectRepository struct {
 	app core.App
 }
@@ -96,8 +93,6 @@ func (r *ProjectRepository) rosterOf(domainID string) ([]domain.UserID, error) {
 	return out, nil
 }
 
-// A user that cannot be expanded (a deleted account) leaves that member's
-// email blank rather than failing the whole roster.
 func toMembers(app core.App, rows []*core.Record) []domain.Member {
 	app.ExpandRecords(rows, []string{"user"}, nil)
 	out := make([]domain.Member, 0, len(rows))
@@ -220,8 +215,6 @@ func (r *ProjectRepository) GetBySlug(ctx context.Context, slug string) (domain.
 	return r.toProject(rec)
 }
 
-// Create writes the project and its grants in one transaction: a project
-// without an owner would be unreachable and unadministrable.
 func (r *ProjectRepository) Create(ctx context.Context, p domain.Project) (domain.Project, error) {
 	if existing, err := r.app.FindFirstRecordByData(ColProjects, "slug", p.Slug); err == nil && existing != nil {
 		return domain.Project{}, domain.ErrConflict
@@ -289,8 +282,6 @@ func (r *ProjectRepository) Create(ctx context.Context, p domain.Project) (domai
 	return r.GetByID(ctx, domain.ProjectID(rec.Id))
 }
 
-// newOwnDomain gives a project created without a domain its own client and
-// domain.
 func newOwnDomain(tx core.App, p domain.Project) (string, string, error) {
 	clients, err := tx.FindCollectionByNameOrId(ColClients)
 	if err != nil {

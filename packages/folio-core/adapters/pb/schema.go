@@ -9,9 +9,6 @@ import (
 	"folio/folio-core/domain/rules"
 )
 
-// Rules traverse back-relations rather than aliased @collection joins: an
-// aliased join is rejected on create, where the record has no id yet, and
-// one that references its own collection reads as empty rather than failing.
 const me = "@request.auth.id"
 
 type reach int

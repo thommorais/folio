@@ -74,7 +74,6 @@ func (p Project) Access() ProjectAccess {
 	return ProjectAccess{ClientOwners: p.ClientOwners, DomainGrants: p.DomainGrants, Members: p.Members}
 }
 
-// RoleOf returns the user's personal grant, ignoring client and domain grants.
 func (p Project) RoleOf(user UserID) (Role, bool) {
 	for _, m := range p.Members {
 		if m.UserID == user {
@@ -84,7 +83,6 @@ func (p Project) RoleOf(user UserID) (Role, bool) {
 	return "", false
 }
 
-// Owners returns every personal grant holding the owner role.
 func (p Project) Owners() []Member {
 	out := make([]Member, 0, 1)
 	for _, m := range p.Members {
