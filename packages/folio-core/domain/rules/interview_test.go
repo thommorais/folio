@@ -233,3 +233,43 @@ func TestValidateSend(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateSendDeferAndReopen(t *testing.T) {
+	answered := question("q1", 1)
+	answered.Status = domain.QuestionAnswered
+	answered.Answer = &domain.Answer{Kind: domain.AnswerAccept, Option: "b"}
+	s := state(answered, question("q2", 1))
+
+	if err := rules.ValidateSend(s, []domain.SendAction{{Type: domain.SendReopen, Q: "q1"}, {Type: domain.SendDefer, Q: "q2"}}); err != nil {
+		t.Fatalf("reopen an answered question and defer an open one: %v", err)
+	}
+	invalid(t, rules.ValidateSend(s, []domain.SendAction{{Type: domain.SendDefer, Q: "q1"}}), "defer an answered question")
+	invalid(t, rules.ValidateSend(s, []domain.SendAction{{Type: domain.SendReopen, Q: "q2"}}), "reopen an open question")
+}
+
+func TestCheckFinishable(t *testing.T) {
+	deferred := question("q2", 1)
+	deferred.Status = domain.QuestionDeferred
+	answered := question("q1", 1)
+	answered.Status = domain.QuestionAnswered
+	answered.Answer = &domain.Answer{Kind: domain.AnswerAccept, Option: "b"}
+
+	if err := rules.CheckFinishable(state(answered, deferred)); err != nil {
+		t.Fatalf("every question settled: %v", err)
+	}
+	reopened := question("q3", 2)
+	reopened.Status = domain.QuestionReopened
+	invalid(t, rules.CheckFinishable(state(answered, reopened)), "a reopened question is open")
+	invalid(t, rules.CheckFinishable(state()), "an interview with no questions has nothing to finish")
+}
+
+func TestCheckHandled(t *testing.T) {
+	if err := rules.CheckHandled(2, 4, 5); err != nil {
+		t.Fatalf("forward within the Sends: %v", err)
+	}
+	if err := rules.CheckHandled(4, 4, 4); err != nil {
+		t.Fatalf("the same seq again is a no-op: %v", err)
+	}
+	invalid(t, rules.CheckHandled(4, 3, 5), "backwards")
+	invalid(t, rules.CheckHandled(2, 6, 5), "past the last Send")
+}

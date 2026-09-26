@@ -17,6 +17,8 @@ type ticketFixture struct {
 	planSvc    *services.PlanService
 	entrySvc   *services.EntryService
 	cycleSvc   *services.CycleService
+	interviews   *fakeInterviews
+	interviewSvc *services.InterviewService
 	guard      *services.ProjectGuard
 	owner      ports.Actor
 	viewer     ports.Actor
@@ -43,6 +45,7 @@ func newTicketFixture(t *testing.T) *ticketFixture {
 	plans := newFakePlans()
 	entries := newFakeEntries()
 	cycles := newFakeCycles()
+	interviews := newFakeInterviews(issues, entries)
 	guard := services.NewProjectGuard(projects)
 	clock := &fakeClock{now: testNow}
 
@@ -55,6 +58,8 @@ func newTicketFixture(t *testing.T) *ticketFixture {
 		planSvc:  services.NewPlanService(plans, issues, issueSvc, guard, clock, &seqIDs{prefix: "pl"}, nopLogger{}),
 		entrySvc: services.NewEntryService(entries, issues, plans, guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),
 		cycleSvc: services.NewCycleService(cycles, issues, guard, clock, &seqIDs{prefix: "cy"}, nopLogger{}),
+		interviews:   interviews,
+		interviewSvc: services.NewInterviewService(interviews, issues, guard, clock, &seqIDs{prefix: "iv"}, nopLogger{}),
 		owner:      ports.Actor{UserID: "u-owner"},
 		viewer:     ports.Actor{UserID: "u-viewer"},
 		outside:    ports.Actor{UserID: "u-stranger"},

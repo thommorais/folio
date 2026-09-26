@@ -507,6 +507,14 @@ func ValidateSend(s domain.InterviewState, actions []domain.SendAction) error {
 			if len(keys) == 0 {
 				return domain.Invalid(a.Q, "only a question with options can be explored")
 			}
+		case domain.SendDefer:
+			if !q.Status.IsOpen() {
+				return domain.Invalid(a.Q, "only an open question can be deferred")
+			}
+		case domain.SendReopen:
+			if q.Status.IsOpen() {
+				return domain.Invalid(a.Q, "is already open")
+			}
 		}
 	}
 	return nil
@@ -538,4 +546,63 @@ func strict(raw json.RawMessage, into any) error {
 
 func isNull(raw json.RawMessage) bool {
 	return string(bytes.TrimSpace(raw)) == "null"
+}
+
+func CheckFinishable(s domain.InterviewState) error {
+	if len(s.Questions) == 0 {
+		return domain.Invalid("finish", "the interview has no questions yet")
+	}
+	for _, q := range s.Questions {
+		if q.Status.IsOpen() {
+			return domain.Invalid("finish", q.ID+" is still open; answer or defer it first")
+		}
+	}
+	return nil
+}
+
+func CheckHandled(current, next, lastSeq int) error {
+	if next < current {
+		return domain.Invalid("agent.handled", "cannot move back from "+strconv.Itoa(current))
+	}
+	if next > lastSeq {
+		return domain.Invalid("agent.handled", "the last Send is "+strconv.Itoa(lastSeq))
+	}
+	return nil
+}
+
+func CheckInterviewable(ticket domain.Issue) error {
+	if ticket.Kind != domain.IssueTicket || ticket.Wayfinder != domain.WayfinderGrilling {
+		return domain.Invalid("ticket", "an interview runs on a grilling ticket")
+	}
+	if ticket.Status.IsTerminal() {
+		return domain.Invalid("ticket", "is closed; reopen it to ask the question again")
+	}
+	return nil
+}
+
+type PatchSummary struct {
+	Round    int
+	Added    int
+	Answered int
+}
+
+func SummarisePatch(before, after domain.InterviewState) PatchSummary {
+	known := make(map[string]domain.QuestionStatus, len(before.Questions))
+	for _, q := range before.Questions {
+		known[q.ID] = q.Status
+	}
+	var out PatchSummary
+	for _, q := range after.Questions {
+		if q.Round > out.Round {
+			out.Round = q.Round
+		}
+		status, existed := known[q.ID]
+		if !existed {
+			out.Added++
+		}
+		if q.Status == domain.QuestionAnswered && status != domain.QuestionAnswered {
+			out.Answered++
+		}
+	}
+	return out
 }

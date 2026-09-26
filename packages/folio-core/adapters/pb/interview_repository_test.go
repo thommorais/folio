@@ -135,3 +135,48 @@ func TestInterviewsGoWithTheirTicket(t *testing.T) {
 		t.Fatalf("events left behind: %d", n)
 	}
 }
+
+func TestFinishWritesAllThreeOrNone(t *testing.T) {
+	s := setup(t)
+	repo := pb.NewInterviewRepository(s.app)
+	issues := pb.NewIssueRepository(s.app)
+	ticket := newIssue(t, s, domain.IssueTicket, "tree-or-graph")
+	interview, err := repo.Create(t.Context(), anInterview(s, ticket.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 9, 26, 14, 0, 0, 0, time.UTC)
+	resolution := domain.Entry{
+		ID: "resolution00001", Kind: domain.EntryResolution, ProjectID: ticket.ProjectID, IssueID: ticket.ID,
+		Body: "# Tree or graph", CreatedAt: now, UpdatedAt: now,
+	}
+
+	gone := ticket
+	gone.ID = "doesnotexist001"
+	if err := repo.Finish(t.Context(), interview, gone, resolution); err == nil {
+		t.Fatal("finishing against a missing ticket must fail")
+	}
+	if _, err := pb.NewEntryRepository(s.app).GetByID(t.Context(), resolution.ID); err == nil {
+		t.Fatal("a failed finish left its resolution entry behind")
+	}
+
+	closed := ticket
+	closed.Status = domain.IssueDone
+	closed.Resolution = "A graph."
+	closed.ResolutionEntry = resolution.ID
+	interview.FinishedAt = &now
+	if err := repo.Finish(t.Context(), interview, closed, resolution); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := issues.GetByID(t.Context(), ticket.ID)
+	if err != nil || got.Status != domain.IssueDone || got.ResolutionEntry != resolution.ID {
+		t.Fatalf("ticket = %+v, %v", got, err)
+	}
+	if detail, err := pb.NewEntryRepository(s.app).GetByID(t.Context(), resolution.ID); err != nil || detail.Body != "# Tree or graph" {
+		t.Fatalf("detail = %+v, %v", detail, err)
+	}
+	if finished, err := repo.GetByID(t.Context(), interview.ID); err != nil || !finished.IsFinished() {
+		t.Fatalf("interview = %+v, %v", finished, err)
+	}
+}

@@ -89,6 +89,7 @@ type InterviewRepository interface {
 	Update(ctx context.Context, i domain.Interview) (domain.Interview, error)
 	AppendEvent(ctx context.Context, i domain.Interview, actions []domain.SendAction, at time.Time) (domain.InterviewEvent, error)
 	EventsAfter(ctx context.Context, id domain.InterviewID, seq int) ([]domain.InterviewEvent, error)
+	Finish(ctx context.Context, i domain.Interview, ticket domain.Issue, resolution domain.Entry) error
 }
 
 type CycleRepository interface {

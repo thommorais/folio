@@ -229,3 +229,21 @@ type UpdateKnowledgeInput struct {
 	Body      *string
 	Tags      *[]string
 }
+
+type InterviewUseCase interface {
+	StartInterview(ctx context.Context, actor Actor, ticket domain.IssueID) (domain.Interview, bool, error)
+	CurrentInterview(ctx context.Context, actor Actor, ticket domain.IssueID) (domain.Interview, error)
+	ListInterviews(ctx context.Context, actor Actor, ticket domain.IssueID) ([]domain.Interview, error)
+	PatchInterview(ctx context.Context, actor Actor, ticket domain.IssueID, patch []byte) (InterviewPatchSummary, error)
+	PendingSends(ctx context.Context, actor Actor, ticket domain.IssueID) ([]domain.InterviewEvent, error)
+	SendToInterview(ctx context.Context, actor Actor, ticket domain.IssueID, actions []domain.SendAction) (domain.InterviewEvent, error)
+	FinishInterview(ctx context.Context, actor Actor, ticket domain.IssueID, answer, doc string) (domain.Interview, error)
+}
+
+type InterviewPatchSummary struct {
+	Interview domain.Interview
+	Round     int
+	Added     int
+	Answered  int
+	Handled   int
+}

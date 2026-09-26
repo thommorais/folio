@@ -174,3 +174,16 @@ func toEvent(rec *core.Record) (domain.InterviewEvent, error) {
 		Actions:     actions,
 	}, nil
 }
+
+func (r *InterviewRepository) Finish(ctx context.Context, i domain.Interview, ticket domain.Issue, resolution domain.Entry) error {
+	return mapErr(r.app.RunInTransaction(func(tx core.App) error {
+		if _, err := NewEntryRepository(tx).Create(ctx, resolution); err != nil {
+			return err
+		}
+		if _, err := NewIssueRepository(tx).Update(ctx, ticket); err != nil {
+			return err
+		}
+		_, err := NewInterviewRepository(tx).Update(ctx, i)
+		return err
+	}))
+}
