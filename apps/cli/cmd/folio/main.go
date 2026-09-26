@@ -61,6 +61,7 @@ func main() {
 	root.PersistentFlags().BoolVar(&flagJSON, "json", false, "output JSON instead of a table")
 
 	root.AddCommand(
+		clientCommand(),
 		configCommand(),
 		cycleCommand(),
 		docCommand(),
