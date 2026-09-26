@@ -10,8 +10,9 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from '@thom/ui/dropdown-menu'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ClearIcon, FilterIcon, SearchIcon } from './icons'
+import { useTypeToSearch } from './type-to-search'
 
 const FILTER_KEY = {
 	STATUSES: 'statuses',
@@ -109,6 +110,9 @@ type Props = {
 
 const FilterBar = ({ placeholder, term, onSearch, chips, children, trailing }: Props) => {
 	const [draft, setDraft] = useState(term ?? '')
+	const input = useRef<HTMLInputElement>(null)
+
+	useTypeToSearch(input, text => setDraft(current => current + text))
 
 	return (
 		<DropdownMenu>
@@ -125,6 +129,7 @@ const FilterBar = ({ placeholder, term, onSearch, chips, children, trailing }: P
 					</span>
 
 					<input
+						ref={input}
 						value={draft}
 						onChange={event => {
 							setDraft(event.target.value)
