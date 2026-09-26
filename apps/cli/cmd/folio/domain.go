@@ -30,6 +30,19 @@ func splitDomainRef(ref string) (string, string, error) {
 	return clientRef, domainRef, nil
 }
 
+func findDomain(folio *client.Client, clientRef, domainRef string) (string, error) {
+	domains, err := folio.ListDomains()
+	if err != nil {
+		return "", err
+	}
+	for _, d := range domains {
+		if (d.ClientSlug == clientRef || d.ClientID == clientRef) && (d.Slug == domainRef || d.ID == domainRef) {
+			return d.ID, nil
+		}
+	}
+	return "", fmt.Errorf("no domain %s/%s among the domains you can see", clientRef, domainRef)
+}
+
 func domainListCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",

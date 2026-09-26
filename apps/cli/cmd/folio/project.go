@@ -33,23 +33,34 @@ func projectCommand() *cobra.Command {
 }
 
 func projectCreateCommand() *cobra.Command {
-	var slug, descr string
+	var slug, descr, domainRef string
 
 	cmd := &cobra.Command{
 		Use:   "create <name>",
 		Short: "Create a project, becoming its first owner",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
+			var clientRef, domainPart string
+			if domainRef != "" {
+				var err error
+				if clientRef, domainPart, err = splitDomainRef(domainRef); err != nil {
+					return err
+				}
+			}
+
 			folio, err := api()
 			if err != nil {
 				return err
 			}
 
-			project, err := folio.CreateProject(client.CreateProjectInput{
-				Name:  args[0],
-				Slug:  slug,
-				Descr: descr,
-			})
+			in := client.CreateProjectInput{Name: args[0], Slug: slug, Descr: descr}
+			if domainRef != "" {
+				if in.DomainID, err = findDomain(folio, clientRef, domainPart); err != nil {
+					return err
+				}
+			}
+
+			project, err := folio.CreateProject(in)
 			if err != nil {
 				return err
 			}
@@ -67,6 +78,7 @@ func projectCreateCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&slug, "slug", "", "derived from the name when omitted")
 	cmd.Flags().StringVar(&descr, "descr", "", "what the project is")
+	cmd.Flags().StringVar(&domainRef, "domain", "", "<client>/<domain> to create it in; a new client and domain when omitted")
 
 	return cmd
 }

@@ -11,6 +11,7 @@ type Member struct {
 
 type Project struct {
 	ID        string   `json:"id"`
+	DomainID  string   `json:"domain_id,omitempty"`
 	Slug      string   `json:"slug"`
 	Name      string   `json:"name"`
 	Descr     string   `json:"descr,omitempty"`
@@ -42,9 +43,10 @@ func (c *Client) GetProject(ref string) (Project, error) {
 }
 
 type CreateProjectInput struct {
-	Slug  string `json:"slug,omitempty"`
-	Name  string `json:"name"`
-	Descr string `json:"descr,omitempty"`
+	DomainID string `json:"domain_id,omitempty"`
+	Slug     string `json:"slug,omitempty"`
+	Name     string `json:"name"`
+	Descr    string `json:"descr,omitempty"`
 }
 
 type ProjectInput struct {
