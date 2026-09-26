@@ -17,6 +17,7 @@ const (
 	SlugMaxLen  = 60
 	TitleMaxLen = 200
 	DescrMaxLen = 2000
+	LinkMaxLen  = 300
 	BodyMaxLen  = 500000
 	// RefMaxLen bounds a branch name, PR number or ticket key.
 	RefMaxLen = 200
@@ -66,6 +67,22 @@ func ValidateProject(p domain.Project) error {
 		return err
 	}
 	return optional("description", p.Descr, DescrMaxLen)
+}
+
+func ValidateClient(c domain.Client) error {
+	if err := ValidateSlug("slug", c.Slug); err != nil {
+		return err
+	}
+	if err := required("name", c.Name, NameMaxLen); err != nil {
+		return err
+	}
+	if err := optional("site", c.Site, LinkMaxLen); err != nil {
+		return err
+	}
+	if err := optional("logo", c.Logo, LinkMaxLen); err != nil {
+		return err
+	}
+	return optional("description", c.Descr, DescrMaxLen)
 }
 
 var planStatuses = map[domain.PlanStatus]bool{

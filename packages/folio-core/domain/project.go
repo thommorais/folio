@@ -54,6 +54,7 @@ type Client struct {
 	Site      string
 	Logo      string
 	Descr     string
+	Owners    []UserID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

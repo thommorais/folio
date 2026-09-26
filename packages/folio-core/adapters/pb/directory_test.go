@@ -1,6 +1,7 @@
 package pb_test
 
 import (
+	"errors"
 	"slices"
 	"testing"
 
@@ -75,5 +76,37 @@ func TestDomainListFollowsVisibility(t *testing.T) {
 				t.Errorf("domains = %v, want %v", got, tc.want)
 			}
 		})
+	}
+}
+
+func TestClientRepositoryUpdates(t *testing.T) {
+	s := setup(t)
+	c := castGrants(t, s)
+	newRecord(t, s.app, pb.ColClients, map[string]any{"slug": "globex", "name": "Globex"})
+	repo := pb.NewClientRepository(s.app)
+
+	got, err := repo.GetBySlug(t.Context(), "acme")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Owners) != 1 || string(got.Owners[0]) != c.boss.Id {
+		t.Errorf("owners = %v, want the boss only", got.Owners)
+	}
+
+	got.Name, got.Site = "Acme Corp", "https://acme.test"
+	updated, err := repo.Update(t.Context(), got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.Name != "Acme Corp" || updated.Site != "https://acme.test" {
+		t.Errorf("updated = %+v", updated)
+	}
+
+	got.Slug = "globex"
+	if _, err := repo.Update(t.Context(), got); !errors.Is(err, domain.ErrConflict) {
+		t.Errorf("taking another client's slug: err = %v, want ErrConflict", err)
+	}
+	if _, err := repo.GetByID(t.Context(), "missing0000000"); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("missing client: err = %v, want ErrNotFound", err)
 	}
 }

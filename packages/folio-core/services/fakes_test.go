@@ -358,3 +358,42 @@ func (r *fakeDomains) GetByID(_ context.Context, id domain.DomainID) (domain.Dom
 func (r *fakeDomains) List(_ context.Context, _ domain.UserID) ([]domain.Domain, error) {
 	return nil, nil
 }
+
+type fakeClients struct {
+	items   map[domain.ClientID]domain.Client
+	visible map[domain.UserID][]domain.ClientID
+}
+
+func newFakeClients() *fakeClients {
+	return &fakeClients{items: map[domain.ClientID]domain.Client{}, visible: map[domain.UserID][]domain.ClientID{}}
+}
+
+func (r *fakeClients) List(_ context.Context, user domain.UserID) ([]domain.Client, error) {
+	out := []domain.Client{}
+	for _, id := range r.visible[user] {
+		out = append(out, r.items[id])
+	}
+	return out, nil
+}
+
+func (r *fakeClients) GetByID(_ context.Context, id domain.ClientID) (domain.Client, error) {
+	c, ok := r.items[id]
+	if !ok {
+		return domain.Client{}, domain.ErrNotFound
+	}
+	return c, nil
+}
+
+func (r *fakeClients) GetBySlug(_ context.Context, slug string) (domain.Client, error) {
+	for _, c := range r.items {
+		if c.Slug == slug {
+			return c, nil
+		}
+	}
+	return domain.Client{}, domain.ErrNotFound
+}
+
+func (r *fakeClients) Update(_ context.Context, c domain.Client) (domain.Client, error) {
+	r.items[c.ID] = c
+	return c, nil
+}

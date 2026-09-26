@@ -42,3 +42,7 @@ func CanCreateProjectIn(d domain.Domain, user domain.UserID) bool {
 	}
 	return slices.ContainsFunc(d.Members, func(m domain.Member) bool { return m.UserID == user })
 }
+
+func CanAdminClient(c domain.Client, user domain.UserID) bool {
+	return slices.Contains(c.Owners, user)
+}

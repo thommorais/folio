@@ -27,6 +27,7 @@ TOKEN=$(curl -s -X POST localhost:8090/api/collections/users/auth-with-password 
 | Method | Path | Role |
 | --- | --- | --- |
 | GET | `/clients` | client member, domain member, or granted a project under it |
+| PATCH | `/clients/{client}` | client owner |
 | GET | `/domains` | domain member, client owner, or granted a project in it |
 
 Each domain carries `client_id`, `client_slug` and its roster in `members`.

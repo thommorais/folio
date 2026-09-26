@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/pocketbase/pocketbase/apis"
@@ -74,6 +75,17 @@ func TestClientsAndDomainsOverTheAPI(t *testing.T) {
 	get("/api/folio/clients", &clients)
 	if len(clients.Clients) != 1 || clients.Clients[0]["slug"] != "acme" || clients.Clients[0]["site"] != "https://acme.test" {
 		t.Errorf("clients = %v, want acme with its site", clients.Clients)
+	}
+
+	patch := httptest.NewRequest(http.MethodPatch, "/api/folio/clients/acme", strings.NewReader(`{"name":"Acme Corp"}`))
+	patch.Header.Set("Content-Type", "application/json")
+	patch.Header.Set("Authorization", token)
+	res := httptest.NewRecorder()
+	mux.ServeHTTP(res, patch)
+	var patched map[string]any
+	_ = json.Unmarshal(res.Body.Bytes(), &patched)
+	if res.Code != http.StatusOK || patched["name"] != "Acme Corp" || patched["slug"] != "acme" {
+		t.Errorf("PATCH client = %d %v, want 200 with the new name", res.Code, patched)
 	}
 
 	var domains struct {

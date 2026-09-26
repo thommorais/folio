@@ -52,7 +52,7 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 
 	return &App{
 		Projects:  services.NewProjectService(projectRepo, domainRepo, guard, clock, ids, log),
-		Clients:   services.NewClientService(pb.NewClientRepository(app)),
+		Clients:   services.NewClientService(pb.NewClientRepository(app), clock),
 		Domains:   services.NewDomainService(domainRepo),
 		Plans:     plans,
 		Issues:    issues,

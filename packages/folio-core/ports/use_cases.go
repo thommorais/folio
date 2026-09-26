@@ -20,6 +20,15 @@ type ProjectUseCase interface {
 
 type ClientUseCase interface {
 	ListClients(ctx context.Context, actor Actor) ([]domain.Client, error)
+	UpdateClient(ctx context.Context, actor Actor, ref string, in UpdateClientInput) (domain.Client, error)
+}
+
+type UpdateClientInput struct {
+	Slug  *string
+	Name  *string
+	Site  *string
+	Logo  *string
+	Descr *string
 }
 
 type DomainUseCase interface {

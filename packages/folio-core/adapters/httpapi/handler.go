@@ -63,6 +63,7 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.Bind(apis.RequireAuth())
 
 	g.GET("/clients", h.listClients)
+	g.PATCH("/clients/{client}", h.updateClient)
 	g.GET("/domains", h.listDomains)
 
 	g.GET("/projects", h.listProjects)

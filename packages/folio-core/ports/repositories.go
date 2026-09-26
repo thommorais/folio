@@ -37,6 +37,9 @@ type DomainRepository interface {
 
 type ClientRepository interface {
 	List(ctx context.Context, user domain.UserID) ([]domain.Client, error)
+	GetByID(ctx context.Context, id domain.ClientID) (domain.Client, error)
+	GetBySlug(ctx context.Context, slug string) (domain.Client, error)
+	Update(ctx context.Context, c domain.Client) (domain.Client, error)
 }
 
 type PlanRepository interface {
