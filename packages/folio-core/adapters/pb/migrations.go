@@ -85,6 +85,12 @@ func Register(app core.App) error {
 	if err := backfillTags(app); err != nil {
 		return fmt.Errorf("backfill tags: %w", err)
 	}
+	if err := ensureClientMembers(app); err != nil {
+		return fmt.Errorf("client members: %w", err)
+	}
+	if err := ensureProjectGrants(app); err != nil {
+		return fmt.Errorf("project grants: %w", err)
+	}
 	// Last of the data steps: it refuses unless every legacy row was copied.
 	if err := dropLegacy(app); err != nil {
 		return fmt.Errorf("drop legacy: %w", err)

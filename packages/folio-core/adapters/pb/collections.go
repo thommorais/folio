@@ -17,6 +17,8 @@ const (
 	ColIssueTags       = "journ_issue_tags"
 	ColEntryTags       = "journ_entry_tags"
 	ColMembers         = "journ_members"
+	ColClientMembers   = "journ_client_members"
+	ColProjectGrants   = "journ_project_grants"
 	ColPlans           = "journ_plans"
 	ColCycles          = "journ_cycles"
 	ColShares          = "journ_shares"
