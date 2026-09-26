@@ -220,12 +220,19 @@ func toIssueIDs(raw []string) []domain.IssueID {
 }
 
 type issueBriefView struct {
+	Issue    issueView     `json:"issue"`
+	Children []issueView   `json:"children"`
+	Plans    []planView    `json:"plans"`
+	Journal  []entryView   `json:"journal"`
+	Docs     []entryView   `json:"docs"`
+	Cycles   []cycleView   `json:"cycles"`
+	Map      *mapBriefView `json:"map,omitempty"`
+}
+
+type mapBriefView struct {
 	Issue    issueView   `json:"issue"`
-	Children []issueView `json:"children"`
-	Plans    []planView  `json:"plans"`
-	Journal  []entryView `json:"journal"`
-	Docs     []entryView `json:"docs"`
-	Cycles   []cycleView `json:"cycles"`
+	Open     int         `json:"open"`
+	Frontier []issueView `json:"frontier"`
 }
 
 func toIssueBriefView(b domain.IssueBrief) issueBriefView {
@@ -249,10 +256,14 @@ func toIssueBriefView(b domain.IssueBrief) issueBriefView {
 	for _, c := range b.Cycles {
 		cycles = append(cycles, toCycleView(c))
 	}
-	return issueBriefView{
+	out := issueBriefView{
 		Issue: toIssueView(b.Issue), Children: children, Plans: plans,
 		Journal: journal, Docs: docs, Cycles: cycles,
 	}
+	if b.Map != nil {
+		out.Map = &mapBriefView{Issue: toIssueView(b.Map.Map), Open: b.Map.Open, Frontier: issueViews(b.Map.Frontier)}
+	}
+	return out
 }
 
 type entryView struct {

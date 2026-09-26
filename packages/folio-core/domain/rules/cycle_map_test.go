@@ -3,6 +3,7 @@ package rules_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"folio/folio-core/domain"
 	"folio/folio-core/domain/rules"
@@ -120,5 +121,23 @@ func TestOpenDecisions(t *testing.T) {
 	}
 	if got := rules.OpenDecisions(children); got != 2 {
 		t.Fatalf("got %d, want 2", got)
+	}
+}
+
+func TestTakeable(t *testing.T) {
+	at := func(day int) time.Time { return time.Date(2026, 1, day, 0, 0, 0, 0, time.UTC) }
+	children := []domain.Issue{
+		{Title: "late", Status: domain.IssueOpen, CreatedAt: at(3)},
+		{Title: "early", Status: domain.IssueInProgress, CreatedAt: at(1)},
+		{Title: "done", Status: domain.IssueDone, CreatedAt: at(1)},
+		{Title: "claimed", Status: domain.IssueOpen, Assignee: "u1", CreatedAt: at(1)},
+		{Title: "blocked", Status: domain.IssueOpen, Blocked: true, CreatedAt: at(1)},
+	}
+	got := []string{}
+	for _, issue := range rules.Takeable(children) {
+		got = append(got, issue.Title)
+	}
+	if len(got) != 2 || got[0] != "early" || got[1] != "late" {
+		t.Fatalf("got %v, want [early late]", got)
 	}
 }

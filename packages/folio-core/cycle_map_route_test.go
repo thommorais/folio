@@ -103,6 +103,24 @@ func TestCycleMapOverTheAPI(t *testing.T) {
 		t.Fatalf("leave plan with an open decision = %d %s, want 400", res.Code, res.Body)
 	}
 
+	var brief struct {
+		Map *struct {
+			Issue struct {
+				ID string `json:"id"`
+			} `json:"issue"`
+			Open     int `json:"open"`
+			Frontier []struct {
+				Title string `json:"title"`
+			} `json:"frontier"`
+		} `json:"map"`
+	}
+	if err := json.Unmarshal(do(http.MethodGet, "/api/folio/issues/"+work+"/brief", "").Body.Bytes(), &brief); err != nil {
+		t.Fatal(err)
+	}
+	if brief.Map == nil || brief.Map.Issue.ID != theMap || brief.Map.Open != 1 || len(brief.Map.Frontier) != 1 || brief.Map.Frontier[0].Title != "Tree or graph" {
+		t.Fatalf("brief map = %+v", brief.Map)
+	}
+
 	other := idOf(do(http.MethodPost, "/api/folio/projects/redesign/issues", `{"kind":"ticket","title":"Mobile nav"}`), http.StatusCreated)
 	if res := do(http.MethodGet, "/api/folio/issues/"+other+"/cycles/current", ""); res.Code != http.StatusNotFound {
 		t.Fatalf("current with no cycle = %d %s, want 404", res.Code, res.Body)

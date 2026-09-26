@@ -154,3 +154,48 @@ func TestAMapHoldsItsCycleOpenToo(t *testing.T) {
 		t.Fatalf("every decision is closed, got %v", err)
 	}
 }
+
+func TestBriefCarriesTheCurrentCyclesPlan(t *testing.T) {
+	f := newTicketFixture(t)
+	ctx := t.Context()
+	work := f.ticket(t, f.project, "Wayfinder view")
+	theMap := f.child(t, work.ID, domain.WayfinderMap, "Plan the wayfinder view")
+	first := f.child(t, theMap.ID, domain.WayfinderGrilling, "Tree or graph")
+	f.child(t, theMap.ID, domain.WayfinderResearch, "How dense")
+	if _, err := f.issueSvc.CreateIssue(ctx, f.owner, ports.CreateIssueInput{
+		ProjectID: f.project, Kind: domain.IssueTicket, Title: "Prototype the rail", Wayfinder: domain.WayfinderPrototype,
+		ParentID: theMap.ID, DependsOn: []domain.IssueID{first.ID},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if brief, err := f.issueSvc.GetIssueBrief(ctx, f.owner, work.ID, ports.BriefOptions{}); err != nil || brief.Map != nil {
+		t.Fatalf("no cycle yet: want no plan, got %+v, %v", brief.Map, err)
+	}
+
+	cycle, err := f.cycleSvc.OpenCycle(ctx, f.owner, work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.cycleSvc.SetCycleMap(ctx, f.owner, cycle.ID, theMap.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	brief, err := f.issueSvc.GetIssueBrief(ctx, f.owner, work.ID, ports.BriefOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if brief.Map == nil || brief.Map.Map.ID != theMap.ID {
+		t.Fatalf("plan = %+v, want the cycle's map", brief.Map)
+	}
+	if brief.Map.Open != 3 {
+		t.Errorf("open = %d, want 3", brief.Map.Open)
+	}
+	titles := []string{}
+	for _, next := range brief.Map.Frontier {
+		titles = append(titles, next.Title)
+	}
+	if len(titles) != 2 || titles[0] != "Tree or graph" || titles[1] != "How dense" {
+		t.Errorf("frontier = %v, want the two unblocked decisions, oldest first", titles)
+	}
+}

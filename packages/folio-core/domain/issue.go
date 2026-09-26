@@ -135,4 +135,11 @@ type IssueBrief struct {
 	Journal  []Entry
 	Docs     []Entry
 	Cycles   []Cycle
+	Map      *MapBrief
+}
+
+type MapBrief struct {
+	Map      Issue
+	Open     int
+	Frontier []Issue
 }

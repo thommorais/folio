@@ -183,3 +183,15 @@ func NextIssuePosition(issues []domain.Issue) int {
 	}
 	return max + 1
 }
+
+func Takeable(children []domain.Issue) []domain.Issue {
+	out := make([]domain.Issue, 0, len(children))
+	for _, child := range children {
+		if child.Status.IsTerminal() || child.Assignee != "" || child.Blocked {
+			continue
+		}
+		out = append(out, child)
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].CreatedAt.Before(out[j].CreatedAt) })
+	return out
+}

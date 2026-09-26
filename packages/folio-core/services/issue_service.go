@@ -587,15 +587,7 @@ func (s *IssueService) Frontier(ctx context.Context, actor ports.Actor, mapID do
 		return nil, err
 	}
 
-	out := make([]domain.Issue, 0, len(children))
-	for _, child := range children {
-		if child.Status.IsTerminal() || child.Assignee != "" || child.Blocked {
-			continue
-		}
-		out = append(out, child)
-	}
-	sort.SliceStable(out, func(i, j int) bool { return out[i].CreatedAt.Before(out[j].CreatedAt) })
-	return out, nil
+	return rules.Takeable(children), nil
 }
 
 func (s *IssueService) GetIssueBrief(ctx context.Context, actor ports.Actor, id domain.IssueID, in ports.BriefOptions) (domain.IssueBrief, error) {
@@ -652,6 +644,11 @@ func (s *IssueService) brief(ctx context.Context, issue domain.Issue, in ports.B
 		cycles = []domain.Cycle{}
 	}
 
+	plan, err := s.mapBrief(ctx, issue.ProjectID, cycles)
+	if err != nil {
+		return domain.IssueBrief{}, err
+	}
+
 	return domain.IssueBrief{
 		Issue:    issue,
 		Children: children,
@@ -659,7 +656,30 @@ func (s *IssueService) brief(ctx context.Context, issue domain.Issue, in ports.B
 		Journal:  journal,
 		Docs:     docs,
 		Cycles:   cycles,
+		Map:      plan,
 	}, nil
+}
+
+func (s *IssueService) mapBrief(ctx context.Context, project domain.ProjectID, cycles []domain.Cycle) (*domain.MapBrief, error) {
+	current, ok := rules.CurrentCycle(cycles)
+	if !ok || current.MapID == "" {
+		return nil, nil
+	}
+	theMap, err := s.repo.GetByID(ctx, current.MapID)
+	if err != nil {
+		if notFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	children, err := s.repo.ListByParent(ctx, theMap.ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.decorate(ctx, project, children); err != nil {
+		return nil, err
+	}
+	return &domain.MapBrief{Map: theMap, Open: rules.OpenDecisions(children), Frontier: rules.Takeable(children)}, nil
 }
 
 func sortOpenFirstIssues(issues []domain.Issue) {
