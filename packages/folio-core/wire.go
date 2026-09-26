@@ -19,6 +19,8 @@ import (
 // interfaces, never on the services or repositories behind them.
 type App struct {
 	Projects  ports.ProjectUseCase
+	Clients   ports.ClientUseCase
+	Domains   ports.DomainUseCase
 	Plans     ports.PlanUseCase
 	Issues    ports.IssueUseCase
 	Entries   ports.EntryUseCase
@@ -50,6 +52,8 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 
 	return &App{
 		Projects:  services.NewProjectService(projectRepo, domainRepo, guard, clock, ids, log),
+		Clients:   services.NewClientService(pb.NewClientRepository(app)),
+		Domains:   services.NewDomainService(domainRepo),
 		Plans:     plans,
 		Issues:    issues,
 		Entries:   services.NewEntryService(entryRepo, issueRepo, planRepo, guard, clock, ids, log),
@@ -63,6 +67,8 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 func (a *App) Deps() httpapi.Deps {
 	return httpapi.Deps{
 		Projects:  a.Projects,
+		Clients:   a.Clients,
+		Domains:   a.Domains,
 		Plans:     a.Plans,
 		Issues:    a.Issues,
 		Entries:   a.Entries,

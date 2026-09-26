@@ -18,6 +18,14 @@ type ProjectUseCase interface {
 	SetMemberRole(ctx context.Context, actor Actor, id domain.ProjectID, user domain.UserID, role domain.Role) (domain.Project, error)
 }
 
+type ClientUseCase interface {
+	ListClients(ctx context.Context, actor Actor) ([]domain.Client, error)
+}
+
+type DomainUseCase interface {
+	ListDomains(ctx context.Context, actor Actor) ([]domain.Domain, error)
+}
+
 type CreateProjectInput struct {
 	DomainID domain.DomainID
 	Slug     string

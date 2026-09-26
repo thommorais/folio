@@ -33,17 +33,60 @@ type projectView struct {
 }
 
 func toProjectView(p domain.Project) projectView {
-	members := make([]memberView, 0, len(p.Members))
-	for _, m := range p.Members {
-		members = append(members, memberView{
-			UserID: string(m.UserID), Email: m.Email, Name: m.Name, Role: string(m.Role),
-		})
-	}
+	members := toMemberViews(p.Members)
 	return projectView{
 		ID: string(p.ID), DomainID: string(p.DomainID), Slug: p.Slug, Name: p.Name, Descr: p.Descr,
 		Archived: p.Archived, Members: members,
 		CreatedAt: rfc3339(p.CreatedAt), UpdatedAt: rfc3339(p.UpdatedAt),
 	}
+}
+
+type clientView struct {
+	ID        string `json:"id"`
+	Slug      string `json:"slug"`
+	Name      string `json:"name"`
+	Site      string `json:"site,omitempty"`
+	Logo      string `json:"logo,omitempty"`
+	Descr     string `json:"descr,omitempty"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+func toClientView(c domain.Client) clientView {
+	return clientView{
+		ID: string(c.ID), Slug: c.Slug, Name: c.Name, Site: c.Site, Logo: c.Logo, Descr: c.Descr,
+		CreatedAt: rfc3339(c.CreatedAt), UpdatedAt: rfc3339(c.UpdatedAt),
+	}
+}
+
+type domainView struct {
+	ID         string       `json:"id"`
+	ClientID   string       `json:"client_id"`
+	ClientSlug string       `json:"client_slug"`
+	Slug       string       `json:"slug"`
+	Name       string       `json:"name"`
+	Descr      string       `json:"descr,omitempty"`
+	Members    []memberView `json:"members"`
+	CreatedAt  string       `json:"created_at"`
+	UpdatedAt  string       `json:"updated_at"`
+}
+
+func toDomainView(d domain.Domain) domainView {
+	return domainView{
+		ID: string(d.ID), ClientID: string(d.ClientID), ClientSlug: d.ClientSlug, Slug: d.Slug, Name: d.Name,
+		Descr: d.Descr, Members: toMemberViews(d.Members),
+		CreatedAt: rfc3339(d.CreatedAt), UpdatedAt: rfc3339(d.UpdatedAt),
+	}
+}
+
+func toMemberViews(ms []domain.Member) []memberView {
+	out := make([]memberView, 0, len(ms))
+	for _, m := range ms {
+		out = append(out, memberView{
+			UserID: string(m.UserID), Email: m.Email, Name: m.Name, Role: string(m.Role),
+		})
+	}
+	return out
 }
 
 type progressView struct {

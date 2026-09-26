@@ -16,6 +16,8 @@ import (
 // on ports, so the same handler works against any adapter set.
 type Handler struct {
 	projects  ports.ProjectUseCase
+	clients   ports.ClientUseCase
+	domains   ports.DomainUseCase
 	plans     ports.PlanUseCase
 	issues    ports.IssueUseCase
 	entries   ports.EntryUseCase
@@ -27,6 +29,8 @@ type Handler struct {
 
 type Deps struct {
 	Projects  ports.ProjectUseCase
+	Clients   ports.ClientUseCase
+	Domains   ports.DomainUseCase
 	Plans     ports.PlanUseCase
 	Issues    ports.IssueUseCase
 	Entries   ports.EntryUseCase
@@ -38,7 +42,7 @@ type Deps struct {
 
 func New(d Deps) *Handler {
 	return &Handler{
-		projects: d.Projects, plans: d.Plans, issues: d.Issues, entries: d.Entries, cycles: d.Cycles, search: d.Search,
+		projects: d.Projects, clients: d.Clients, domains: d.Domains, plans: d.Plans, issues: d.Issues, entries: d.Entries, cycles: d.Cycles, search: d.Search,
 		knowledge: d.Knowledge, shares: d.Shares,
 	}
 }
@@ -57,6 +61,9 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 
 	g := e.Router.Group(BasePath)
 	g.Bind(apis.RequireAuth())
+
+	g.GET("/clients", h.listClients)
+	g.GET("/domains", h.listDomains)
 
 	g.GET("/projects", h.listProjects)
 	g.POST("/projects", h.createProject)

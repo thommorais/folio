@@ -22,12 +22,21 @@ TOKEN=$(curl -s -X POST localhost:8090/api/collections/users/auth-with-password 
 | 409 | slug already taken |
 | 207 | batch write partly succeeded; body lists `created` and `errors` |
 
+## Clients and domains
+
+| Method | Path | Role |
+| --- | --- | --- |
+| GET | `/clients` | client member, domain member, or granted a project under it |
+| GET | `/domains` | domain member, client owner, or granted a project in it |
+
+Each domain carries `client_id`, `client_slug` and its roster in `members`.
+
 ## Projects
 
 | Method | Path | Role |
 | --- | --- | --- |
 | GET | `/projects?archived=true` | member |
-| POST | `/projects` | any user, becomes owner |
+| POST | `/projects` | any user, becomes owner; with `domain_id`, a member of that domain or an owner of its client |
 | GET | `/projects/{project}` | member |
 | PATCH | `/projects/{project}` | editor |
 | DELETE | `/projects/{project}` | owner |

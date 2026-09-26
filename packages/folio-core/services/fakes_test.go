@@ -354,3 +354,7 @@ func (r *fakeDomains) GetByID(_ context.Context, id domain.DomainID) (domain.Dom
 	}
 	return d, nil
 }
+
+func (r *fakeDomains) List(_ context.Context, _ domain.UserID) ([]domain.Domain, error) {
+	return nil, nil
+}

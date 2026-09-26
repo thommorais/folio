@@ -61,6 +61,7 @@ type Client struct {
 type Domain struct {
 	ID           DomainID
 	ClientID     ClientID
+	ClientSlug   string
 	Slug         string
 	Name         string
 	Descr        string

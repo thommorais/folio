@@ -31,7 +31,12 @@ type ProjectRepository interface {
 }
 
 type DomainRepository interface {
+	List(ctx context.Context, user domain.UserID) ([]domain.Domain, error)
 	GetByID(ctx context.Context, id domain.DomainID) (domain.Domain, error)
+}
+
+type ClientRepository interface {
+	List(ctx context.Context, user domain.UserID) ([]domain.Client, error)
 }
 
 type PlanRepository interface {
