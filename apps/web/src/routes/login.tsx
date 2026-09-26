@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { Button } from '@thom/ui/button'
-import { Input } from '@thom/ui/input'
-import type { AuthError } from '_/core/ports/auth'
-import { useSession, useSignIn } from '_/app/use-session'
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
+import { Button } from '@thom/ui/button';
+import { Input } from '@thom/ui/input';
+import { useSession, useSignIn } from '_/app/use-session';
+import type { AuthError } from '_/core/ports/auth';
+import { useEffect, useState } from 'react';
 
 const messageFor = (error: AuthError): string => {
 	switch (error.kind) {
@@ -57,15 +57,14 @@ const Login = () => {
 			<div className='border-border bg-card hidden w-1/2 flex-col justify-between border-r p-12 lg:flex'>
 				<span className='font-serif text-lg'>folio</span>
 				<p className='max-w-sm font-serif text-2xl leading-snug text-balance'>
-					The shared channel between developers and their coding agents.
+					“Not all those who wander are lost.”
 				</p>
-				<span className='text-dim text-xs'>Tickets, plans, todos and a shared journal.</span>
 			</div>
 
 			<div className='flex w-full flex-col items-center justify-center p-8 lg:w-1/2 lg:p-12'>
 				<div className='flex w-full max-w-md flex-1 flex-col justify-center space-y-8'>
 					<div className='space-y-2 text-center'>
-						<h1 className='mb-4 font-serif text-lg lg:text-xl'>Welcome to folio</h1>
+						<h1 className='mb-4 font-serif text-lg lg:text-xl'>Welcome</h1>
 						<p className='text-dim text-sm'>Sign in to your account</p>
 					</div>
 
@@ -99,13 +98,13 @@ const Login = () => {
 					</form>
 				</div>
 
-				<p className='text-dim mt-auto text-center text-xs'>
+				{/* <p className='text-dim mt-auto text-center text-xs'>
 					Need an account? Ask a project owner to invite you, or{' '}
 					<Link to='/login' className='underline underline-offset-4'>
 						contact support
 					</Link>
 					.
-				</p>
+				</p> */}
 			</div>
 		</main>
 	)
