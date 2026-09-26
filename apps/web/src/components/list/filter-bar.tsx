@@ -137,7 +137,7 @@ const FilterBar = ({ placeholder, term, onSearch, chips, children, trailing }: P
 						autoCapitalize='none'
 						autoCorrect='off'
 						spellCheck={false}
-						className='border-border h-9 w-full border bg-transparent pr-9 pl-9 text-sm focus:outline-hidden sm:w-[320px]'
+						className='border-border h-9 w-full border bg-transparent pr-9 pl-9 text-base sm:w-[320px] sm:text-sm'
 					/>
 
 					{children !== undefined && (

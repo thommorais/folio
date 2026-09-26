@@ -103,10 +103,15 @@
 		text-wrap-style: pretty;
 		text-rendering: optimizeLegibility;
 		-webkit-font-smoothing: antialiased;
+		-webkit-tap-highlight-color: transparent;
 	}
 
 	*:focus {
 		outline: none;
+	}
+
+	*:focus-visible {
+		box-shadow: inset 0 0 0 1px var(--color-ring);
 	}
 }
 

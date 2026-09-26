@@ -54,7 +54,7 @@ export const Section = ({ title, items, message, emptyLabel, filtered, to, param
 						<Link
 							to={item.to}
 							params={item.params}
-							className='hover:bg-accent/40 block px-4 py-2.5 transition-colors'
+							className='hover:bg-accent/40 active:bg-accent/60 block px-4 py-2.5 transition-colors'
 						>
 							{item.line}
 						</Link>

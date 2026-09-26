@@ -40,7 +40,7 @@ const CyclePlan = ({
 		<Link
 			to='/$client/$domain/$slug/tickets/$ticket'
 			params={{ client, domain, slug: project, ticket: map.slug }}
-			className='border-border hover:bg-accent/40 flex max-w-xl items-center gap-4 border px-4 py-2.5 transition-colors'
+			className='border-border hover:bg-accent/40 active:bg-accent/60 flex max-w-xl items-center gap-4 border px-4 py-2.5 transition-colors'
 		>
 			<span className='flex min-w-0 flex-1 flex-col'>
 				<span className='text-dim text-xs'>Planned by</span>

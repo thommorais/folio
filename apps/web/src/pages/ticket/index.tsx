@@ -215,7 +215,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 								<Link
 									to='/$client/$domain/$slug/todos/$todo'
 									params={{ client, domain, slug: project, todo: todo.slug }}
-									className='hover:bg-accent/40 block px-4 py-2.5 transition-colors'
+									className='hover:bg-accent/40 active:bg-accent/60 block px-4 py-2.5 transition-colors'
 								>
 									<IssueLine issue={todo} strike />
 								</Link>
@@ -234,7 +234,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 								<Link
 									to='/$client/$domain/$slug/journal/$entry'
 									params={{ client, domain, slug: project, entry: entry.slug }}
-									className='hover:bg-accent/40 flex items-center justify-between gap-4 px-4 py-3 text-sm transition-colors'
+									className='hover:bg-accent/40 active:bg-accent/60 flex items-center justify-between gap-4 px-4 py-3 text-sm transition-colors'
 								>
 									<span className='min-w-0 flex-1 truncate'>{entry.title}</span>
 									<Badge color='muted'>{ENTRY_KIND_LABELS[entry.kind]}</Badge>

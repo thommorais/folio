@@ -53,13 +53,13 @@ const Journal = () => {
 						<Link
 							to='/$client/$domain/$slug/journal/$entry'
 							params={{ client, domain, slug, entry: entry.slug }}
-							className='hover:bg-accent/40 block space-y-2 px-4 py-4 transition-colors'
+							className='hover:bg-accent/40 active:bg-accent/60 block space-y-2 px-4 py-4 transition-colors'
 						>
 							<div className='flex items-start justify-between gap-4'>
 								<h3 className='text-sm font-medium'>{entry.title}</h3>
 								<span className='flex shrink-0 items-center gap-3'>
 									<Badge color='muted'>{ENTRY_KIND_LABELS[entry.kind]}</Badge>
-									<span className='text-dimmer text-xs'>{dayMonth.format(entry.createdAt)}</span>
+									<span className='text-dimmer text-xs tabular-nums'>{dayMonth.format(entry.createdAt)}</span>
 								</span>
 							</div>
 

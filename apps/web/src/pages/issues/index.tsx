@@ -71,7 +71,7 @@ const Row = ({
 	const muted = isTerminal(issue.status) || row.isContext
 
 	return (
-		<article className='hover:bg-accent/40 relative px-4 py-2.5 transition-colors'>
+		<article className='hover:bg-accent/40 active:bg-accent/60 has-focus-visible:bg-accent/40 relative px-4 py-2.5 transition-colors'>
 			<Guides row={row} />
 
 			<div style={{ paddingLeft: row.depth * INDENT }}>

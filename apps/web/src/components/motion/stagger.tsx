@@ -5,8 +5,8 @@ const EASE = [0.16, 1, 0.3, 1] as const
 
 // Rows past this point land after the eye has already moved on, so they all
 // share the last delay rather than trailing a long list in sequence.
-const MAX_STAGGERED = 8
-const STEP = 0.03
+const MAX_STAGGERED = 6
+const STEP = 0.02
 
 type StaggerItemProps = {
 	readonly index: number
@@ -30,7 +30,7 @@ export const StaggerItem = ({ index, children, className, as = 'div' }: StaggerI
 			className={className}
 			initial={{ opacity: 0, y: 6 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.28, ease: EASE, delay: Math.min(index, MAX_STAGGERED) * STEP }}
+			transition={{ duration: 0.15, ease: EASE, delay: Math.min(index, MAX_STAGGERED) * STEP }}
 		>
 			{children}
 		</Tag>

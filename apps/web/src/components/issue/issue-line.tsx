@@ -35,7 +35,7 @@ export const IssueLine = ({ issue, title, muted = isTerminal(issue.status), stri
 			{extra}
 		</span>
 
-		<time dateTime={issue.updatedAt.toISOString()} className='text-dimmer w-12 shrink-0 text-right text-xs'>
+		<time dateTime={issue.updatedAt.toISOString()} className='text-dimmer w-12 shrink-0 text-right text-xs tabular-nums'>
 			{dayMonth.format(issue.updatedAt)}
 		</time>
 	</div>

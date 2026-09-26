@@ -17,7 +17,7 @@ const Row = ({ plan, project }: { readonly plan: Plan; readonly project: string 
 		<Link
 			to='/$client/$domain/$slug/plans/$plan'
 			params={{ client, domain, slug: project, plan: plan.id }}
-			className='hover:bg-accent/40 block space-y-2 px-4 py-4 transition-colors'
+			className='hover:bg-accent/40 active:bg-accent/60 block space-y-2 px-4 py-4 transition-colors'
 		>
 			<div className='flex items-start justify-between gap-4'>
 				<h3 className={cn('text-sm font-medium', plan.status === PLAN_STATUS.DONE && 'text-dim line-through')}>{plan.title}</h3>
