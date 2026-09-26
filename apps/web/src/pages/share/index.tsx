@@ -1,6 +1,7 @@
 import { useParams } from '@tanstack/react-router'
 import { cn } from '@thom/libs/cn'
 import { Badge } from '@thom/ui/badge'
+import { Tag } from '_/components/issue/tag'
 import { Heading } from '@thom/ui/heading'
 import { useShared } from '_/app/use-shared'
 import { Markdown } from '_/components/markdown'
@@ -24,9 +25,7 @@ const Section = ({ title, children }: { readonly title: string; readonly childre
 
 const Tags = ({ tags }: { readonly tags: readonly string[] }) =>
 	tags.map(tag => (
-		<Badge key={tag} color='muted'>
-			{tag}
-		</Badge>
+		<Tag key={tag} tag={tag} />
 	))
 
 const TodoList = ({ todos }: { readonly todos: readonly (SharedIssue & { readonly id: string })[] }) => (

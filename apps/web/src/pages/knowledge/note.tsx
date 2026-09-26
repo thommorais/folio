@@ -1,5 +1,5 @@
 import { Link, useParams } from '@tanstack/react-router'
-import { Badge } from '@thom/ui/badge'
+import { Tag } from '_/components/issue/tag'
 import { Heading } from '@thom/ui/heading'
 import { Status } from '_/lib/async-status'
 import { Markdown } from '_/components/markdown'
@@ -40,9 +40,7 @@ export const KnowledgeNote = () => {
 					<span className='font-mono'>{note.slug}</span>
 					<span>{formatDate(note.updatedAt)}</span>
 					{note.tags.map(tag => (
-						<Badge key={tag} color='muted'>
-							{tag}
-						</Badge>
+						<Tag key={tag} tag={tag} />
 					))}
 				</div>
 			</header>

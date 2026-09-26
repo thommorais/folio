@@ -1,10 +1,12 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { useIssues } from '_/app/use-issues';
 import { usePlans } from '_/app/use-plans';
-import { ISSUE_KIND, ISSUE_STATUS, isTerminal, type Issue } from '_/core/domain/issue';
+import { cn } from '@thom/libs/cn';
+import { IssueLine } from '_/components/issue/issue-line';
+import { Tags } from '_/components/issue/tag';
+import { ISSUE_KIND, ISSUE_STATUS, type Issue } from '_/core/domain/issue';
 import { isTerminal as isPlanTerminal, PLAN_STATUS, type Plan } from '_/core/domain/plan';
 import { Status } from '_/lib/async-status';
-import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels';
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels';
 import { useScope } from '_/routing/use-scope';
 import { Section, type WorkItem } from './section';
@@ -19,33 +21,31 @@ type Scope = {
 
 const issueItem = (scope: Scope, issue: Issue): WorkItem => ({
 	id: issue.id,
-	title: issue.title,
-	status: ISSUE_STATUS_LABELS[issue.status],
-	muted: isTerminal(issue.status),
-	meta: [issue.priority, ...issue.tags],
 	to: '/$client/$domain/$slug/tickets/$ticket',
 	params: { ...scope, ticket: issue.slug },
+	line: <IssueLine issue={issue} />,
 })
 
 const todoItem = (scope: Scope, todo: Issue): WorkItem => ({
 	id: todo.id,
-	title: todo.title,
-	status: ISSUE_STATUS_LABELS[todo.status],
-	muted: isTerminal(todo.status),
-	checked: todo.status === ISSUE_STATUS.DONE,
-	meta: [todo.priority, ...todo.tags],
 	to: '/$client/$domain/$slug/todos/$todo',
 	params: { ...scope, todo: todo.slug },
+	line: <IssueLine issue={todo} strike />,
 })
 
 const planItem = (scope: Scope, plan: Plan): WorkItem => ({
 	id: plan.id,
-	title: plan.title,
-	status: PLAN_STATUS_LABELS[plan.status],
-	muted: isPlanTerminal(plan.status),
-	meta: plan.tags,
 	to: '/$client/$domain/$slug/plans/$plan',
 	params: { ...scope, plan: plan.id },
+	line: (
+		<div className='flex h-5 items-center gap-3'>
+			<span className={cn('min-w-0 flex-1 truncate text-sm', isPlanTerminal(plan.status) && 'text-dim')}>
+				{plan.title}
+			</span>
+			<Tags tags={plan.tags} className='hidden shrink-0 flex-nowrap sm:flex' />
+			<span className='text-dim w-20 shrink-0 text-right text-xs'>{PLAN_STATUS_LABELS[plan.status]}</span>
+		</div>
+	),
 })
 
 const Work = () => {

@@ -4,14 +4,14 @@ import { Badge } from '@thom/ui/badge';
 import { useIssues } from '_/app/use-issues';
 import { Skeleton } from '_/components/motion/skeleton';
 import { MarkdownPreview } from '_/components/markdown/preview';
+import { ISSUE_LINE_INSET, IssueLine } from '_/components/issue/issue-line';
 import { StaggerItem } from '_/components/motion/stagger';
-import { isTerminal, ISSUE_KIND, ISSUE_STATUS, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
+import { isTerminal, ISSUE_KIND, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
 import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree';
 import type { IssueSortField, Sort } from '_/core/ports/sort';
 import { Status } from '_/lib/async-status';
 import { useScope } from '_/routing/use-scope';
 import { IssueFilters } from './issue-filters';
-import { ISSUE_STATUS_LABELS as statusLabels } from './status-labels';
 
 type IssuesSearch = {
 	readonly statuses?: readonly IssueStatus[]
@@ -23,7 +23,7 @@ type IssuesSearch = {
 
 const INDENT = 22
 // Vertical center of a nested row's title line, where the connector meets it.
-const ELBOW = '1.1rem'
+const ELBOW = '1.25rem'
 
 // Guides live in the row's left gutter rather than in the flow, so the title
 // column keeps one offset per depth instead of drifting with the markup.
@@ -68,60 +68,38 @@ const Row = ({
 }) => {
 	const { issue } = row
 	const { client, domain } = useScope()
+	const muted = isTerminal(issue.status) || row.isContext
 
 	return (
-		<article className={cn('relative px-4', row.depth === 0 ? 'py-4' : 'py-3')}>
+		<article className='hover:bg-accent/40 relative px-4 py-2.5 transition-colors'>
 			<Guides row={row} />
 
-			<div className='space-y-2' style={{ paddingLeft: row.depth * INDENT }}>
-				<div className='flex items-start justify-between gap-4'>
-					<span className='flex min-w-0 items-start gap-2'>
-						{kind === ISSUE_KIND.TODO && (
-							<span
-								className={cn(
-									'border-border mt-0.5 size-4 shrink-0 border',
-									issue.status === ISSUE_STATUS.DONE && 'bg-foreground border-foreground',
-								)}
-							/>
-						)}
-
+			<div style={{ paddingLeft: row.depth * INDENT }}>
+				<IssueLine
+					issue={row.isContext ? { ...issue, tags: [] } : issue}
+					muted={muted}
+					strike={kind === ISSUE_KIND.TODO}
+					title={
 						<Link
 							to={kind === ISSUE_KIND.TODO ? '/$client/$domain/$slug/todos/$todo' : '/$client/$domain/$slug/tickets/$ticket'}
 							params={{ client, domain, slug: project, ticket: issue.slug, todo: issue.slug }}
-							className={cn(
-								'text-sm font-medium hover:underline',
-								(isTerminal(issue.status) || row.isContext) && 'text-dim',
-								issue.status === ISSUE_STATUS.DONE && kind === ISSUE_KIND.TODO && 'line-through',
-							)}
+							className='after:absolute after:inset-0'
 						>
 							{issue.title}
 						</Link>
-					</span>
+					}
+					extra={
+						!row.isContext && (
+							<>
+								{issue.wayfinder && <Badge color='muted'>{issue.wayfinder}</Badge>}
+								{issue.externalRef && <span className='text-dimmer font-mono text-xs'>{issue.externalRef}</span>}
+							</>
+						)
+					}
+				/>
 
-					<span className='flex shrink-0 items-center gap-2'>
-						{issue.wayfinder && <Badge color='muted'>{issue.wayfinder}</Badge>}
-						<span className='text-dim text-xs'>{statusLabels[issue.status]}</span>
-					</span>
-				</div>
-
-				{/* A context row is only present to place its children, so its own
-				    body and metadata would read as a false match. */}
-				{!row.isContext && (
-					// The checkbox indents the title, so its row's body and metadata
-					// line up under the text rather than under the box.
-					<div className={cn('space-y-2', kind === ISSUE_KIND.TODO && 'pl-6')}>
-						{issue.body && <MarkdownPreview>{issue.body}</MarkdownPreview>}
-
-						<div className='flex flex-wrap items-center gap-2 pt-1'>
-							<span className='text-dimmer font-mono text-xs'>{issue.priority}</span>
-							{issue.externalRef && <span className='text-dimmer font-mono text-xs'>{issue.externalRef}</span>}
-							{issue.tags.map(tag => (
-								<Badge key={tag} color='muted'>
-									{tag}
-								</Badge>
-							))}
-						</div>
-					</div>
+				{!row.isContext && issue.body && (
+					<MarkdownPreview className={cn('mt-1 line-clamp-1 text-xs', ISSUE_LINE_INSET)}>{issue.body}</MarkdownPreview>
 				)}
 			</div>
 		</article>
@@ -161,7 +139,7 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 			return (
 				<div className='border-border divide-border divide-y border'>
 					{[0, 1].map(key => (
-						<Skeleton key={key} className='h-20' />
+						<Skeleton key={key} className='h-16' />
 					))}
 				</div>
 			)

@@ -1,6 +1,6 @@
 import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { cn } from '@thom/libs/cn'
-import { Badge } from '@thom/ui/badge'
+import { Tag } from '_/components/issue/tag'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { usePlans } from '_/app/use-plans'
@@ -29,9 +29,7 @@ const Row = ({ plan, project }: { readonly plan: Plan; readonly project: string 
 			{plan.tags.length > 0 && (
 				<div className='flex flex-wrap items-center gap-2 pt-1'>
 					{plan.tags.map(tag => (
-						<Badge key={tag} color='muted'>
-							{tag}
-						</Badge>
+						<Tag key={tag} tag={tag} />
 					))}
 				</div>
 			)}

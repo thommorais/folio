@@ -1,5 +1,6 @@
 import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
+import { Tag } from '_/components/issue/tag'
 import { Skeleton } from '_/components/motion/skeleton'
 import { MarkdownPreview } from '_/components/markdown/preview'
 import { StaggerItem } from '_/components/motion/stagger'
@@ -69,9 +70,7 @@ const Journal = () => {
 								{entry.externalRef && <span className='text-dimmer font-mono text-xs'>{entry.externalRef}</span>}
 								{entry.pr && <span className='text-dimmer font-mono text-xs'>#{entry.pr}</span>}
 								{entry.tags.map(tag => (
-									<Badge key={tag} color='muted'>
-										{tag}
-									</Badge>
+									<Tag key={tag} tag={tag} />
 								))}
 							</div>
 						</Link>

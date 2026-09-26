@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { useSlugSync } from '_/routing/use-slug-sync'
 import { RecordGone } from '_/components/record/record-gone'
 import { Badge } from '@thom/ui/badge'
+import { Tag } from '_/components/issue/tag'
 import { Heading } from '@thom/ui/heading'
 import { Markdown } from '_/components/markdown'
 import { useEntry } from '_/app/use-entry'
@@ -35,9 +36,7 @@ const EntryBody = ({ project, entry }: { readonly project: string; readonly entr
 					{entry.pr && <span className='font-mono'>#{entry.pr}</span>}
 					{entry.externalRef && <span className='font-mono'>{entry.externalRef}</span>}
 					{entry.tags.map(tag => (
-						<Badge key={tag} color='muted'>
-							{tag}
-						</Badge>
+						<Tag key={tag} tag={tag} />
 					))}
 				</div>
 

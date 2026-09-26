@@ -1,15 +1,16 @@
 import { Link, useParams } from '@tanstack/react-router'
 import { cn } from '@thom/libs/cn'
 import { Badge } from '@thom/ui/badge'
+import { Tag } from '_/components/issue/tag'
 import { Heading } from '@thom/ui/heading'
 import { Markdown } from '_/components/markdown'
 import { Skeleton } from '_/components/motion/skeleton'
 import { RecordGone } from '_/components/record/record-gone'
 import { ShareSheet } from '_/components/share/share-sheet'
 import { usePlan } from '_/app/use-plan'
+import { IssueRef } from '_/components/issue/issue-ref'
 import { PLAN_STATUS, type Plan, type PlanStatus } from '_/core/domain/plan'
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels'
-import { useScope } from '_/routing/use-scope'
 import { Status } from '_/lib/async-status'
 import { SHARE_KIND } from '_/core/domain/share'
 
@@ -23,8 +24,6 @@ const statusColor = (status: PlanStatus) => {
 }
 
 const PlanBody = ({ plan, project }: { readonly plan: Plan; readonly project: string }) => {
-	const { client, domain } = useScope()
-
 	return (
 		<article className='space-y-8'>
 			<header className='space-y-3'>
@@ -36,19 +35,9 @@ const PlanBody = ({ plan, project }: { readonly plan: Plan; readonly project: st
 				<div className='text-dimmer flex flex-wrap items-center gap-3 text-xs'>
 					<Badge color={statusColor(plan.status)}>{PLAN_STATUS_LABELS[plan.status]}</Badge>
 					<span>Updated {formatDate(plan.updatedAt)}</span>
-					{plan.ticketId && (
-						<Link
-							to='/$client/$domain/$slug/tickets'
-							params={{ client, domain, slug: project }}
-							className='hover:text-foreground font-mono transition-colors'
-						>
-							{plan.ticketId}
-						</Link>
-					)}
+					{plan.ticketId && <IssueRef project={project} id={plan.ticketId} />}
 					{plan.tags.map(tag => (
-						<Badge key={tag} color='muted'>
-							{tag}
-						</Badge>
+						<Tag key={tag} tag={tag} />
 					))}
 				</div>
 			</header>

@@ -1,19 +1,13 @@
 import { Link } from '@tanstack/react-router'
-import { cn } from '@thom/libs/cn'
-import { Badge } from '@thom/ui/badge'
+import type { ReactNode } from 'react'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 
 export type WorkItem = {
 	readonly id: string
-	readonly title: string
-	readonly status: string
-	readonly muted: boolean
-	// Todos get a checkbox; a ticket or a plan is not something you tick off.
-	readonly checked?: boolean
-	readonly meta: readonly string[]
 	readonly to: string
 	readonly params: Record<string, string>
+	readonly line: ReactNode
 }
 
 type Props = {
@@ -44,7 +38,7 @@ export const Section = ({ title, items, message, emptyLabel, filtered, to, param
 		{message === undefined && items === undefined && (
 			<div className='border-border divide-border divide-y border'>
 				{[0, 1].map(key => (
-					<Skeleton key={key} className='h-11' />
+					<Skeleton key={key} className='h-10' />
 				))}
 			</div>
 		)}
@@ -60,30 +54,9 @@ export const Section = ({ title, items, message, emptyLabel, filtered, to, param
 						<Link
 							to={item.to}
 							params={item.params}
-							className='hover:bg-accent/40 flex items-center gap-3 px-4 py-3 transition-colors'
+							className='hover:bg-accent/40 block px-4 py-2.5 transition-colors'
 						>
-							{item.checked !== undefined && (
-								<span
-									className={cn(
-										'border-border size-4 shrink-0 border',
-										item.checked && 'bg-foreground border-foreground',
-									)}
-								/>
-							)}
-
-							<span className={cn('min-w-0 flex-1 truncate text-sm', item.muted && 'text-dim line-through')}>
-								{item.title}
-							</span>
-
-							<span className='hidden shrink-0 items-center gap-2 sm:flex'>
-								{item.meta.map(entry => (
-									<Badge key={entry} color='muted'>
-										{entry}
-									</Badge>
-								))}
-							</span>
-
-							<span className='text-dim w-24 shrink-0 text-right text-xs'>{item.status}</span>
+							{item.line}
 						</Link>
 					</StaggerItem>
 				))}

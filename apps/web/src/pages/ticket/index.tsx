@@ -1,6 +1,10 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { cn } from '@thom/libs/cn';
 import { Badge } from '@thom/ui/badge';
+import { Tag } from '_/components/issue/tag';
+import { IssueLine } from '_/components/issue/issue-line';
+import { CycleChip } from '_/components/issue/cycle-chip';
+import { PriorityIcon } from '_/components/issue/priority-icon';
+import { StatusIcon } from '_/components/issue/status-icon';
 import { Heading } from '@thom/ui/heading';
 import { useCycles } from '_/app/use-cycles';
 import { useEntries } from '_/app/use-entries';
@@ -13,9 +17,8 @@ import { ShareSheet } from '_/components/share/share-sheet';
 import { openBlockers } from '_/core/domain/blocked';
 import { newestFirst } from '_/core/domain/cycle-progress';
 import { ADDRESSABLE_KINDS, ENTRY_KIND } from '_/core/domain/entry';
-import { ISSUE_KIND, ISSUE_STATUS, type Issue, type IssueStatus } from '_/core/domain/issue';
+import { ISSUE_KIND, type Issue, type IssueStatus } from '_/core/domain/issue';
 import { Status } from '_/lib/async-status';
-import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels';
 import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels';
 import { useScope } from '_/routing/use-scope';
 import { useSlugSync } from '_/routing/use-slug-sync';
@@ -127,19 +130,19 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 				</div>
 
 				<div className='flex flex-wrap items-center gap-2'>
-					<span className='text-dim text-xs'>{statusLabels[ticket.status]}</span>
-					<span className='text-dimmer font-mono text-xs'>{ticket.priority}</span>
+					<span className='text-dim flex items-center gap-1.5 text-xs'>
+						<StatusIcon status={ticket.status} />
+						{statusLabels[ticket.status]}
+					</span>
+					<span className='text-dim flex items-center gap-1.5 text-xs capitalize'>
+						<PriorityIcon priority={ticket.priority} />
+						{ticket.priority}
+					</span>
 					{ticket.wayfinder && <Badge color='neutral'>{ticket.wayfinder}</Badge>}
-					{current && (
-						<Badge color='muted'>
-							cycle {current.ordinal}: {current.phase}
-						</Badge>
-					)}
+					{current && <CycleChip cycle={current} />}
 					{ticket.externalRef && <span className='text-dimmer font-mono text-xs'>{ticket.externalRef}</span>}
 					{ticket.tags.map(tag => (
-						<Badge key={tag} color='muted'>
-							{tag}
-						</Badge>
+						<Tag key={tag} tag={tag} />
 					))}
 				</div>
 
@@ -212,31 +215,9 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 								<Link
 									to='/$client/$domain/$slug/todos/$todo'
 									params={{ client, domain, slug: project, todo: todo.slug }}
-									className='hover:bg-accent/40 flex w-full items-center gap-3 px-4 py-3 transition-colors'
+									className='hover:bg-accent/40 block px-4 py-2.5 transition-colors'
 								>
-									<span
-										className={cn(
-											'border-border size-4 shrink-0 border',
-											todo.status === ISSUE_STATUS.DONE && 'bg-foreground border-foreground',
-										)}
-									/>
-
-									<span className={cn('flex-1 truncate text-sm', todo.status === ISSUE_STATUS.DONE && 'text-dim line-through')}>
-										{todo.title}
-									</span>
-
-									{todo.status === ISSUE_STATUS.BLOCKED && <Badge color='destructive'>Blocked</Badge>}
-
-									<span className='hidden shrink-0 items-center gap-3 sm:flex'>
-										{todo.tags.map(tag => (
-											<Badge key={tag} color='muted'>
-												{tag}
-											</Badge>
-										))}
-									</span>
-
-									<span className='text-dimmer hidden w-16 shrink-0 text-right text-xs sm:block'>{todo.priority}</span>
-									<span className='text-dim w-24 shrink-0 text-right text-xs'>{ISSUE_STATUS_LABELS[todo.status]}</span>
+									<IssueLine issue={todo} strike />
 								</Link>
 							</li>
 						))}

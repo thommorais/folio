@@ -2,16 +2,16 @@ import type React from 'react'
 import { tv, type VariantProps } from '@thom/libs/tv'
 
 const badgeClasses = tv({
-	base: 'inline-flex items-center gap-x-1.5 border px-1.5 py-0.5 text-xs font-medium',
+	base: 'inline-flex h-5 shrink-0 items-center gap-1.5 px-2 text-[11px] leading-none font-normal whitespace-nowrap',
 	variants: {
 		color: {
-			neutral: 'border-border bg-accent text-foreground',
-			muted: 'border-border text-dim bg-transparent',
-			active: 'border-border bg-foreground text-background',
-			destructive: 'border-destructive/20 bg-destructive/10 text-destructive',
+			neutral: 'bg-accent text-foreground',
+			muted: 'bg-accent text-dim',
+			active: 'bg-foreground text-background',
+			destructive: 'bg-destructive/10 text-destructive',
 		},
 	},
-	defaultVariants: { color: 'neutral' },
+	defaultVariants: { color: 'muted' },
 })
 
 type BadgeProps = React.ComponentPropsWithoutRef<'span'> & VariantProps<typeof badgeClasses>

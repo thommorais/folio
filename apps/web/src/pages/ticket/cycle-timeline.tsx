@@ -57,17 +57,12 @@ const PhaseRail = ({ cycle }: { readonly cycle: Cycle }) => (
 		{cycleProgress(cycle).map((step, index) => (
 			<li key={step.phase} className='flex items-center gap-1'>
 				{index > 0 && <span className={cn('h-px w-3', step.reached ? 'bg-foreground' : 'bg-border')} aria-hidden />}
-				<span
-					className={cn(
-						'border px-1.5 py-0.5 text-xs',
-						step.reached ? 'border-foreground' : 'border-border text-dimmer',
-						step.current && 'bg-foreground text-background',
-						step.reached && !step.current && 'text-foreground',
-					)}
+				<Badge
+					color={step.current ? 'active' : step.reached ? 'neutral' : 'muted'}
 					aria-current={step.current ? 'step' : undefined}
 				>
 					{step.phase}
-				</span>
+				</Badge>
 			</li>
 		))}
 	</ol>

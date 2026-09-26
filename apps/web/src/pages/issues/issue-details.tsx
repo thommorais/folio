@@ -1,13 +1,18 @@
-import { Badge } from '@thom/ui/badge'
+import { Link } from '@tanstack/react-router'
+import { Tag } from '_/components/issue/tag'
+import { PriorityIcon } from '_/components/issue/priority-icon'
+import { StatusIcon } from '_/components/issue/status-icon'
+import { IssueRef } from '_/components/issue/issue-ref'
+import { PlanRef } from '_/components/issue/plan-ref'
 import { RecordGone } from '_/components/record/record-gone'
 import { Markdown } from '_/components/markdown'
 import { cn } from '@thom/libs/cn'
 import { useIssueById } from '_/app/use-issue'
-import { useIssues } from '_/app/use-issues'
-import { usePlans } from '_/app/use-plans'
-import { ISSUE_KIND, ISSUE_STATUS, type Issue, type IssueStatus } from '_/core/domain/issue'
+import { ISSUE_STATUS, type Issue } from '_/core/domain/issue'
 import { ISSUE_STATUS_LABELS } from './status-labels'
 import { Status } from '_/lib/async-status'
+import { useScope } from '_/routing/use-scope'
+import { usePreviewStore } from '_/app/preview-store'
 
 const Field = ({ label, children }: { readonly label: string; readonly children: React.ReactNode }) => (
 	<div>
@@ -38,38 +43,43 @@ const Skeleton = () => (
 	</div>
 )
 
-const Body = ({ todo, project }: { readonly todo: Issue; readonly project: string }) => {
-	// The record stores ids; a bare id tells the reader nothing, so each is
-	// resolved to the title and falls back to the id if the lookup is not in yet.
-	const tickets = useIssues(project, { kind: ISSUE_KIND.TICKET })
-	const plans = usePlans(project)
-
-	const ticketTitle =
-		todo.parentId !== undefined && tickets.status === Status.Ready
-			? (tickets.issues.find(candidate => candidate.id === todo.parentId)?.title ?? todo.parentId)
-			: todo.parentId
-
-	const planTitle =
-		todo.planId !== undefined && plans.status === Status.Ready
-			? (plans.plans.find(candidate => candidate.id === todo.planId)?.title ?? todo.planId)
-			: todo.planId
+const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonly project: string; readonly linked?: boolean }) => {
+	const { client, domain } = useScope()
+	const closePreview = usePreviewStore(state => state.closePreview)
 
 	return (
 		<div className='scrollbar-hide h-full overflow-auto pb-6'>
 			<header className='mb-8'>
 				<div className='text-dim flex items-center justify-between text-xs'>
-					<span className='font-mono'>{todo.priority}</span>
+					<span className='flex items-center gap-1.5 capitalize'>
+						<PriorityIcon priority={todo.priority} />
+						{todo.priority}
+					</span>
 					<span>{formatDate(todo.createdAt)}</span>
 				</div>
 
-				<h2 className={cn('mt-6 mb-3 text-lg', todo.status === ISSUE_STATUS.DONE && 'text-dim line-through')}>{todo.title}</h2>
+				<h2 className={cn('mt-6 mb-3 text-lg', todo.status === ISSUE_STATUS.DONE && 'text-dim line-through')}>
+					{linked ? (
+						<Link
+							to='/$client/$domain/$slug/todos/$todo'
+							params={{ client, domain, slug: project, todo: todo.slug }}
+							onClick={closePreview}
+							className='hover:underline underline-offset-4'
+						>
+							{todo.title}
+						</Link>
+					) : (
+						todo.title
+					)}
+				</h2>
 
 				<div className='flex flex-wrap items-center gap-2'>
-					<Badge color={statusColor(todo.status)}>{ISSUE_STATUS_LABELS[todo.status]}</Badge>
+					<span className='text-dim flex items-center gap-1.5 text-xs'>
+						<StatusIcon status={todo.status} />
+						{ISSUE_STATUS_LABELS[todo.status]}
+					</span>
 					{todo.tags.map(tag => (
-						<Badge key={tag} color='muted'>
-							{tag}
-						</Badge>
+						<Tag key={tag} tag={tag} />
 					))}
 				</div>
 			</header>
@@ -81,8 +91,8 @@ const Body = ({ todo, project }: { readonly todo: Issue; readonly project: strin
 			)}
 
 			<div className='grid grid-cols-2 gap-4'>
-				<Field label='Ticket'>{ticketTitle ?? <Empty />}</Field>
-				<Field label='Plan'>{planTitle ?? <Empty />}</Field>
+				<Field label='Parent'>{todo.parentId ? <IssueRef project={project} id={todo.parentId} /> : <Empty />}</Field>
+				<Field label='Plan'>{todo.planId ? <PlanRef project={project} id={todo.planId} /> : <Empty />}</Field>
 				<Field label='Due'>{todo.dueDate ? formatDate(todo.dueDate) : <Empty />}</Field>
 				<Field label='Position'>{todo.position}</Field>
 				<Field label='Depends on'>
@@ -96,13 +106,6 @@ const Body = ({ todo, project }: { readonly todo: Issue; readonly project: strin
 			</div>
 		</div>
 	)
-}
-
-const statusColor = (status: IssueStatus) => {
-	if (status === ISSUE_STATUS.BLOCKED) {
-		return 'destructive' as const
-	}
-	return status === ISSUE_STATUS.DONE ? ('active' as const) : ('neutral' as const)
 }
 
 type Props = {
@@ -125,7 +128,7 @@ const IssueDetails = ({ project, todoId }: Props) => {
 		return <Skeleton />
 	}
 
-	return <Body todo={state.issue} project={project} />
+	return <Body todo={state.issue} project={project} linked />
 }
 
 export { Body as TodoBody, IssueDetails }

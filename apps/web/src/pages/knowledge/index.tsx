@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Badge } from '@thom/ui/badge'
+import { Tag } from '_/components/issue/tag'
 import { Heading } from '@thom/ui/heading'
 import { Status } from '_/lib/async-status'
 import { useKnowledgeList } from '_/app/use-knowledge'
@@ -49,9 +49,7 @@ export const KnowledgeList = () => {
 									<span className='font-mono'>{note.slug}</span>
 									<span>{formatDate(note.updatedAt)}</span>
 									{note.tags.map(tag => (
-										<Badge key={tag} color='muted'>
-											{tag}
-										</Badge>
+										<Tag key={tag} tag={tag} />
 									))}
 								</span>
 							</Link>
