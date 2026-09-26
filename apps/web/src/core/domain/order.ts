@@ -1,6 +1,6 @@
 import { SORT_DIRECTION, type EntrySortField, type IssueSortField, type PlanSortField, type Sort } from '_/core/ports/sort'
 import type { Entry } from './entry'
-import { ISSUE_STATUS, PRIORITY, type Issue, type IssueStatus, type Priority } from './issue'
+import { ISSUE_KIND, ISSUE_STATUS, PRIORITY, type Issue, type IssueKind, type IssueStatus, type Priority } from './issue'
 import { PLAN_STATUS, type Plan, type PlanStatus } from './plan'
 
 type Key = number | string | undefined
@@ -24,32 +24,43 @@ const PLAN_STATUS_RANK: Record<PlanStatus, number> = {
 	[PLAN_STATUS.ABANDONED]: 3,
 }
 
-const NEWEST_FIRST = { field: 'created', direction: SORT_DIRECTION.DESC } as const
+const NEWEST_FIRST = [{ field: 'created', direction: SORT_DIRECTION.DESC }] as const
+
+export const DEFAULT_ISSUE_ORDER: Record<IssueKind, readonly Sort<IssueSortField>[]> = {
+	[ISSUE_KIND.TICKET]: [
+		{ field: 'status', direction: SORT_DIRECTION.ASC },
+		{ field: 'priority', direction: SORT_DIRECTION.DESC },
+	],
+	[ISSUE_KIND.TODO]: [{ field: 'position', direction: SORT_DIRECTION.ASC }],
+}
 
 const compareKeys = (a: Key, b: Key): number => {
 	if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b, undefined, { sensitivity: 'base' })
 	return (a as number) - (b as number)
 }
 
+const compareBy =
+	<T extends Row, F extends string>(keys: Record<F, (row: T) => Key>, { field, direction }: Sort<F>) =>
+	(a: T, b: T): number => {
+		const left = keys[field](a)
+		const right = keys[field](b)
+
+		if (left === undefined || right === undefined) return left === right ? 0 : left === undefined ? 1 : -1
+
+		return compareKeys(left, right) * (direction === SORT_DIRECTION.DESC ? -1 : 1)
+	}
+
 const sortBy = <T extends Row, F extends string>(
 	rows: readonly T[],
-	sort: Sort<F> | undefined,
+	order: readonly Sort<F>[],
 	keys: Record<F, (row: T) => Key>,
-	fallback: Sort<F>,
 ): readonly T[] => {
-	const { field, direction } = sort ?? fallback
-	const keyOf = keys[field]
-	const sign = direction === SORT_DIRECTION.DESC ? -1 : 1
+	const comparators = order.map(sort => compareBy(keys, sort))
 
 	return [...rows].sort((a, b) => {
-		const left = keyOf(a)
-		const right = keyOf(b)
-
-		if (left === undefined || right === undefined) {
-			if (left !== right) return left === undefined ? 1 : -1
-		} else {
-			const order = compareKeys(left, right) * sign
-			if (order !== 0) return order
+		for (const compare of comparators) {
+			const result = compare(a, b)
+			if (result !== 0) return result
 		}
 
 		return b.createdAt.getTime() - a.createdAt.getTime() || a.id.localeCompare(b.id)
@@ -82,11 +93,11 @@ const ENTRY_KEYS: Record<EntrySortField, (entry: Entry) => Key> = {
 	updated: entry => time(entry.updatedAt),
 }
 
-export const sortIssues = (rows: readonly Issue[], sort: Sort<IssueSortField> | undefined) =>
-	sortBy(rows, sort, ISSUE_KEYS, NEWEST_FIRST)
+export const sortIssues = (rows: readonly Issue[], sort: Sort<IssueSortField> | undefined, kind?: IssueKind) =>
+	sortBy(rows, sort ? [sort] : kind ? DEFAULT_ISSUE_ORDER[kind] : NEWEST_FIRST, ISSUE_KEYS)
 
 export const sortPlans = (rows: readonly Plan[], sort: Sort<PlanSortField> | undefined) =>
-	sortBy(rows, sort, PLAN_KEYS, NEWEST_FIRST)
+	sortBy(rows, sort ? [sort] : NEWEST_FIRST, PLAN_KEYS)
 
 export const sortEntries = (rows: readonly Entry[], sort: Sort<EntrySortField> | undefined) =>
-	sortBy(rows, sort, ENTRY_KEYS, NEWEST_FIRST)
+	sortBy(rows, sort ? [sort] : NEWEST_FIRST, ENTRY_KEYS)

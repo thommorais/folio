@@ -79,6 +79,40 @@ describe('sortIssues', () => {
 		expect(ids(sortIssues(rows, { field: 'size', direction: 'desc' }))).toEqual(['big', 'small', 'none'])
 	})
 
+	it('groups tickets by status, then priority, when no sort is chosen', () => {
+		const rows = [
+			anIssue('open-low', { kind: 'ticket', status: 'open', priority: 'low' }),
+			anIssue('doing-medium', { kind: 'ticket', status: 'in_progress', priority: 'medium' }),
+			anIssue('open-high', { kind: 'ticket', status: 'open', priority: 'high' }),
+			anIssue('blocked-high', { kind: 'ticket', status: 'blocked', priority: 'high' }),
+			anIssue('doing-high', { kind: 'ticket', status: 'in_progress', priority: 'high' }),
+		]
+
+		expect(ids(sortIssues(rows, undefined, 'ticket'))).toEqual([
+			'doing-high',
+			'doing-medium',
+			'open-high',
+			'open-low',
+			'blocked-high',
+		])
+	})
+
+	it('keeps todos in their manual position when no sort is chosen', () => {
+		const rows = [
+			anIssue('third', { kind: 'todo', position: 3, createdAt: day(3) }),
+			anIssue('first', { kind: 'todo', position: 1, createdAt: day(1) }),
+			anIssue('second', { kind: 'todo', position: 2, createdAt: day(2) }),
+		]
+
+		expect(ids(sortIssues(rows, undefined, 'todo'))).toEqual(['first', 'second', 'third'])
+	})
+
+	it('lets a chosen sort override the default order', () => {
+		const rows = [anIssue('a', { title: 'b', position: 1 }), anIssue('b', { title: 'a', position: 2 })]
+
+		expect(ids(sortIssues(rows, { field: 'title', direction: 'asc' }, 'todo'))).toEqual(['b', 'a'])
+	})
+
 	it('does not mutate its input', () => {
 		const rows = [anIssue('a', { position: 2 }), anIssue('b', { position: 1 })]
 

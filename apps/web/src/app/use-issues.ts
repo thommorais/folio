@@ -22,10 +22,10 @@ export const useIssues = (project: string, filter?: IssueFilter): IssuesState =>
 	const state = useLiveList<Issue>({
 		load: async () => {
 			const result = await issues.list(project, current)
-			return result.success ? { ...result, value: sortIssues(result.value, current?.sort) } : result
+			return result.success ? { ...result, value: sortIssues(result.value, current?.sort, current?.kind) } : result
 		},
 		subscribe: update => issues.subscribeToList(project, update, current),
-		fold: (rows, row, action) => sortIssues(withBlocked(foldUpdates(rows, row, action)), current?.sort),
+		fold: (rows, row, action) => sortIssues(withBlocked(foldUpdates(rows, row, action)), current?.sort, current?.kind),
 		connection,
 		deps: [project, key, issues],
 	})
