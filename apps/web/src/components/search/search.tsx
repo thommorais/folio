@@ -9,6 +9,7 @@ import { useSearch } from '_/app/use-search'
 import { usePreviewStore } from '_/app/preview-store'
 import { useSearchStore } from '_/app/search-store'
 import { ISSUE_KIND } from '_/core/domain/issue'
+import { pastedPath } from './pasted-path'
 
 type Shortcut = {
 	readonly id: string
@@ -186,7 +187,17 @@ export const Search = () => {
 			shouldFilter={false}
 			className='search-container bg-background border-border relative h-[495px] w-full overflow-hidden border p-0 backdrop-blur-lg dark:bg-[#0C0C0C]/99'
 		>
-			<div className='border-border relative border-b'>
+			<div
+				className='border-border relative border-b'
+				onPaste={event => {
+					const path = pastedPath(event.clipboardData.getData('text'), window.location.origin)
+					if (path === undefined) return
+
+					event.preventDefault()
+					setOpen(false)
+					void navigate({ href: path })
+				}}
+			>
 				<CommandInput
 					autoFocus
 					placeholder='Type a command or search...'
