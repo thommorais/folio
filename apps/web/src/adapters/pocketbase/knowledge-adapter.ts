@@ -1,7 +1,9 @@
 import type { Knowledge, KnowledgeFilter, KnowledgePort } from '_/core/ports/knowledge'
 import { err, ok, type Result } from '_/lib/result'
+import type { Unsubscribe } from '_/core/ports/subscription'
 import { tryCatch } from '_/lib/try-catch'
 import { getPocketBaseClient } from './client'
+import { subscribeToRecord } from './subscribe-to-record'
 
 const DEFAULT_LIMIT = 50
 
@@ -30,10 +32,35 @@ const toKnowledge = (note: KnowledgeResponse): Knowledge => ({
 	updatedAt: new Date(note.updated_at),
 })
 
+const COLLECTION = 'journ_knowledge'
+
+type KnowledgeRecord = {
+	id: string
+	slug: string
+	title: string
+	body?: string
+	project?: string
+	tags?: string[] | null
+	created: string
+	updated: string
+}
+
+const fromRecord = (record: KnowledgeRecord): Knowledge => ({
+	id: record.id,
+	slug: record.slug,
+	title: record.title,
+	body: record.body ?? '',
+	projectId: record.project ?? '',
+	tags: record.tags ?? [],
+	createdAt: new Date(record.created),
+	updatedAt: new Date(record.updated),
+})
+
 const message = (error: unknown): string => (error instanceof Error ? error.message : 'Unknown error')
 
 export const createKnowledgeAdapter = (): KnowledgePort => {
 	const client = getPocketBaseClient()
+	const collection = () => client.collection(COLLECTION)
 
 	return {
 		list: async (filter: KnowledgeFilter = {}): Promise<Result<readonly Knowledge[]>> => {
@@ -61,5 +88,23 @@ export const createKnowledgeAdapter = (): KnowledgePort => {
 				? err(new Error(`Failed to load note ${ref}: ${message(error)}`, { cause: error }))
 				: ok(toKnowledge(data))
 		},
+
+		subscribeToList: async (onChange): Promise<Result<Unsubscribe>> => {
+			try {
+				return ok(await collection().subscribe('*', () => onChange()))
+			} catch (error) {
+				return err(new Error(`Failed to subscribe to knowledge: ${message(error)}`))
+			}
+		},
+
+		subscribeToRecord: async (id, onChange, onGone): Promise<Result<Unsubscribe>> =>
+			subscribeToRecord(
+				{ subscribe: (topic, handler) => collection().subscribe<KnowledgeRecord>(topic, handler) },
+				id,
+				fromRecord,
+				onChange,
+				onGone,
+				'note',
+			),
 	}
 }

@@ -16,4 +16,9 @@ export type ClientsPort = {
 		update: (client: Client, action: ActionEvent) => void,
 		filter?: ClientFilter,
 	) => Promise<Result<Unsubscribe>>
+	readonly subscribeToRecord: (
+		id: string,
+		onChange: (client: Client) => void,
+		onGone: () => void,
+	) => Promise<Result<Unsubscribe>>
 }

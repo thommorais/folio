@@ -10,6 +10,7 @@ import { getPocketBaseClient } from './client'
 import { keyed } from './request-key'
 import { filterFor } from './filter-builder'
 import { paginate } from './paginate'
+import { subscribeToRecord } from './subscribe-to-record'
 
 type ClientColumns = {
 	slug: string
@@ -87,5 +88,8 @@ export const createClientsAdapter = (): ClientsPort => {
 				return err(new Error(`Failed to subscribe to clients: ${message(error)}`))
 			}
 		},
+
+		subscribeToRecord: async (id, onChange, onGone): Promise<Result<Unsubscribe>> =>
+			subscribeToRecord(clients(), id, toClient, onChange, onGone, 'client'),
 	}
 }

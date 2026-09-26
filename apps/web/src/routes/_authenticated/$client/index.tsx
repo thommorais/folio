@@ -3,6 +3,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@thom/ui/card'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useClient } from '_/app/use-client'
+import { RecordGone } from '_/components/record/record-gone'
 import { useDomains } from '_/app/use-domains'
 import { Status } from '_/lib/async-status'
 
@@ -15,6 +16,15 @@ const ClientPage = () => {
 	)
 
 	if (client.status === Status.Failed) return <p className='text-destructive text-sm'>{client.message}</p>
+	if (client.status === Status.Gone) {
+		return (
+			<RecordGone title={client.title}>
+				<Link to='/' className='text-sm underline'>
+					Back to clients
+				</Link>
+			</RecordGone>
+		)
+	}
 
 	return (
 		<div className='space-y-6'>

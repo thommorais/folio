@@ -18,6 +18,7 @@ import { getPocketBaseClient } from './client'
 import { keyed } from './request-key'
 import { filterFor } from './filter-builder'
 import { paginate } from './paginate'
+import { subscribeToRecord } from './subscribe-to-record'
 
 type MemberRecord = JournMembersResponse<{ user?: UsersResponse }>
 
@@ -122,5 +123,15 @@ export const createDomainsAdapter = (): DomainsPort => {
 				return err(new Error(`Failed to subscribe to domains: ${message(error)}`))
 			}
 		},
+
+		subscribeToRecord: async (id, onChange, onGone): Promise<Result<Unsubscribe>> =>
+			subscribeToRecord(
+				{ subscribe: (topic, handler) => domains().subscribe<DomainRecord>(topic, handler, { expand: MEMBER_EXPAND }) },
+				id,
+				toDomain,
+				onChange,
+				onGone,
+				'domain',
+			),
 	}
 }

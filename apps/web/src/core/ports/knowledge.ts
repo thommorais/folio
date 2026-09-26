@@ -1,4 +1,5 @@
 import type { Result } from '_/lib/result'
+import type { Unsubscribe } from './subscription'
 
 // Knowledge is durable, reusable notes: a tip, a snippet, a fix worth keeping.
 // It is the one resource with no project, so unlike every other port here
@@ -27,4 +28,10 @@ export type KnowledgePort = {
 	// Takes an id or a slug: the slug namespace is global, so no project is
 	// needed to resolve one.
 	readonly get: (ref: string) => Promise<Result<Knowledge>>
+	readonly subscribeToList: (onChange: () => void) => Promise<Result<Unsubscribe>>
+	readonly subscribeToRecord: (
+		id: string,
+		onChange: (note: Knowledge) => void,
+		onGone: () => void,
+	) => Promise<Result<Unsubscribe>>
 }

@@ -18,4 +18,9 @@ export type DomainsPort = {
 		update: (domain: Domain, action: ActionEvent) => void,
 		filter?: DomainFilter,
 	) => Promise<Result<Unsubscribe>>
+	readonly subscribeToRecord: (
+		id: string,
+		onChange: (domain: Domain) => void,
+		onGone: () => void,
+	) => Promise<Result<Unsubscribe>>
 }

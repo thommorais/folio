@@ -3,6 +3,7 @@ import { Badge } from '@thom/ui/badge'
 import { Heading } from '@thom/ui/heading'
 import { Status } from '_/lib/async-status'
 import { Markdown } from '_/components/markdown'
+import { RecordGone } from '_/components/record/record-gone'
 import { useKnowledge } from '_/app/use-knowledge'
 
 const formatDate = (date: Date): string =>
@@ -12,8 +13,17 @@ export const KnowledgeNote = () => {
 	const { note: ref } = useParams({ from: '/_authenticated/knowledge/$note' })
 	const state = useKnowledge(ref)
 
-	if (state.status === Status.Loading) return <p className='text-dim text-sm'>Loading…</p>
+	if (state.status === Status.Idle || state.status === Status.Loading) return <p className='text-dim text-sm'>Loading…</p>
 	if (state.status === Status.Failed) return <p className='text-sm text-red-500'>{state.message}</p>
+	if (state.status === Status.Gone) {
+		return (
+			<RecordGone title={state.title}>
+				<Link to='/knowledge' className='text-sm underline'>
+					Back to knowledge
+				</Link>
+			</RecordGone>
+		)
+	}
 
 	const { note } = state
 

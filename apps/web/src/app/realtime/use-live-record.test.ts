@@ -100,6 +100,30 @@ describe('useLiveRecord', () => {
 		expect(result.current).toEqual({ status: Status.Gone, title: 'Fix the nav' })
 	})
 
+	it('names a gone record through titleOf when it has no title', async () => {
+		type Named = { readonly id: string; readonly name: string }
+		let onGone: () => void = () => {}
+		const connection = fakeConnection()
+
+		const { result } = renderHook(() =>
+			useLiveRecord<Named>({
+				load: async () => ok({ id: 'a', name: 'Acme' }),
+				subscribe: async (_id, _change, gone) => {
+					onGone = gone
+					return ok((async () => {}) as Unsubscribe)
+				},
+				titleOf: record => record.name,
+				connection: connection.port,
+				deps: ['a'],
+			}),
+		)
+		await waitFor(() => expect(result.current.status).toBe(Status.Ready))
+
+		act(() => onGone())
+
+		expect(result.current).toEqual({ status: Status.Gone, title: 'Acme' })
+	})
+
 	it('reports a load failure', async () => {
 		const io = setup(row('a'))
 		io.setServer(err(new Error('not found')))

@@ -4,6 +4,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@thom/ui/card'
 import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useDomain } from '_/app/use-domain'
+import { RecordGone } from '_/components/record/record-gone'
 import { useProjects } from '_/app/use-projects'
 import { MemberRoster } from '_/pages/domain/member-roster'
 import { Status } from '_/lib/async-status'
@@ -17,6 +18,15 @@ const DomainPage = () => {
 	)
 
 	if (domain.status === Status.Failed) return <p className='text-destructive text-sm'>{domain.message}</p>
+	if (domain.status === Status.Gone) {
+		return (
+			<RecordGone title={domain.title}>
+				<Link to='/$client' params={{ client }} className='text-sm underline'>
+					Back to {client}
+				</Link>
+			</RecordGone>
+		)
+	}
 
 	return (
 		<div className='space-y-6'>

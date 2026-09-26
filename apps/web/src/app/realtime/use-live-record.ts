@@ -6,7 +6,7 @@ import { useAsyncState } from './use-async-state'
 import { useSubscription } from './use-subscription'
 import { Status } from '_/lib/async-status'
 
-type Titled = { readonly id: string; readonly title: string }
+type Identified = { readonly id: string }
 
 export type RecordState<T> =
 	| { readonly status: typeof Status.Idle }
@@ -15,13 +15,19 @@ export type RecordState<T> =
 	| { readonly status: typeof Status.Gone; readonly title: string }
 	| { readonly status: typeof Status.Failed; readonly message: string }
 
-type Options<T extends Titled> = {
+type Naming<T> = T extends { readonly title: string }
+	? { readonly titleOf?: (record: T) => string }
+	: { readonly titleOf: (record: T) => string }
+
+type Options<T extends Identified> = {
 	readonly load: () => Promise<Result<T>>
 	readonly subscribe: (id: string, onChange: (record: T) => void, onGone: () => void) => Promise<Result<Unsubscribe>>
 	readonly connection: ConnectionPort
 	readonly deps: readonly unknown[]
 	readonly skip?: boolean
-}
+} & Naming<T>
+
+const ownTitle = <T,>(record: T): string => (record as { readonly title: string }).title
 
 const abortableCallTimeout = (func: () => Promise<void>, time: number, signal: AbortSignal) => {
 	let timeout: ReturnType<typeof setTimeout> | undefined
@@ -36,12 +42,13 @@ const abortableCallTimeout = (func: () => Promise<void>, time: number, signal: A
 
 const TIMEOUT = 520
 
-export const useLiveRecord = <T extends Titled>({
+export const useLiveRecord = <T extends Identified>({
 	load,
 	subscribe,
 	connection,
 	deps,
 	skip = false,
+	titleOf = ownTitle,
 }: Options<T>): RecordState<T> => {
 	const { state, refetch, patch } = useAsyncState(load, deps, skip)
 	const [gone, setGone] = useState<string | undefined>(undefined)
@@ -70,7 +77,7 @@ export const useLiveRecord = <T extends Titled>({
 		const result = await subscribe(
 			state.data.id,
 			record => patch(() => record),
-			() => setGone(latest.current?.title ?? ''),
+			() => setGone(latest.current === undefined ? '' : titleOf(latest.current)),
 		)
 
 		if (result.success) abortableCallTimeout(refetch, TIMEOUT, pending.current.signal)()

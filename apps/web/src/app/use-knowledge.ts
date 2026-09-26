@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useEffectEvent } from 'react'
 import type { Knowledge } from '_/core/ports/knowledge'
 import { Status } from '_/lib/async-status'
 import { useContainer } from './container'
+import { useAsyncState } from './realtime/use-async-state'
+import { useLiveRecord } from './realtime/use-live-record'
+import { useSubscription } from './realtime/use-subscription'
 
 type ListState =
 	| { readonly status: typeof Status.Loading }
@@ -9,59 +12,38 @@ type ListState =
 	| { readonly status: typeof Status.Failed; readonly message: string }
 
 type NoteState =
+	| { readonly status: typeof Status.Idle }
 	| { readonly status: typeof Status.Loading }
 	| { readonly status: typeof Status.Ready; readonly note: Knowledge }
+	| { readonly status: typeof Status.Gone; readonly title: string }
 	| { readonly status: typeof Status.Failed; readonly message: string }
 
-// Knowledge is not subscribed to the way project records are: it has no
-// project to scope a subscription by, and a note is read far more often than
-// it changes.
 export const useKnowledgeList = (text: string): ListState => {
-	const { knowledge } = useContainer()
-	const [state, setState] = useState<ListState>({ status: Status.Loading })
+	const { knowledge, connection } = useContainer()
+	const { state, refetch } = useAsyncState(() => knowledge.list({ text }), [knowledge, text])
 
-	useEffect(() => {
-		let cancelled = false
-		setState({ status: Status.Loading })
+	const open = useEffectEvent(async () => {
+		const result = await knowledge.subscribeToList(() => void refetch())
+		if (result.success) void refetch()
+		return result
+	})
 
-		void knowledge.list({ text }).then(result => {
-			if (cancelled) return
-			setState(
-				result.success
-					? { status: Status.Ready, notes: result.value }
-					: { status: Status.Failed, message: result.error.message },
-			)
-		})
+	useSubscription(open, [knowledge])
 
-		return () => {
-			cancelled = true
-		}
-	}, [knowledge, text])
+	useEffect(() => connection.onReconnect(() => void refetch()), [connection, refetch])
 
-	return state
+	return state.status === Status.Ready ? { status: Status.Ready, notes: state.data } : state
 }
 
 export const useKnowledge = (ref: string): NoteState => {
-	const { knowledge } = useContainer()
-	const [state, setState] = useState<NoteState>({ status: Status.Loading })
+	const { knowledge, connection } = useContainer()
 
-	useEffect(() => {
-		let cancelled = false
-		setState({ status: Status.Loading })
+	const state = useLiveRecord<Knowledge>({
+		load: () => knowledge.get(ref),
+		subscribe: (id, onChange, onGone) => knowledge.subscribeToRecord(id, onChange, onGone),
+		connection,
+		deps: [knowledge, ref],
+	})
 
-		void knowledge.get(ref).then(result => {
-			if (cancelled) return
-			setState(
-				result.success
-					? { status: Status.Ready, note: result.value }
-					: { status: Status.Failed, message: result.error.message },
-			)
-		})
-
-		return () => {
-			cancelled = true
-		}
-	}, [knowledge, ref])
-
-	return state
+	return state.status === Status.Ready ? { status: Status.Ready, note: state.data } : state
 }
