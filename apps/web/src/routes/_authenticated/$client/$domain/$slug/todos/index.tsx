@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { listMemory } from '_/adapters/browser/list-memory';
 import { DEFAULT_ISSUE_STATUSES, ISSUE_KIND, ISSUE_STATUSES, PRIORITIES, type IssueStatus, type Priority } from '_/core/domain/issue';
 import { TODO_SORT_FIELDS, type Sort, type TodoSortField } from '_/core/ports/sort';
 import { Issues } from '_/pages/issues';
@@ -15,6 +16,11 @@ export type TodosSearch = {
 }
 
 export const Route = createFileRoute('/_authenticated/$client/$domain/$slug/todos/')({
+	beforeLoad: ({ search, cause, params }) => {
+		if (cause !== 'enter') return
+		const restored = listMemory.restore('/_authenticated/$client/$domain/$slug/todos/', search)
+		if (restored) throw redirect({ to: '/$client/$domain/$slug/todos', params, search: restored })
+	},
 	validateSearch: (search: Record<string, unknown>): TodosSearch => ({
 		ticket: asString(search.ticket),
 		plan: asString(search.plan),

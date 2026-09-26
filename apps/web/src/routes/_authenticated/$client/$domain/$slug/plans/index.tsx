@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { listMemory } from '_/adapters/browser/list-memory'
 import { PLAN_STATUSES, type PlanStatus } from '_/core/domain/plan'
 import { PLAN_SORT_FIELDS, type PlanSortField, type Sort } from '_/core/ports/sort'
 import { Plans } from '_/pages/plans'
@@ -13,6 +14,11 @@ export type PlansSearch = {
 }
 
 export const Route = createFileRoute('/_authenticated/$client/$domain/$slug/plans/')({
+	beforeLoad: ({ search, cause, params }) => {
+		if (cause !== 'enter') return
+		const restored = listMemory.restore('/_authenticated/$client/$domain/$slug/plans/', search)
+		if (restored) throw redirect({ to: '/$client/$domain/$slug/plans', params, search: restored })
+	},
 	validateSearch: (search: Record<string, unknown>): PlansSearch => ({
 		ticket: asString(search.ticket),
 		statuses: asMembers(PLAN_STATUSES, search.statuses),
