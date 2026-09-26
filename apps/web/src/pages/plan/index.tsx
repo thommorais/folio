@@ -12,6 +12,7 @@ import { PLAN_STATUS, type Plan, type PlanStatus } from '_/core/domain/plan'
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels'
 import { Status } from '_/lib/async-status'
 import { SHARE_KIND } from '_/core/domain/share'
+import { LoadError } from '_/components/load-error'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
@@ -65,7 +66,7 @@ const PlanDetail = () => {
 	}
 
 	if (state.status === Status.Failed) {
-		return <p className='text-destructive text-sm'>{state.message}</p>
+		return <LoadError message={state.message} />
 	}
 
 	return <PlanBody plan={state.plan} project={slug} />

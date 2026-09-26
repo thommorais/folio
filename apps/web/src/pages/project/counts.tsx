@@ -6,6 +6,7 @@ import { StaggerItem } from '_/components/motion/stagger'
 import { useCounts } from '_/app/use-counts'
 import { entities, type Entity } from '_/app/counts'
 import { Status } from '_/lib/async-status'
+import { LoadError } from '_/components/load-error'
 
 const labels: Record<Entity, string> = {
 	tickets: 'Tickets',
@@ -31,7 +32,7 @@ export const ProjectCounts = ({ client, domain, slug }: Props) => {
 	const state = useCounts(slug)
 
 	if (state.status === Status.Failed) {
-		return <p className='text-destructive text-sm'>{state.message}</p>
+		return <LoadError message={state.message} />
 	}
 
 	return (

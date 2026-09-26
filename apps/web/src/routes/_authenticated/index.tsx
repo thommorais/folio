@@ -8,6 +8,7 @@ import { buildInsights } from '_/pages/clients/insights'
 import { SummaryTicker } from '_/pages/clients/summary-ticker'
 import { WelcomeGreeting } from '_/pages/clients/welcome'
 import { Status } from '_/lib/async-status'
+import { LoadError } from '_/components/load-error'
 
 const Clients = () => {
 	const state = useClients()
@@ -22,7 +23,7 @@ const Clients = () => {
 				{state.status === Status.Ready && <SummaryTicker insights={buildInsights(state.clients, domains)} />}
 			</div>
 
-			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
+			{state.status === Status.Failed && <LoadError message={state.message} />}
 
 			{state.status === Status.Ready && state.clients.length === 0 && (
 				<p className='text-dim text-sm'>No clients yet.</p>

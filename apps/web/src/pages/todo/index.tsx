@@ -3,6 +3,7 @@ import { useIssue } from '_/app/use-issue'
 import { RecordGone } from '_/components/record/record-gone'
 import { Status } from '_/lib/async-status'
 import { TodoBody } from '_/pages/issues/issue-details'
+import { LoadError } from '_/components/load-error'
 
 const TodoDetail = () => {
 	const { client, domain, slug, todo } = useParams({ from: '/_authenticated/$client/$domain/$slug/todos/$todo' })
@@ -23,7 +24,7 @@ const TodoDetail = () => {
 	}
 
 	if (state.status === Status.Failed) {
-		return <p className='text-destructive text-sm'>{state.message}</p>
+		return <LoadError message={state.message} />
 	}
 
 	return <TodoBody project={slug} todo={state.issue} />

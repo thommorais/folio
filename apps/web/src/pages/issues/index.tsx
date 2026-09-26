@@ -13,6 +13,7 @@ import { Status } from '_/lib/async-status';
 import { useScope } from '_/routing/use-scope';
 import { EmptyState } from '_/components/empty-state';
 import { IssueFilters } from './issue-filters';
+import { LoadError } from '_/components/load-error';
 
 type IssuesSearch = {
 	readonly statuses?: readonly IssueStatus[]
@@ -141,7 +142,7 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 		if (state.status === Status.Loading) return null
 
 		if (state.status === Status.Failed) {
-			return <p className='text-destructive text-sm'>{state.message}</p>
+			return <LoadError message={state.message} />
 		}
 
 		if (state.issues.length === 0) {

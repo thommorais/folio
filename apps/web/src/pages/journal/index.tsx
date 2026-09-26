@@ -10,6 +10,7 @@ import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
 import { JournalFilters } from './journal-filters'
 import { ENTRY_KIND_LABELS } from './kind-labels'
 import { Status } from '_/lib/async-status'
+import { LoadError } from '_/components/load-error'
 
 const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' })
 
@@ -32,7 +33,7 @@ const Journal = () => {
 		if (state.status === Status.Loading) return null
 
 		if (state.status === Status.Failed) {
-			return <p className='text-destructive text-sm'>{state.message}</p>
+			return <LoadError message={state.message} />
 		}
 
 		if (state.entries.length === 0) {

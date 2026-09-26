@@ -5,6 +5,7 @@ import { useClient } from '_/app/use-client'
 import { RecordGone } from '_/components/record/record-gone'
 import { useDomains } from '_/app/use-domains'
 import { Status } from '_/lib/async-status'
+import { LoadError } from '_/components/load-error'
 
 const ClientPage = () => {
 	const { client: slug } = useParams({ from: '/_authenticated/$client/' })
@@ -14,7 +15,7 @@ const ClientPage = () => {
 		client.status !== Status.Ready,
 	)
 
-	if (client.status === Status.Failed) return <p className='text-destructive text-sm'>{client.message}</p>
+	if (client.status === Status.Failed) return <LoadError message={client.message} />
 	if (client.status === Status.Gone) {
 		return (
 			<RecordGone title={client.title}>
@@ -34,7 +35,7 @@ const ClientPage = () => {
 				)}
 			</div>
 
-			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
+			{state.status === Status.Failed && <LoadError message={state.message} />}
 
 			{state.status === Status.Ready && state.domains.length === 0 && (
 				<p className='text-dim text-sm'>No domains in this client yet.</p>

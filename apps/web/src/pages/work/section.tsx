@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { StaggerItem } from '_/components/motion/stagger'
 import { Flash } from '_/components/motion/flash'
 import { EmptyState } from '_/components/empty-state'
+import { LoadError } from '_/components/load-error'
 
 export type WorkItem = {
 	readonly id: string
@@ -36,7 +37,7 @@ export const Section = ({ title, items, message, emptyLabel, command, filtered, 
 			{items !== undefined && <span className='text-dimmer text-xs tabular-nums'>{items.length}</span>}
 		</header>
 
-		{message !== undefined && <p className='text-destructive text-sm'>{message}</p>}
+		{message !== undefined && <LoadError message={message} />}
 
 		{items !== undefined && items.length === 0 && filtered && <p className='text-dim text-sm'>No {emptyLabel} match.</p>}
 

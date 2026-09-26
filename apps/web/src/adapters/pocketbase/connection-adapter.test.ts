@@ -91,4 +91,18 @@ describe('createConnectionAdapter', () => {
 		expect(realtime.subscribe).toHaveBeenCalledTimes(1)
 		expect(realtime.subscribe).toHaveBeenCalledWith('PB_CONNECT', expect.any(Function))
 	})
+
+	it('retries on demand, telling every listener to reload', () => {
+		const realtime = fakeRealtime()
+		const adapter = createConnectionAdapter(realtime)
+		const first = vi.fn()
+		const second = vi.fn()
+		adapter.onReconnect(first)
+		adapter.onReconnect(second)
+
+		adapter.retry()
+
+		expect(first).toHaveBeenCalledTimes(1)
+		expect(second).toHaveBeenCalledTimes(1)
+	})
 })

@@ -27,6 +27,7 @@ import { Answer } from './answer';
 import { CycleTimeline } from './cycle-timeline';
 import { MapFrontier } from './map-frontier';
 import { SHARE_KIND } from '_/core/domain/share';
+import { LoadError } from '_/components/load-error';
 
 const statusLabels: Record<IssueStatus, string> = {
 	open: 'Open',
@@ -85,7 +86,7 @@ const TicketDetail = () => {
 	}
 
 	if (state.status === Status.Failed) {
-		return <p className='text-destructive text-sm'>{state.message}</p>
+		return <LoadError message={state.message} />
 	}
 
 	return <TicketBody project={slug} ticket={state.issue} />

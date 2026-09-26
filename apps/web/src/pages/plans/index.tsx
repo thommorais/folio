@@ -11,6 +11,7 @@ import { PlanFilters } from './plan-filters'
 import { PLAN_STATUS_LABELS } from './status-labels'
 import { useScope } from '_/routing/use-scope'
 import { Status } from '_/lib/async-status'
+import { LoadError } from '_/components/load-error'
 
 const Row = ({ plan, project }: { readonly plan: Plan; readonly project: string }) => {
 	const { client, domain } = useScope()
@@ -59,7 +60,7 @@ const Plans = () => {
 		<div className='space-y-4'>
 			<PlanFilters />
 
-			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
+			{state.status === Status.Failed && <LoadError message={state.message} />}
 
 			{state.status === Status.Ready && state.plans.length === 0 && filtered && (
 				<p className='text-dim text-sm'>No plans match.</p>

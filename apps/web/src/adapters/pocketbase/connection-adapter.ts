@@ -10,13 +10,17 @@ export const createConnectionAdapter = (realtime?: ConnectTopic): ConnectionPort
 	const listeners = new Set<() => void>()
 	let connected = false
 
+	const notify = () => {
+		for (const listener of listeners) listener()
+	}
+
 	void source.subscribe('PB_CONNECT', () => {
 		if (!connected) {
 			connected = true
 			return
 		}
 
-		for (const listener of listeners) listener()
+		notify()
 	})
 
 	return {
@@ -27,5 +31,6 @@ export const createConnectionAdapter = (realtime?: ConnectTopic): ConnectionPort
 				listeners.delete(listener)
 			}
 		},
+		retry: notify,
 	}
 }

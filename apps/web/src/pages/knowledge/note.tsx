@@ -5,6 +5,7 @@ import { Status } from '_/lib/async-status'
 import { Markdown } from '_/components/markdown'
 import { RecordGone } from '_/components/record/record-gone'
 import { useKnowledge } from '_/app/use-knowledge'
+import { LoadError } from '_/components/load-error'
 
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
@@ -14,7 +15,7 @@ export const KnowledgeNote = () => {
 	const state = useKnowledge(ref)
 
 	if (state.status === Status.Idle || state.status === Status.Loading) return null
-	if (state.status === Status.Failed) return <p className='text-destructive text-sm'>{state.message}</p>
+	if (state.status === Status.Failed) return <LoadError message={state.message} />
 	if (state.status === Status.Gone) {
 		return (
 			<RecordGone title={state.title}>

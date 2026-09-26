@@ -8,6 +8,7 @@ import { EmptyState } from '_/components/empty-state'
 import { useProjects } from '_/app/use-projects'
 import { MemberRoster } from '_/pages/domain/member-roster'
 import { Status } from '_/lib/async-status'
+import { LoadError } from '_/components/load-error'
 
 const DomainPage = () => {
 	const { client, domain: slug } = useParams({ from: '/_authenticated/$client/$domain/' })
@@ -17,7 +18,7 @@ const DomainPage = () => {
 		domain.status !== Status.Ready,
 	)
 
-	if (domain.status === Status.Failed) return <p className='text-destructive text-sm'>{domain.message}</p>
+	if (domain.status === Status.Failed) return <LoadError message={domain.message} />
 	if (domain.status === Status.Gone) {
 		return (
 			<RecordGone title={domain.title}>
@@ -39,7 +40,7 @@ const DomainPage = () => {
 
 			{domain.status === Status.Ready && <MemberRoster members={domain.domain.members} />}
 
-			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
+			{state.status === Status.Failed && <LoadError message={state.message} />}
 
 			{state.status === Status.Ready && state.projects.length === 0 && (
 				<EmptyState

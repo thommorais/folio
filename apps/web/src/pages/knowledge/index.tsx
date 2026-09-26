@@ -8,6 +8,7 @@ import { StaggerItem } from '_/components/motion/stagger'
 import { Flash } from '_/components/motion/flash'
 import { Status } from '_/lib/async-status'
 import type { KnowledgeSearch } from '_/routes/_authenticated/knowledge'
+import { LoadError } from '_/components/load-error'
 
 const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' })
 
@@ -20,7 +21,7 @@ export const KnowledgeList = () => {
 		if (state.status === Status.Loading) return null
 
 		if (state.status === Status.Failed) {
-			return <p className='text-destructive text-sm'>{state.message}</p>
+			return <LoadError message={state.message} />
 		}
 
 		if (state.notes.length === 0) {

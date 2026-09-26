@@ -13,6 +13,7 @@ import { ISSUE_STATUS_LABELS } from './status-labels'
 import { Status } from '_/lib/async-status'
 import { useScope } from '_/routing/use-scope'
 import { usePreviewStore } from '_/app/preview-store'
+import { LoadError } from '_/components/load-error'
 
 const Field = ({ label, children }: { readonly label: string; readonly children: React.ReactNode }) => (
 	<div>
@@ -104,7 +105,7 @@ const IssueDetails = ({ project, todoId }: Props) => {
 	}
 
 	if (state.status === Status.Failed) {
-		return <p className='text-destructive text-sm'>{state.message}</p>
+		return <LoadError message={state.message} />
 	}
 
 	if (state.status !== Status.Ready) {
