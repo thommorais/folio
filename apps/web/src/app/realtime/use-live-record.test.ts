@@ -20,6 +20,7 @@ const fakeConnection = () => {
 				return () => listeners.delete(listener)
 			},
 			retry: () => {},
+			onStatusChange: () => () => {},
 		} satisfies ConnectionPort,
 		reconnect: () => {
 			for (const listener of listeners) listener()

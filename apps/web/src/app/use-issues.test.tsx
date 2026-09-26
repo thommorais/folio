@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest'
 import { ContainerProvider, type Container } from './container'
 import { useIssues } from './use-issues'
 
-const connection: ConnectionPort = { onReconnect: () => () => {}, retry: () => {} }
+const connection: ConnectionPort = { onReconnect: () => () => {}, retry: () => {}, onStatusChange: () => () => {} }
 
 const setup = (rows: Issue[]) => {
 	let push: (issue: Issue, action: ActionEvent) => void = () => {}

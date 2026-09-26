@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { ConnectionStatus } from './connection-status'
 import { PreviewSheet } from './preview-sheet'
 import { OpenSearchButton } from './search/open-search-button'
 import { SearchModal } from './search/search-modal'
@@ -12,6 +13,7 @@ const Header = () => (
 		<OpenSearchButton />
 
 		<div className='ml-auto flex items-center space-x-4'>
+			<ConnectionStatus />
 			<Link
 				to='/knowledge'
 				className='text-dim hover:text-foreground text-sm transition-colors'
