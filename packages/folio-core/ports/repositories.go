@@ -33,6 +33,8 @@ type ProjectRepository interface {
 type DomainRepository interface {
 	List(ctx context.Context, user domain.UserID) ([]domain.Domain, error)
 	GetByID(ctx context.Context, id domain.DomainID) (domain.Domain, error)
+	GetBySlug(ctx context.Context, client domain.ClientID, slug string) (domain.Domain, error)
+	Update(ctx context.Context, d domain.Domain) (domain.Domain, error)
 }
 
 type ClientRepository interface {

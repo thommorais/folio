@@ -103,3 +103,53 @@ func TestClientsAndDomainsOverTheAPI(t *testing.T) {
 		t.Errorf("domain members = %v, want the owner", d["members"])
 	}
 }
+
+func TestDomainUpdateOverTheAPI(t *testing.T) {
+	dir, err := os.MkdirTemp("", "folio-domain-update")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	app := core.NewBaseApp(core.BaseAppConfig{DataDir: dir})
+	if err := app.Bootstrap(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = app.ResetBootstrapState() })
+	if err := app.RunAllMigrations(); err != nil {
+		t.Fatal(err)
+	}
+	if err := folio.Migrate(app); err != nil {
+		t.Fatal(err)
+	}
+
+	owner := record(t, app, pb.ColUsers, map[string]any{"email": "owner@test.local", "password": "password12345", "verified": true})
+	client := record(t, app, pb.ColClients, map[string]any{"slug": "acme", "name": "Acme"})
+	record(t, app, pb.ColClientMembers, map[string]any{"client": client.Id, "user": owner.Id, "role": "owner"})
+	record(t, app, pb.ColDomains, map[string]any{"client": client.Id, "slug": "web", "name": "Web"})
+
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	httpapi.New(folio.New(app, nil).Deps()).Mount(&core.ServeEvent{App: app, Router: router})
+	mux, err := router.BuildMux()
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, err := owner.NewAuthToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPatch, "/api/folio/clients/acme/domains/web", strings.NewReader(`{"name":"Web Team"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", token)
+	res := httptest.NewRecorder()
+	mux.ServeHTTP(res, req)
+
+	var got map[string]any
+	_ = json.Unmarshal(res.Body.Bytes(), &got)
+	if res.Code != http.StatusOK || got["name"] != "Web Team" || got["slug"] != "web" || got["client_slug"] != "acme" {
+		t.Errorf("PATCH domain = %d %v, want 200 with the new name", res.Code, got)
+	}
+}

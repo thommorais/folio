@@ -76,6 +76,34 @@ func (r *DomainRepository) GetByID(ctx context.Context, id domain.DomainID) (dom
 	return r.toDomain(rec)
 }
 
+func (r *DomainRepository) GetBySlug(ctx context.Context, client domain.ClientID, slug string) (domain.Domain, error) {
+	rec, err := r.app.FindFirstRecordByFilter(ColDomains, "client = {:client} && slug = {:slug}",
+		dbx.Params{"client": string(client), "slug": slug})
+	if err != nil {
+		return domain.Domain{}, mapErr(err)
+	}
+	return r.toDomain(rec)
+}
+
+func (r *DomainRepository) Update(ctx context.Context, d domain.Domain) (domain.Domain, error) {
+	rec, err := r.app.FindRecordById(ColDomains, string(d.ID))
+	if err != nil {
+		return domain.Domain{}, mapErr(err)
+	}
+	taken, err := r.app.FindFirstRecordByFilter(ColDomains, "client = {:client} && slug = {:slug}",
+		dbx.Params{"client": rec.GetString("client"), "slug": d.Slug})
+	if err == nil && taken.Id != rec.Id {
+		return domain.Domain{}, domain.ErrConflict
+	}
+	rec.Set("slug", d.Slug)
+	rec.Set("name", d.Name)
+	rec.Set("descr", d.Descr)
+	if err := r.app.Save(rec); err != nil {
+		return domain.Domain{}, mapErr(err)
+	}
+	return r.toDomain(rec)
+}
+
 func (r *DomainRepository) toDomain(rec *core.Record) (domain.Domain, error) {
 	client, err := r.app.FindRecordById(ColClients, rec.GetString("client"))
 	if err != nil {

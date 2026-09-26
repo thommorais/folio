@@ -110,3 +110,35 @@ func TestClientRepositoryUpdates(t *testing.T) {
 		t.Errorf("missing client: err = %v, want ErrNotFound", err)
 	}
 }
+
+func TestDomainRepositoryUpdates(t *testing.T) {
+	s := setup(t)
+	globex := newRecord(t, s.app, pb.ColClients, map[string]any{"slug": "globex", "name": "Globex"})
+	newRecord(t, s.app, pb.ColDomains, map[string]any{"client": globex.Id, "slug": "shared", "name": "Shared"})
+	repo := pb.NewDomainRepository(s.app)
+
+	web, err := repo.GetBySlug(t.Context(), domain.ClientID(s.client.Id), "web")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if web.ID != domain.DomainID(s.domain.Id) {
+		t.Fatalf("GetBySlug found %s, want %s", web.ID, s.domain.Id)
+	}
+	if _, err := repo.GetBySlug(t.Context(), domain.ClientID(globex.Id), "web"); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("web under globex: err = %v, want ErrNotFound", err)
+	}
+
+	web.Name, web.Slug = "Web Team", "shared"
+	updated, err := repo.Update(t.Context(), web)
+	if err != nil {
+		t.Fatalf("a slug another client uses was refused: %v", err)
+	}
+	if updated.Name != "Web Team" || updated.Slug != "shared" || updated.ClientSlug != "acme" {
+		t.Errorf("updated = %+v", updated)
+	}
+
+	web.Slug = "infra"
+	if _, err := repo.Update(t.Context(), web); !errors.Is(err, domain.ErrConflict) {
+		t.Errorf("taking a sibling domain's slug: err = %v, want ErrConflict", err)
+	}
+}

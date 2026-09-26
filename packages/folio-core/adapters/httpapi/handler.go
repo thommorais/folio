@@ -64,6 +64,7 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 
 	g.GET("/clients", h.listClients)
 	g.PATCH("/clients/{client}", h.updateClient)
+	g.PATCH("/clients/{client}/domains/{domain}", h.updateDomain)
 	g.GET("/domains", h.listDomains)
 
 	g.GET("/projects", h.listProjects)

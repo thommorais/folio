@@ -38,6 +38,7 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 
 	projectRepo := pb.NewProjectRepository(app)
 	domainRepo := pb.NewDomainRepository(app)
+	clientRepo := pb.NewClientRepository(app)
 	planRepo := pb.NewPlanRepository(app)
 	issueRepo := pb.NewIssueRepository(app)
 	entryRepo := pb.NewEntryRepository(app)
@@ -52,8 +53,8 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 
 	return &App{
 		Projects:  services.NewProjectService(projectRepo, domainRepo, guard, clock, ids, log),
-		Clients:   services.NewClientService(pb.NewClientRepository(app), clock),
-		Domains:   services.NewDomainService(domainRepo),
+		Clients:   services.NewClientService(clientRepo, clock),
+		Domains:   services.NewDomainService(domainRepo, clientRepo, clock),
 		Plans:     plans,
 		Issues:    issues,
 		Entries:   services.NewEntryService(entryRepo, issueRepo, planRepo, guard, clock, ids, log),

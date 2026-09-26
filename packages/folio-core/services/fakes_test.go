@@ -340,11 +340,20 @@ var (
 )
 
 type fakeDomains struct {
-	items map[domain.DomainID]domain.Domain
+	items   map[domain.DomainID]domain.Domain
+	visible map[domain.UserID][]domain.DomainID
 }
 
 func newFakeDomains() *fakeDomains {
-	return &fakeDomains{items: map[domain.DomainID]domain.Domain{}}
+	return &fakeDomains{items: map[domain.DomainID]domain.Domain{}, visible: map[domain.UserID][]domain.DomainID{}}
+}
+
+func (r *fakeDomains) List(_ context.Context, user domain.UserID) ([]domain.Domain, error) {
+	out := []domain.Domain{}
+	for _, id := range r.visible[user] {
+		out = append(out, r.items[id])
+	}
+	return out, nil
 }
 
 func (r *fakeDomains) GetByID(_ context.Context, id domain.DomainID) (domain.Domain, error) {
@@ -355,8 +364,18 @@ func (r *fakeDomains) GetByID(_ context.Context, id domain.DomainID) (domain.Dom
 	return d, nil
 }
 
-func (r *fakeDomains) List(_ context.Context, _ domain.UserID) ([]domain.Domain, error) {
-	return nil, nil
+func (r *fakeDomains) GetBySlug(_ context.Context, client domain.ClientID, slug string) (domain.Domain, error) {
+	for _, d := range r.items {
+		if d.ClientID == client && d.Slug == slug {
+			return d, nil
+		}
+	}
+	return domain.Domain{}, domain.ErrNotFound
+}
+
+func (r *fakeDomains) Update(_ context.Context, d domain.Domain) (domain.Domain, error) {
+	r.items[d.ID] = d
+	return d, nil
 }
 
 type fakeClients struct {

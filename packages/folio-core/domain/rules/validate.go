@@ -85,6 +85,16 @@ func ValidateClient(c domain.Client) error {
 	return optional("description", c.Descr, DescrMaxLen)
 }
 
+func ValidateDomain(d domain.Domain) error {
+	if err := ValidateSlug("slug", d.Slug); err != nil {
+		return err
+	}
+	if err := required("name", d.Name, NameMaxLen); err != nil {
+		return err
+	}
+	return optional("description", d.Descr, DescrMaxLen)
+}
+
 var planStatuses = map[domain.PlanStatus]bool{
 	domain.PlanDraft: true, domain.PlanActive: true,
 	domain.PlanDone: true, domain.PlanAbandoned: true,

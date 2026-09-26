@@ -53,3 +53,23 @@ func (h *Handler) listDomains(e *core.RequestEvent) error {
 	}
 	return e.JSON(http.StatusOK, map[string]any{"domains": out})
 }
+
+type updateDomainBody struct {
+	Slug  *string `json:"slug"`
+	Name  *string `json:"name"`
+	Descr *string `json:"descr"`
+}
+
+func (h *Handler) updateDomain(e *core.RequestEvent) error {
+	var body updateDomainBody
+	if err := e.BindBody(&body); err != nil {
+		return e.BadRequestError("invalid request body", err)
+	}
+	d, err := h.domains.UpdateDomain(e.Request.Context(), actorOf(e),
+		e.Request.PathValue("client"), e.Request.PathValue("domain"),
+		ports.UpdateDomainInput{Slug: body.Slug, Name: body.Name, Descr: body.Descr})
+	if err != nil {
+		return fail(e, err)
+	}
+	return e.JSON(http.StatusOK, toDomainView(d))
+}

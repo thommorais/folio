@@ -26,7 +26,7 @@ func (s *ClientService) ListClients(ctx context.Context, actor ports.Actor) ([]d
 }
 
 func (s *ClientService) UpdateClient(ctx context.Context, actor ports.Actor, ref string, in ports.UpdateClientInput) (domain.Client, error) {
-	c, err := s.resolve(ctx, ref)
+	c, err := resolveClient(ctx, s.repo, ref)
 	if err != nil {
 		return domain.Client{}, err
 	}
@@ -63,24 +63,76 @@ func (s *ClientService) UpdateClient(ctx context.Context, actor ports.Actor, ref
 	return s.repo.Update(ctx, c)
 }
 
-func (s *ClientService) resolve(ctx context.Context, ref string) (domain.Client, error) {
-	c, err := s.repo.GetByID(ctx, domain.ClientID(ref))
+func resolveClient(ctx context.Context, repo ports.ClientRepository, ref string) (domain.Client, error) {
+	c, err := repo.GetByID(ctx, domain.ClientID(ref))
 	if err == nil || !notFound(err) {
 		return c, err
 	}
-	return s.repo.GetBySlug(ctx, ref)
+	return repo.GetBySlug(ctx, ref)
 }
 
 type DomainService struct {
-	repo ports.DomainRepository
+	repo    ports.DomainRepository
+	clients ports.ClientRepository
+	clock   ports.Clock
 }
 
-func NewDomainService(repo ports.DomainRepository) *DomainService {
-	return &DomainService{repo: repo}
+func NewDomainService(repo ports.DomainRepository, clients ports.ClientRepository, clock ports.Clock) *DomainService {
+	return &DomainService{repo: repo, clients: clients, clock: clock}
 }
 
 var _ ports.DomainUseCase = (*DomainService)(nil)
 
 func (s *DomainService) ListDomains(ctx context.Context, actor ports.Actor) ([]domain.Domain, error) {
 	return s.repo.List(ctx, actor.UserID)
+}
+
+func (s *DomainService) UpdateDomain(ctx context.Context, actor ports.Actor, clientRef, domainRef string, in ports.UpdateDomainInput) (domain.Domain, error) {
+	d, err := s.resolve(ctx, clientRef, domainRef)
+	if err != nil {
+		return domain.Domain{}, err
+	}
+	if !actor.Superuser && !rules.CanAdminDomain(d, actor.UserID) {
+		visible, err := s.repo.List(ctx, actor.UserID)
+		if err != nil {
+			return domain.Domain{}, err
+		}
+		if slices.ContainsFunc(visible, func(v domain.Domain) bool { return v.ID == d.ID }) {
+			return domain.Domain{}, domain.ErrForbidden
+		}
+		return domain.Domain{}, domain.ErrNotFound
+	}
+
+	if in.Slug != nil {
+		d.Slug = strings.TrimSpace(*in.Slug)
+	}
+	if in.Name != nil {
+		d.Name = strings.TrimSpace(*in.Name)
+	}
+	if in.Descr != nil {
+		d.Descr = *in.Descr
+	}
+	if err := rules.ValidateDomain(d); err != nil {
+		return domain.Domain{}, err
+	}
+	d.UpdatedAt = s.clock.Now()
+	return s.repo.Update(ctx, d)
+}
+
+func (s *DomainService) resolve(ctx context.Context, clientRef, domainRef string) (domain.Domain, error) {
+	c, err := resolveClient(ctx, s.clients, clientRef)
+	if err != nil {
+		return domain.Domain{}, err
+	}
+	d, err := s.repo.GetByID(ctx, domain.DomainID(domainRef))
+	if err == nil {
+		if d.ClientID != c.ID {
+			return domain.Domain{}, domain.ErrNotFound
+		}
+		return d, nil
+	}
+	if !notFound(err) {
+		return domain.Domain{}, err
+	}
+	return s.repo.GetBySlug(ctx, c.ID, domainRef)
 }

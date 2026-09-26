@@ -33,6 +33,13 @@ type UpdateClientInput struct {
 
 type DomainUseCase interface {
 	ListDomains(ctx context.Context, actor Actor) ([]domain.Domain, error)
+	UpdateDomain(ctx context.Context, actor Actor, clientRef, domainRef string, in UpdateDomainInput) (domain.Domain, error)
+}
+
+type UpdateDomainInput struct {
+	Slug  *string
+	Name  *string
+	Descr *string
 }
 
 type CreateProjectInput struct {
