@@ -31,15 +31,17 @@ func (r Role) CanAdmin() bool {
 }
 
 type Project struct {
-	ID ProjectID
-	// DomainID holds the project's roster: projects under one domain share
-	// their members.
-	DomainID  DomainID
-	Slug      string
-	Name      string
-	Descr     string
-	Archived  bool
-	Members   []Member
+	ID       ProjectID
+	DomainID DomainID
+	Slug     string
+	Name     string
+	Descr    string
+	Archived bool
+
+	ClientOwners []UserID
+	DomainGrants []DomainGrant
+	Members      []Member
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -68,7 +70,11 @@ type Domain struct {
 	UpdatedAt time.Time
 }
 
-// RoleOf returns the role the given user holds on the project.
+func (p Project) Access() ProjectAccess {
+	return ProjectAccess{ClientOwners: p.ClientOwners, DomainGrants: p.DomainGrants, Members: p.Members}
+}
+
+// RoleOf returns the user's personal grant, ignoring client and domain grants.
 func (p Project) RoleOf(user UserID) (Role, bool) {
 	for _, m := range p.Members {
 		if m.UserID == user {
@@ -78,7 +84,7 @@ func (p Project) RoleOf(user UserID) (Role, bool) {
 	return "", false
 }
 
-// Owners returns every member holding the owner role.
+// Owners returns every personal grant holding the owner role.
 func (p Project) Owners() []Member {
 	out := make([]Member, 0, 1)
 	for _, m := range p.Members {

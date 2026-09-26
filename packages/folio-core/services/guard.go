@@ -9,6 +9,7 @@ import (
 	"errors"
 
 	"folio/folio-core/domain"
+	"folio/folio-core/domain/rules"
 	"folio/folio-core/ports"
 )
 
@@ -35,7 +36,7 @@ func (g *ProjectGuard) ensure(ctx context.Context, actor ports.Actor, id domain.
 	if actor.Superuser {
 		return project, nil
 	}
-	role, member := project.RoleOf(actor.UserID)
+	role, member := rules.EffectiveRole(project.Access(), actor.UserID)
 	if !member {
 		return domain.Project{}, domain.ErrNotFound
 	}

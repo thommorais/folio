@@ -40,6 +40,7 @@ func TestResolutionClosesADecisionOverTheAPI(t *testing.T) {
 	dom := record(t, app, pb.ColDomains, map[string]any{"client": client.Id, "slug": "web", "name": "Web"})
 	project := record(t, app, pb.ColProjects, map[string]any{"slug": "redesign", "name": "Redesign", "domain": dom.Id})
 	record(t, app, pb.ColMembers, map[string]any{"domain": dom.Id, "project": project.Id, "user": owner.Id, "role": "owner"})
+	record(t, app, pb.ColProjectGrants, map[string]any{"project": project.Id, "user": owner.Id, "role": "owner"})
 
 	router, err := apis.NewRouter(app)
 	if err != nil {

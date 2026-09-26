@@ -10,7 +10,7 @@ import (
 	"folio/folio-core/ports"
 )
 
-// ProjectRepository stores projects and their membership rows. It runs
+// ProjectRepository stores projects and their grants. It runs
 // in-process against core.App, so it bypasses PocketBase's own API rules;
 // authorisation is the service layer's job (see services.ProjectGuard).
 type ProjectRepository struct {
@@ -24,36 +24,82 @@ func NewProjectRepository(app core.App) *ProjectRepository {
 var _ ports.ProjectRepository = (*ProjectRepository)(nil)
 
 func (r *ProjectRepository) toProject(rec *core.Record) (domain.Project, error) {
-	members, err := r.membersOf(rec.GetString("domain"))
-	if err != nil {
-		return domain.Project{}, err
-	}
-	return domain.Project{
+	p := domain.Project{
 		ID:        domain.ProjectID(rec.Id),
 		DomainID:  domain.DomainID(rec.GetString("domain")),
 		Slug:      rec.GetString("slug"),
 		Name:      rec.GetString("name"),
 		Descr:     rec.GetString("descr"),
 		Archived:  rec.GetBool("archived"),
-		Members:   members,
 		CreatedAt: rec.GetDateTime("created").Time(),
 		UpdatedAt: rec.GetDateTime("updated").Time(),
-	}, nil
+	}
+
+	owners, err := r.clientOwnersOf(rec.GetString("domain"))
+	if err != nil {
+		return domain.Project{}, err
+	}
+	p.ClientOwners = owners
+
+	grants, err := r.app.FindAllRecords(ColProjectGrants, dbx.HashExp{"project": rec.Id})
+	if err != nil {
+		return domain.Project{}, mapErr(err)
+	}
+	var personal []*core.Record
+	for _, g := range grants {
+		if g.GetString("user") != "" {
+			personal = append(personal, g)
+			continue
+		}
+		roster, err := r.rosterOf(g.GetString("domain"))
+		if err != nil {
+			return domain.Project{}, err
+		}
+		p.DomainGrants = append(p.DomainGrants, domain.DomainGrant{
+			DomainID: domain.DomainID(g.GetString("domain")),
+			Role:     domain.Role(g.GetString("role")),
+			Members:  roster,
+		})
+	}
+	p.Members = toMembers(r.app, personal)
+	return p, nil
 }
 
-// membersOf loads the roster, expanding each row's user so callers get an
-// email and name without a second round trip.
-func (r *ProjectRepository) membersOf(domainID string) ([]domain.Member, error) {
+func (r *ProjectRepository) clientOwnersOf(domainID string) ([]domain.UserID, error) {
 	if domainID == "" {
 		return nil, nil
 	}
+	d, err := r.app.FindRecordById(ColDomains, domainID)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	rows, err := r.app.FindAllRecords(ColClientMembers, dbx.HashExp{"client": d.GetString("client"), "role": "owner"})
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	out := make([]domain.UserID, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, domain.UserID(row.GetString("user")))
+	}
+	return out, nil
+}
+
+func (r *ProjectRepository) rosterOf(domainID string) ([]domain.UserID, error) {
 	rows, err := r.app.FindAllRecords(ColMembers, dbx.HashExp{"domain": domainID})
 	if err != nil {
 		return nil, mapErr(err)
 	}
-	// A user that cannot be expanded (a deleted account) leaves that member's
-	// email blank rather than failing the whole roster.
-	r.app.ExpandRecords(rows, []string{"user"}, nil)
+	out := make([]domain.UserID, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, domain.UserID(row.GetString("user")))
+	}
+	return out, nil
+}
+
+// A user that cannot be expanded (a deleted account) leaves that member's
+// email blank rather than failing the whole roster.
+func toMembers(app core.App, rows []*core.Record) []domain.Member {
+	app.ExpandRecords(rows, []string{"user"}, nil)
 	out := make([]domain.Member, 0, len(rows))
 	for _, row := range rows {
 		m := domain.Member{
@@ -66,25 +112,19 @@ func (r *ProjectRepository) membersOf(domainID string) ([]domain.Member, error) 
 		}
 		out = append(out, m)
 	}
-	return out, nil
+	return out
 }
 
-// List returns the projects the actor belongs to, resolved through their
-// membership rows so a non-member never appears in anyone's listing.
 func (r *ProjectRepository) List(ctx context.Context, actor domain.UserID, includeArchived bool) ([]domain.Project, error) {
-	memberships, err := r.app.FindAllRecords(ColMembers, dbx.HashExp{"user": string(actor)})
+	ids, err := r.reachable(string(actor))
 	if err != nil {
-		return nil, mapErr(err)
+		return nil, err
 	}
-	if len(memberships) == 0 {
+	if len(ids) == 0 {
 		return []domain.Project{}, nil
 	}
-	ids := make([]any, 0, len(memberships))
-	for _, m := range memberships {
-		ids = append(ids, m.GetString("domain"))
-	}
 
-	exprs := []dbx.Expression{dbx.In("domain", ids...)}
+	exprs := []dbx.Expression{dbx.In("id", ids...)}
 	if !includeArchived {
 		exprs = append(exprs, dbx.HashExp{"archived": false})
 	}
@@ -104,6 +144,66 @@ func (r *ProjectRepository) List(ctx context.Context, actor domain.UserID, inclu
 	return out, nil
 }
 
+func (r *ProjectRepository) reachable(user string) ([]any, error) {
+	seen := map[string]bool{}
+	var ids []any
+	add := func(id string) {
+		if !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
+		}
+	}
+
+	owned, err := r.app.FindAllRecords(ColClientMembers, dbx.HashExp{"user": user, "role": "owner"})
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	if len(owned) > 0 {
+		clients := make([]any, 0, len(owned))
+		for _, row := range owned {
+			clients = append(clients, row.GetString("client"))
+		}
+		domains, err := r.app.FindAllRecords(ColDomains, dbx.In("client", clients...))
+		if err != nil {
+			return nil, mapErr(err)
+		}
+		if len(domains) > 0 {
+			domainIDs := make([]any, 0, len(domains))
+			for _, d := range domains {
+				domainIDs = append(domainIDs, d.Id)
+			}
+			projects, err := r.app.FindAllRecords(ColProjects, dbx.In("domain", domainIDs...))
+			if err != nil {
+				return nil, mapErr(err)
+			}
+			for _, p := range projects {
+				add(p.Id)
+			}
+		}
+	}
+
+	rosters, err := r.app.FindAllRecords(ColMembers, dbx.HashExp{"user": user})
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	grantFilters := []dbx.Expression{dbx.HashExp{"user": user}}
+	if len(rosters) > 0 {
+		domainIDs := make([]any, 0, len(rosters))
+		for _, row := range rosters {
+			domainIDs = append(domainIDs, row.GetString("domain"))
+		}
+		grantFilters = append(grantFilters, dbx.In("domain", domainIDs...))
+	}
+	grants, err := r.app.FindAllRecords(ColProjectGrants, dbx.Or(grantFilters...))
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	for _, g := range grants {
+		add(g.GetString("project"))
+	}
+	return ids, nil
+}
+
 func (r *ProjectRepository) GetByID(ctx context.Context, id domain.ProjectID) (domain.Project, error) {
 	rec, err := r.app.FindRecordById(ColProjects, string(id))
 	if err != nil {
@@ -120,8 +220,8 @@ func (r *ProjectRepository) GetBySlug(ctx context.Context, slug string) (domain.
 	return r.toProject(rec)
 }
 
-// Create writes the project and its first membership row in one transaction:
-// a project without an owner would be unreachable and unadministrable.
+// Create writes the project and its grants in one transaction: a project
+// without an owner would be unreachable and unadministrable.
 func (r *ProjectRepository) Create(ctx context.Context, p domain.Project) (domain.Project, error) {
 	if existing, err := r.app.FindFirstRecordByData(ColProjects, "slug", p.Slug); err == nil && existing != nil {
 		return domain.Project{}, domain.ErrConflict
@@ -131,7 +231,7 @@ func (r *ProjectRepository) Create(ctx context.Context, p domain.Project) (domai
 	if err != nil {
 		return domain.Project{}, mapErr(err)
 	}
-	memberCollection, err := r.app.FindCollectionByNameOrId(ColMembers)
+	grantCollection, err := r.app.FindCollectionByNameOrId(ColProjectGrants)
 	if err != nil {
 		return domain.Project{}, mapErr(err)
 	}
@@ -144,12 +244,11 @@ func (r *ProjectRepository) Create(ctx context.Context, p domain.Project) (domai
 	rec.Set("archived", p.Archived)
 
 	err = r.app.RunInTransaction(func(tx core.App) error {
-		// A project without a domain has no roster and would be
-		// unadministrable, so one is created for it.
 		domainID := string(p.DomainID)
+		var clientID string
 		if domainID == "" {
 			var err error
-			if domainID, err = ensureOwnDomain(tx, p); err != nil {
+			if clientID, domainID, err = newOwnDomain(tx, p); err != nil {
 				return err
 			}
 		} else if _, err := tx.FindRecordById(ColDomains, domainID); err != nil {
@@ -160,19 +259,21 @@ func (r *ProjectRepository) Create(ctx context.Context, p domain.Project) (domai
 		if err := tx.Save(rec); err != nil {
 			return err
 		}
-		// Joining an existing domain must not grant access through its own
-		// member list.
-		for _, m := range p.Members {
-			existing, err := tx.FindFirstRecordByFilter(
-				ColMembers,
-				"domain = {:domain} && user = {:user}",
-				dbx.Params{"domain": domainID, "user": string(m.UserID)},
-			)
-			if err == nil && existing != nil {
-				continue
+		if clientID != "" {
+			if err := ownOwnDomain(tx, clientID, domainID, rec.Id, p.Owners()); err != nil {
+				return err
 			}
-			row := core.NewRecord(memberCollection)
-			row.Set("domain", domainID)
+		}
+
+		byDomain := core.NewRecord(grantCollection)
+		byDomain.Set("project", rec.Id)
+		byDomain.Set("domain", domainID)
+		byDomain.Set("role", string(domain.RoleEditor))
+		if err := tx.Save(byDomain); err != nil {
+			return err
+		}
+		for _, m := range p.Members {
+			row := core.NewRecord(grantCollection)
 			row.Set("project", rec.Id)
 			row.Set("user", string(m.UserID))
 			row.Set("role", string(m.Role))
@@ -188,30 +289,32 @@ func (r *ProjectRepository) Create(ctx context.Context, p domain.Project) (domai
 	return r.GetByID(ctx, domain.ProjectID(rec.Id))
 }
 
-func ensureOwnDomain(tx core.App, p domain.Project) (string, error) {
+// newOwnDomain gives a project created without a domain its own client and
+// domain.
+func newOwnDomain(tx core.App, p domain.Project) (string, string, error) {
 	clients, err := tx.FindCollectionByNameOrId(ColClients)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	domains, err := tx.FindCollectionByNameOrId(ColDomains)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	clientSlugs, err := existingSlugs(tx, ColClients)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	client := core.NewRecord(clients)
 	client.Set("slug", uniqueSlug(p.Slug, clientSlugs))
 	client.Set("name", p.Name)
 	if err := tx.Save(client); err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	domainSlugs, err := existingSlugs(tx, ColDomains)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	d := core.NewRecord(domains)
 	d.Set("client", client.Id)
@@ -219,9 +322,38 @@ func ensureOwnDomain(tx core.App, p domain.Project) (string, error) {
 	d.Set("name", p.Name)
 	d.Set("descr", p.Descr)
 	if err := tx.Save(d); err != nil {
-		return "", err
+		return "", "", err
 	}
-	return d.Id, nil
+	return client.Id, d.Id, nil
+}
+
+func ownOwnDomain(tx core.App, clientID, domainID, projectID string, owners []domain.Member) error {
+	clientMembers, err := tx.FindCollectionByNameOrId(ColClientMembers)
+	if err != nil {
+		return err
+	}
+	roster, err := tx.FindCollectionByNameOrId(ColMembers)
+	if err != nil {
+		return err
+	}
+	for _, m := range owners {
+		owner := core.NewRecord(clientMembers)
+		owner.Set("client", clientID)
+		owner.Set("user", string(m.UserID))
+		owner.Set("role", "owner")
+		if err := tx.Save(owner); err != nil {
+			return err
+		}
+		row := core.NewRecord(roster)
+		row.Set("domain", domainID)
+		row.Set("project", projectID)
+		row.Set("user", string(m.UserID))
+		row.Set("role", "owner")
+		if err := tx.Save(row); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *ProjectRepository) Update(ctx context.Context, p domain.Project) (domain.Project, error) {
@@ -247,23 +379,21 @@ func (r *ProjectRepository) Delete(ctx context.Context, id domain.ProjectID) err
 }
 
 func (r *ProjectRepository) AddMember(ctx context.Context, id domain.ProjectID, user domain.UserID, role domain.Role) error {
-	if row, err := r.memberRow(id, user); err == nil {
+	if row, err := r.grantRow(id, user); err == nil {
 		row.Set("role", string(role))
 		return mapErr(r.app.Save(row))
 	} else if !isNotFound(err) {
 		return err
 	}
 
-	collection, err := r.app.FindCollectionByNameOrId(ColMembers)
+	if _, err := r.app.FindRecordById(ColProjects, string(id)); err != nil {
+		return mapErr(err)
+	}
+	collection, err := r.app.FindCollectionByNameOrId(ColProjectGrants)
 	if err != nil {
 		return mapErr(err)
 	}
-	domainID, err := r.domainOf(id)
-	if err != nil {
-		return err
-	}
 	row := core.NewRecord(collection)
-	row.Set("domain", domainID)
 	row.Set("project", string(id))
 	row.Set("user", string(user))
 	row.Set("role", string(role))
@@ -271,7 +401,7 @@ func (r *ProjectRepository) AddMember(ctx context.Context, id domain.ProjectID, 
 }
 
 func (r *ProjectRepository) RemoveMember(ctx context.Context, id domain.ProjectID, user domain.UserID) error {
-	row, err := r.memberRow(id, user)
+	row, err := r.grantRow(id, user)
 	if err != nil {
 		return err
 	}
@@ -279,7 +409,7 @@ func (r *ProjectRepository) RemoveMember(ctx context.Context, id domain.ProjectI
 }
 
 func (r *ProjectRepository) SetMemberRole(ctx context.Context, id domain.ProjectID, user domain.UserID, role domain.Role) error {
-	row, err := r.memberRow(id, user)
+	row, err := r.grantRow(id, user)
 	if err != nil {
 		return err
 	}
@@ -287,28 +417,16 @@ func (r *ProjectRepository) SetMemberRole(ctx context.Context, id domain.Project
 	return mapErr(r.app.Save(row))
 }
 
-func (r *ProjectRepository) memberRow(id domain.ProjectID, user domain.UserID) (*core.Record, error) {
-	domainID, err := r.domainOf(id)
-	if err != nil {
-		return nil, err
-	}
+func (r *ProjectRepository) grantRow(id domain.ProjectID, user domain.UserID) (*core.Record, error) {
 	row, err := r.app.FindFirstRecordByFilter(
-		ColMembers,
-		"domain = {:domain} && user = {:user}",
-		dbx.Params{"domain": domainID, "user": string(user)},
+		ColProjectGrants,
+		"project = {:project} && user = {:user}",
+		dbx.Params{"project": string(id), "user": string(user)},
 	)
 	if err != nil {
 		return nil, mapErr(err)
 	}
 	return row, nil
-}
-
-func (r *ProjectRepository) domainOf(id domain.ProjectID) (string, error) {
-	rec, err := r.app.FindRecordById(ColProjects, string(id))
-	if err != nil {
-		return "", mapErr(err)
-	}
-	return rec.GetString("domain"), nil
 }
 
 func (r *ProjectRepository) FindUserByEmail(ctx context.Context, email string) (domain.UserID, error) {

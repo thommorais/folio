@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 	_ "github.com/pocketbase/pocketbase/migrations"
 
@@ -173,49 +174,56 @@ func TestUnrelatedDomainIsHidden(t *testing.T) {
 	}
 }
 
-func TestProjectRepositoryResolvesRosterThroughDomain(t *testing.T) {
+func TestProjectRepositoryLoadsEveryGrant(t *testing.T) {
 	s := setup(t)
+	newRecord(t, s.app, pb.ColClientMembers, map[string]any{"client": s.client.Id, "user": s.owner.Id, "role": "owner"})
+	newRecord(t, s.app, pb.ColProjectGrants, map[string]any{"project": s.project.Id, "domain": s.domain.Id, "role": "editor"})
+	newRecord(t, s.app, pb.ColProjectGrants, map[string]any{"project": s.project.Id, "user": s.stranger.Id, "role": "viewer"})
 
-	repo := pb.NewProjectRepository(s.app)
-	project, err := repo.GetByID(t.Context(), domain.ProjectID(s.project.Id))
+	project, err := pb.NewProjectRepository(s.app).GetByID(t.Context(), domain.ProjectID(s.project.Id))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(project.Members) != 3 {
-		t.Fatalf("roster has %d members, want 3", len(project.Members))
+	if len(project.ClientOwners) != 1 || string(project.ClientOwners[0]) != s.owner.Id {
+		t.Errorf("client owners = %v, want the owner", project.ClientOwners)
 	}
-	role, ok := project.RoleOf(domain.UserID(s.editor.Id))
-	if !ok || role != domain.RoleEditor {
-		t.Errorf("editor resolved to %q (found=%v), want editor", role, ok)
+	if len(project.DomainGrants) != 1 || project.DomainGrants[0].Role != domain.RoleEditor ||
+		len(project.DomainGrants[0].Members) != 3 {
+		t.Errorf("domain grants = %+v, want one editor grant carrying the 3-member roster", project.DomainGrants)
 	}
-	if _, ok := project.RoleOf(domain.UserID(s.stranger.Id)); ok {
-		t.Error("stranger appears in the roster")
+	if len(project.Members) != 1 || string(project.Members[0].UserID) != s.stranger.Id ||
+		project.Members[0].Email != "stranger@test.local" {
+		t.Errorf("personal grants = %+v, want the stranger as viewer with their email", project.Members)
 	}
 }
 
-func TestSiblingProjectSharesRoster(t *testing.T) {
+func TestListFindsProjectsThroughEachGrant(t *testing.T) {
 	s := setup(t)
-
-	sibling := newRecord(t, s.app, pb.ColProjects, map[string]any{
-		"slug": "second", "name": "Second", "domain": s.domain.Id,
-	})
+	boss := newUser(t, s.app, "boss@test.local")
+	solo := newUser(t, s.app, "solo@test.local")
+	newRecord(t, s.app, pb.ColClientMembers, map[string]any{"client": s.client.Id, "user": boss.Id, "role": "owner"})
+	newRecord(t, s.app, pb.ColProjectGrants, map[string]any{"project": s.project.Id, "domain": s.domain.Id, "role": "editor"})
+	newRecord(t, s.app, pb.ColProjectGrants, map[string]any{"project": s.project.Id, "user": solo.Id, "role": "viewer"})
+	newRecord(t, s.app, pb.ColProjects, map[string]any{"slug": "ungranted", "name": "Ungranted", "domain": s.domain.Id})
 
 	repo := pb.NewProjectRepository(s.app)
-	project, err := repo.GetByID(t.Context(), domain.ProjectID(sibling.Id))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := project.RoleOf(domain.UserID(s.owner.Id)); !ok {
-		t.Error("owner of the domain is not a member of its sibling project")
-	}
-
-	listed, err := repo.List(t.Context(), domain.UserID(s.owner.Id), false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(listed) != 2 {
-		t.Errorf("List returned %d projects, want 2", len(listed))
+	for _, tc := range []struct {
+		who  *core.Record
+		want int
+	}{
+		{boss, 2},
+		{s.editor, 1},
+		{solo, 1},
+		{s.stranger, 0},
+	} {
+		listed, err := repo.List(t.Context(), domain.UserID(tc.who.Id), false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(listed) != tc.want {
+			t.Errorf("%s lists %d projects, want %d", tc.who.GetString("email"), len(listed), tc.want)
+		}
 	}
 }
 
@@ -228,6 +236,7 @@ func TestCreateProjectIntoExistingDomain(t *testing.T) {
 		DomainID: domain.DomainID(s.domain.Id),
 		Slug:     "second",
 		Name:     "Second",
+		Members:  []domain.Member{{UserID: domain.UserID(s.stranger.Id), Role: domain.RoleOwner}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -236,16 +245,85 @@ func TestCreateProjectIntoExistingDomain(t *testing.T) {
 	if string(created.DomainID) != s.domain.Id {
 		t.Errorf("project landed in domain %q, want %q", created.DomainID, s.domain.Id)
 	}
-	if _, ok := created.RoleOf(domain.UserID(s.owner.Id)); !ok {
-		t.Error("project does not inherit the domain roster")
+	if role, ok := created.RoleOf(domain.UserID(s.stranger.Id)); !ok || role != domain.RoleOwner {
+		t.Errorf("creator's personal grant = %q (found=%v), want owner", role, ok)
+	}
+	if len(created.DomainGrants) != 1 || created.DomainGrants[0].Role != domain.RoleEditor {
+		t.Errorf("domain grants = %+v, want an editor grant to the project's domain", created.DomainGrants)
 	}
 
+	roster, err := s.app.FindAllRecords(pb.ColMembers, dbx.HashExp{"user": s.stranger.Id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(roster) != 0 {
+		t.Error("creating a project in an existing domain added the creator to its roster")
+	}
 	domains, err := s.app.FindAllRecords(pb.ColDomains)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(domains) != 2 {
 		t.Errorf("domain count is %d, want 2: creating a project made a new one", len(domains))
+	}
+}
+
+func TestCreateProjectWithoutDomainMakesCreatorClientOwner(t *testing.T) {
+	s := setup(t)
+
+	created, err := pb.NewProjectRepository(s.app).Create(t.Context(), domain.Project{
+		ID: "proj00000000003", Slug: "solo", Name: "Solo",
+		Members: []domain.Member{{UserID: domain.UserID(s.stranger.Id), Role: domain.RoleOwner}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(created.ClientOwners) != 1 || string(created.ClientOwners[0]) != s.stranger.Id {
+		t.Errorf("client owners = %v, want the creator", created.ClientOwners)
+	}
+	if len(created.DomainGrants) != 1 || len(created.DomainGrants[0].Members) != 1 ||
+		string(created.DomainGrants[0].Members[0]) != s.stranger.Id {
+		t.Errorf("domain grants = %+v, want the new domain granted with the creator on its roster", created.DomainGrants)
+	}
+}
+
+func TestMemberManagementWritesPersonalGrants(t *testing.T) {
+	s := setup(t)
+	repo := pb.NewProjectRepository(s.app)
+	id := domain.ProjectID(s.project.Id)
+	user := domain.UserID(s.stranger.Id)
+
+	if err := repo.AddMember(t.Context(), id, user, domain.RoleViewer); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.SetMemberRole(t.Context(), id, user, domain.RoleEditor); err != nil {
+		t.Fatal(err)
+	}
+	p, err := repo.GetByID(t.Context(), id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if role, ok := p.RoleOf(user); !ok || role != domain.RoleEditor {
+		t.Fatalf("personal grant = %q (found=%v), want editor", role, ok)
+	}
+
+	if err := repo.RemoveMember(t.Context(), id, user); err != nil {
+		t.Fatal(err)
+	}
+	p, err = repo.GetByID(t.Context(), id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := p.RoleOf(user); ok {
+		t.Error("personal grant survived RemoveMember")
+	}
+	roster, err := s.app.FindAllRecords(pb.ColMembers, dbx.HashExp{"user": s.stranger.Id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(roster) != 0 {
+		t.Error("member management touched the domain roster")
 	}
 }
 

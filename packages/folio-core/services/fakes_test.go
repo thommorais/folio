@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"folio/folio-core/domain"
+	"folio/folio-core/domain/rules"
 	"folio/folio-core/ports"
 )
 
@@ -63,7 +64,7 @@ func (r *fakeProjects) List(_ context.Context, actor domain.UserID, includeArchi
 	}
 	out := []domain.Project{}
 	for _, p := range r.items {
-		if _, member := p.RoleOf(actor); !member {
+		if _, member := rules.EffectiveRole(p.Access(), actor); !member {
 			continue
 		}
 		if p.Archived && !includeArchived {
