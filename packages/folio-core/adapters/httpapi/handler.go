@@ -15,35 +15,37 @@ import (
 // Handler wires the folio use cases onto PocketBase's router. It depends only
 // on ports, so the same handler works against any adapter set.
 type Handler struct {
-	projects  ports.ProjectUseCase
-	clients   ports.ClientUseCase
-	domains   ports.DomainUseCase
-	plans     ports.PlanUseCase
-	issues    ports.IssueUseCase
-	entries   ports.EntryUseCase
-	cycles    ports.CycleUseCase
-	search    ports.SearchUseCase
-	knowledge ports.KnowledgeUseCase
-	shares    ports.ShareUseCase
+	projects   ports.ProjectUseCase
+	clients    ports.ClientUseCase
+	domains    ports.DomainUseCase
+	plans      ports.PlanUseCase
+	issues     ports.IssueUseCase
+	entries    ports.EntryUseCase
+	cycles     ports.CycleUseCase
+	search     ports.SearchUseCase
+	knowledge  ports.KnowledgeUseCase
+	shares     ports.ShareUseCase
+	interviews ports.InterviewUseCase
 }
 
 type Deps struct {
-	Projects  ports.ProjectUseCase
-	Clients   ports.ClientUseCase
-	Domains   ports.DomainUseCase
-	Plans     ports.PlanUseCase
-	Issues    ports.IssueUseCase
-	Entries   ports.EntryUseCase
-	Cycles    ports.CycleUseCase
-	Knowledge ports.KnowledgeUseCase
-	Search    ports.SearchUseCase
-	Shares    ports.ShareUseCase
+	Projects   ports.ProjectUseCase
+	Clients    ports.ClientUseCase
+	Domains    ports.DomainUseCase
+	Plans      ports.PlanUseCase
+	Issues     ports.IssueUseCase
+	Entries    ports.EntryUseCase
+	Cycles     ports.CycleUseCase
+	Knowledge  ports.KnowledgeUseCase
+	Search     ports.SearchUseCase
+	Shares     ports.ShareUseCase
+	Interviews ports.InterviewUseCase
 }
 
 func New(d Deps) *Handler {
 	return &Handler{
 		projects: d.Projects, clients: d.Clients, domains: d.Domains, plans: d.Plans, issues: d.Issues, entries: d.Entries, cycles: d.Cycles, search: d.Search,
-		knowledge: d.Knowledge, shares: d.Shares,
+		knowledge: d.Knowledge, shares: d.Shares, interviews: d.Interviews,
 	}
 }
 
@@ -91,6 +93,14 @@ func (h *Handler) Mount(e *core.ServeEvent) {
 	g.PATCH("/issues/{issue}/cycles/current", h.updateCurrentCycle)
 	g.POST("/issues/{issue}/cycles/current/next", h.nextPhase)
 	g.PATCH("/cycles/{cycle}", h.updateCycle)
+
+	g.GET("/issues/{issue}/interviews", h.listInterviews)
+	g.POST("/issues/{issue}/interview", h.startInterview)
+	g.GET("/issues/{issue}/interview", h.currentInterview)
+	g.PATCH("/issues/{issue}/interview", h.patchInterview)
+	g.GET("/issues/{issue}/interview/pending", h.pendingSends)
+	g.POST("/issues/{issue}/interview/sends", h.sendToInterview)
+	g.POST("/issues/{issue}/interview/finish", h.finishInterview)
 
 	g.GET("/projects/{project}/issues", h.listIssues)
 	g.POST("/projects/{project}/issues", h.createIssues)

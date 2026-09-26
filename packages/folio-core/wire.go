@@ -18,16 +18,17 @@ import (
 // App is the assembled set of use cases. Driving adapters depend on these
 // interfaces, never on the services or repositories behind them.
 type App struct {
-	Projects  ports.ProjectUseCase
-	Clients   ports.ClientUseCase
-	Domains   ports.DomainUseCase
-	Plans     ports.PlanUseCase
-	Issues    ports.IssueUseCase
-	Entries   ports.EntryUseCase
-	Cycles    ports.CycleUseCase
-	Knowledge ports.KnowledgeUseCase
-	Search    ports.SearchUseCase
-	Shares    ports.ShareUseCase
+	Projects   ports.ProjectUseCase
+	Clients    ports.ClientUseCase
+	Domains    ports.DomainUseCase
+	Plans      ports.PlanUseCase
+	Issues     ports.IssueUseCase
+	Entries    ports.EntryUseCase
+	Cycles     ports.CycleUseCase
+	Knowledge  ports.KnowledgeUseCase
+	Search     ports.SearchUseCase
+	Shares     ports.ShareUseCase
+	Interviews ports.InterviewUseCase
 }
 
 // New builds the use cases against a PocketBase app running in-process.
@@ -46,37 +47,40 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 	knowledgeRepo := pb.NewKnowledgeRepository(app)
 	searchRepo := pb.NewSearchRepository(app)
 	shareRepo := pb.NewShareRepository(app)
+	interviewRepo := pb.NewInterviewRepository(app)
 
 	guard := services.NewProjectGuard(projectRepo)
 	issues := services.NewIssueService(issueRepo, planRepo, entryRepo, cycleRepo, guard, clock, ids, log)
 	plans := services.NewPlanService(planRepo, issueRepo, issues, guard, clock, ids, log)
 
 	return &App{
-		Projects:  services.NewProjectService(projectRepo, domainRepo, guard, clock, ids, log),
-		Clients:   services.NewClientService(clientRepo, clock),
-		Domains:   services.NewDomainService(domainRepo, clientRepo, clock),
-		Plans:     plans,
-		Issues:    issues,
-		Entries:   services.NewEntryService(entryRepo, issueRepo, planRepo, guard, clock, ids, log),
-		Cycles:    services.NewCycleService(cycleRepo, issueRepo, guard, clock, ids, log),
-		Knowledge: services.NewKnowledgeService(knowledgeRepo, guard, clock, ids, log),
-		Search:    services.NewSearchService(searchRepo, guard, projectRepo),
-		Shares:    services.NewShareService(shareRepo, issueRepo, planRepo, issues, plans, guard, clock, ids, system.TokenGenerator{}, log),
+		Projects:   services.NewProjectService(projectRepo, domainRepo, guard, clock, ids, log),
+		Clients:    services.NewClientService(clientRepo, clock),
+		Domains:    services.NewDomainService(domainRepo, clientRepo, clock),
+		Plans:      plans,
+		Issues:     issues,
+		Entries:    services.NewEntryService(entryRepo, issueRepo, planRepo, guard, clock, ids, log),
+		Cycles:     services.NewCycleService(cycleRepo, issueRepo, guard, clock, ids, log),
+		Knowledge:  services.NewKnowledgeService(knowledgeRepo, guard, clock, ids, log),
+		Search:     services.NewSearchService(searchRepo, guard, projectRepo),
+		Shares:     services.NewShareService(shareRepo, issueRepo, planRepo, issues, plans, guard, clock, ids, system.TokenGenerator{}, log),
+		Interviews: services.NewInterviewService(interviewRepo, issueRepo, guard, clock, ids, log),
 	}
 }
 
 func (a *App) Deps() httpapi.Deps {
 	return httpapi.Deps{
-		Projects:  a.Projects,
-		Clients:   a.Clients,
-		Domains:   a.Domains,
-		Plans:     a.Plans,
-		Issues:    a.Issues,
-		Entries:   a.Entries,
-		Cycles:    a.Cycles,
-		Knowledge: a.Knowledge,
-		Search:    a.Search,
-		Shares:    a.Shares,
+		Projects:   a.Projects,
+		Clients:    a.Clients,
+		Domains:    a.Domains,
+		Plans:      a.Plans,
+		Issues:     a.Issues,
+		Entries:    a.Entries,
+		Cycles:     a.Cycles,
+		Knowledge:  a.Knowledge,
+		Search:     a.Search,
+		Shares:     a.Shares,
+		Interviews: a.Interviews,
 	}
 }
 
