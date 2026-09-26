@@ -16,6 +16,8 @@ type (
 	CycleID     string
 	ShareID     string
 	KnowledgeID string
+	InterviewID string
+	EventID     string
 
 	TicketLogID string
 	PlanLogID   string
