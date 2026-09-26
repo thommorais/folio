@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
+import { cn } from '@thom/libs/cn'
 import { Card, CardHeader } from '@thom/ui/card'
 import { AnimatedNumber } from '_/components/motion/animated-number'
-import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useCounts } from '_/app/use-counts'
 import { entities, type Entity } from '_/app/counts'
@@ -42,13 +42,9 @@ export const ProjectCounts = ({ client, domain, slug }: Props) => {
 						<Card interactive>
 							<CardHeader className='space-y-0.5 p-3 sm:space-y-1.5 sm:p-6'>
 								<span className='text-dim truncate text-[11px] sm:text-xs'>{labels[entity]}</span>
-								{state.status === Status.Loading ? (
-									<Skeleton className='mt-1 h-6 w-8 sm:h-8 sm:w-10' />
-								) : (
-									<span className='font-serif text-xl tabular-nums sm:text-2xl'>
-										<AnimatedNumber value={state.counts[entity]} />
-									</span>
-								)}
+								<span className={cn('font-serif text-xl tabular-nums sm:text-2xl', state.status === Status.Loading && 'invisible')}>
+									{state.status === Status.Ready ? <AnimatedNumber value={state.counts[entity]} /> : 0}
+								</span>
 							</CardHeader>
 						</Card>
 					</Link>

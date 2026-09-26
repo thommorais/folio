@@ -1,7 +1,6 @@
 import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
 import { Tag } from '_/components/issue/tag'
-import { Skeleton } from '_/components/motion/skeleton'
 import { MarkdownPreview } from '_/components/markdown/preview'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useEntries } from '_/app/use-entries'
@@ -28,15 +27,7 @@ const Journal = () => {
 		search.q !== undefined || search.kinds !== undefined || search.tags !== undefined || search.ticket !== undefined
 
 	const list = (() => {
-		if (state.status === Status.Loading) {
-			return (
-				<div className='border-border divide-border divide-y border'>
-					{[0, 1, 2].map(key => (
-						<Skeleton key={key} className='h-24' />
-					))}
-				</div>
-			)
-		}
+		if (state.status === Status.Loading) return null
 
 		if (state.status === Status.Failed) {
 			return <p className='text-destructive text-sm'>{state.message}</p>

@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
 import { Card, CardDescription, CardHeader, CardTitle } from '@thom/ui/card'
-import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useDomain } from '_/app/use-domain'
 import { RecordGone } from '_/components/record/record-gone'
@@ -38,14 +37,6 @@ const DomainPage = () => {
 			</div>
 
 			{domain.status === Status.Ready && <MemberRoster members={domain.domain.members} />}
-
-			{state.status === Status.Loading && (
-				<div className='grid gap-4 sm:grid-cols-2'>
-					{[0, 1].map(key => (
-						<Skeleton key={key} className='border-border h-[124px] border' />
-					))}
-				</div>
-			)}
 
 			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 

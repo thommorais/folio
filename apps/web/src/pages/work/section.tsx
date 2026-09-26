@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
-import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 
 export type WorkItem = {
@@ -34,14 +33,6 @@ export const Section = ({ title, items, message, emptyLabel, filtered, to, param
 		</header>
 
 		{message !== undefined && <p className='text-destructive text-sm'>{message}</p>}
-
-		{message === undefined && items === undefined && (
-			<div className='border-border divide-border divide-y border'>
-				{[0, 1].map(key => (
-					<Skeleton key={key} className='h-10' />
-				))}
-			</div>
-		)}
 
 		{items !== undefined && items.length === 0 && (
 			<p className='text-dim text-sm'>{filtered ? `No ${emptyLabel} match.` : `No ${emptyLabel} yet.`}</p>

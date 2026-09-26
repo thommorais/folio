@@ -1,7 +1,6 @@
 import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { cn } from '@thom/libs/cn'
 import { Tag } from '_/components/issue/tag'
-import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { usePlans } from '_/app/use-plans'
 import { DEFAULT_PLAN_STATUSES, PLAN_STATUS, type Plan } from '_/core/domain/plan'
@@ -52,14 +51,6 @@ const Plans = () => {
 	return (
 		<div className='space-y-4'>
 			<PlanFilters />
-
-			{state.status === Status.Loading && (
-				<div className='border-border divide-border divide-y border'>
-					{[0, 1].map(key => (
-						<Skeleton key={key} className='h-20' />
-					))}
-				</div>
-			)}
 
 			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 

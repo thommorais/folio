@@ -2,7 +2,6 @@ import { Link, useParams, useSearch } from '@tanstack/react-router';
 import { cn } from '@thom/libs/cn';
 import { Badge } from '@thom/ui/badge';
 import { useIssues } from '_/app/use-issues';
-import { Skeleton } from '_/components/motion/skeleton';
 import { MarkdownPreview } from '_/components/markdown/preview';
 import { ISSUE_LINE_INSET, IssueLine } from '_/components/issue/issue-line';
 import { StaggerItem } from '_/components/motion/stagger';
@@ -135,15 +134,7 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 	const everything = useIssues(slug, { kind, sort: search.sort })
 
 	const list = (() => {
-		if (state.status === Status.Loading) {
-			return (
-				<div className='border-border divide-border divide-y border'>
-					{[0, 1].map(key => (
-						<Skeleton key={key} className='h-16' />
-					))}
-				</div>
-			)
-		}
+		if (state.status === Status.Loading) return null
 
 		if (state.status === Status.Failed) {
 			return <p className='text-destructive text-sm'>{state.message}</p>

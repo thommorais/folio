@@ -79,7 +79,7 @@ const JournalEntryDetail = () => {
 	})
 
 	if (state.status === Status.Idle || state.status === Status.Loading) {
-		return <div className='bg-accent/40 h-32 animate-pulse' />
+		return null
 	}
 
 	if (state.status === Status.Gone) {

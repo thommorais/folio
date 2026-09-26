@@ -155,7 +155,6 @@ const SharePanel = ({ target }: { readonly target: ShareTarget }) => {
 
 			<section className='space-y-2'>
 				<h3 className='text-dim text-xs tracking-wide uppercase'>Links</h3>
-				{state.status === Status.Loading && <div className='bg-accent/40 h-16 animate-pulse' />}
 				{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 				{state.status === Status.Ready && state.data.length === 0 && <p className='text-dim text-sm'>No links yet.</p>}
 				{state.status === Status.Ready && state.data.length > 0 && (

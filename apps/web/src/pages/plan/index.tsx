@@ -4,7 +4,6 @@ import { Badge } from '@thom/ui/badge'
 import { Tag } from '_/components/issue/tag'
 import { Heading } from '@thom/ui/heading'
 import { Markdown } from '_/components/markdown'
-import { Skeleton } from '_/components/motion/skeleton'
 import { RecordGone } from '_/components/record/record-gone'
 import { ShareSheet } from '_/components/share/share-sheet'
 import { usePlan } from '_/app/use-plan'
@@ -52,7 +51,7 @@ const PlanDetail = () => {
 	const state = usePlan(slug, plan)
 
 	if (state.status === Status.Idle || state.status === Status.Loading) {
-		return <Skeleton className='h-32' />
+		return null
 	}
 
 	if (state.status === Status.Gone) {

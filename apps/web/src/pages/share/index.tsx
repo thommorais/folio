@@ -5,7 +5,6 @@ import { Tag } from '_/components/issue/tag'
 import { Heading } from '@thom/ui/heading'
 import { useShared } from '_/app/use-shared'
 import { Markdown } from '_/components/markdown'
-import { Skeleton } from '_/components/motion/skeleton'
 import { SHARE_KIND, type SharedCycle, type SharedEntry, type SharedIssue, type SharedItem, type SharedPlan } from '_/core/domain/share'
 import { Status } from '_/lib/async-status'
 import { ISSUE_STATUS_LABELS } from '_/pages/issues/status-labels'
@@ -175,13 +174,7 @@ const SharedPage = () => {
 	const { token } = useParams({ from: '/share/$token' })
 	const state = useShared(token)
 
-	if (state.status === Status.Loading) {
-		return (
-			<Frame>
-				<Skeleton className='h-32' />
-			</Frame>
-		)
-	}
+	if (state.status === Status.Loading) return <Frame>{null}</Frame>
 
 	if (state.status === Status.Gone) {
 		return (

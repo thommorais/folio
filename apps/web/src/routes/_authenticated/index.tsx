@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Card, CardDescription, CardHeader, CardTitle } from '@thom/ui/card'
-import { Skeleton } from '_/components/motion/skeleton'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useClients } from '_/app/use-clients'
 import { useDomains } from '_/app/use-domains'
@@ -21,14 +20,6 @@ const Clients = () => {
 				<WelcomeGreeting />
 				{state.status === Status.Ready && <SummaryTicker insights={buildInsights(state.clients, domains)} />}
 			</div>
-
-			{state.status === Status.Loading && (
-				<div className='grid gap-4 sm:grid-cols-2'>
-					{[0, 1].map(key => (
-						<Skeleton key={key} className='border-border h-[124px] border' />
-					))}
-				</div>
-			)}
 
 			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 

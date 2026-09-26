@@ -26,23 +26,6 @@ const Empty = () => <span className='text-dim'>-</span>
 const formatDate = (date: Date): string =>
 	date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 
-const Skeleton = () => (
-	<div className='space-y-6'>
-		<div className='space-y-3'>
-			<div className='bg-accent/40 h-4 w-24 animate-pulse' />
-			<div className='bg-accent/40 h-6 w-3/5 animate-pulse' />
-		</div>
-		<div className='grid grid-cols-2 gap-4'>
-			{['status', 'priority', 'ticket', 'plan'].map(key => (
-				<div key={key} className='space-y-2'>
-					<div className='bg-accent/40 h-3 w-16 animate-pulse' />
-					<div className='bg-accent/40 h-4 w-24 animate-pulse' />
-				</div>
-			))}
-		</div>
-	</div>
-)
-
 const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonly project: string; readonly linked?: boolean }) => {
 	const { client, domain } = useScope()
 	const closePreview = usePreviewStore(state => state.closePreview)
@@ -125,7 +108,7 @@ const IssueDetails = ({ project, todoId }: Props) => {
 	}
 
 	if (state.status !== Status.Ready) {
-		return <Skeleton />
+		return null
 	}
 
 	return <Body todo={state.issue} project={project} linked />
