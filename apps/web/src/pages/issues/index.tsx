@@ -3,6 +3,7 @@ import { cn } from '@thom/libs/cn';
 import { Badge } from '@thom/ui/badge';
 import { useIssues } from '_/app/use-issues';
 import { Skeleton } from '_/components/motion/skeleton';
+import { MarkdownPreview } from '_/components/markdown/preview';
 import { StaggerItem } from '_/components/motion/stagger';
 import { isTerminal, ISSUE_KIND, ISSUE_STATUS, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
 import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree';
@@ -109,7 +110,7 @@ const Row = ({
 					// The checkbox indents the title, so its row's body and metadata
 					// line up under the text rather than under the box.
 					<div className={cn('space-y-2', kind === ISSUE_KIND.TODO && 'pl-6')}>
-						{issue.body && <p className='text-dim line-clamp-2 text-sm'>{issue.body}</p>}
+						{issue.body && <MarkdownPreview>{issue.body}</MarkdownPreview>}
 
 						<div className='flex flex-wrap items-center gap-2 pt-1'>
 							<span className='text-dimmer font-mono text-xs'>{issue.priority}</span>

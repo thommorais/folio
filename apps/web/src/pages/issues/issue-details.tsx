@@ -1,5 +1,6 @@
 import { Badge } from '@thom/ui/badge'
 import { RecordGone } from '_/components/record/record-gone'
+import { Markdown } from '_/components/markdown'
 import { cn } from '@thom/libs/cn'
 import { useIssueById } from '_/app/use-issue'
 import { useIssues } from '_/app/use-issues'
@@ -73,7 +74,11 @@ const Body = ({ todo, project }: { readonly todo: Issue; readonly project: strin
 				</div>
 			</header>
 
-			{todo.body && <div className='mb-6 border px-4 py-3 text-sm whitespace-pre-line'>{todo.body}</div>}
+			{todo.body && (
+				<div className='mb-6 border px-4 py-3'>
+					<Markdown>{todo.body}</Markdown>
+				</div>
+			)}
 
 			<div className='grid grid-cols-2 gap-4'>
 				<Field label='Ticket'>{ticketTitle ?? <Empty />}</Field>

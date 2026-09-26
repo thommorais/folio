@@ -1,6 +1,7 @@
 import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { Badge } from '@thom/ui/badge'
 import { Skeleton } from '_/components/motion/skeleton'
+import { MarkdownPreview } from '_/components/markdown/preview'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useEntries } from '_/app/use-entries'
 import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
@@ -61,7 +62,7 @@ const Journal = () => {
 								</span>
 							</div>
 
-							{entry.body && <p className='text-dim line-clamp-2 text-sm'>{entry.body}</p>}
+							{entry.body && <MarkdownPreview>{entry.body}</MarkdownPreview>}
 
 							<div className='flex flex-wrap items-center gap-2 pt-1'>
 								{entry.branch && <span className='text-dimmer font-mono text-xs'>{entry.branch}</span>}

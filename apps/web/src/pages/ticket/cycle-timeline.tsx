@@ -3,6 +3,7 @@ import { cn } from '@thom/libs/cn'
 import { Badge } from '@thom/ui/badge'
 import { useEntries } from '_/app/use-entries'
 import { useIssues } from '_/app/use-issues'
+import { Markdown } from '_/components/markdown'
 import { ISSUE_KIND, type Issue } from '_/core/domain/issue'
 import { mapLedger, planHold } from '_/core/domain/map-ledger'
 import { useScope } from '_/routing/use-scope'
@@ -106,13 +107,13 @@ const CycleBlock = ({
 
 				{map !== undefined && <CyclePlan project={project} cycle={cycle} map={map} />}
 
-				{cycle.resolution && <p className='text-sm'>{cycle.resolution}</p>}
+				{cycle.resolution && <Markdown>{cycle.resolution}</Markdown>}
 
 				{logs.status === Status.Ready && logs.entries.length > 0 && (
 					<ul className='border-border space-y-3 border-l pl-4'>
 						{logs.entries.map(entry => (
 							<li key={entry.id} className='space-y-1'>
-								<p className='text-sm whitespace-pre-line'>{entry.body}</p>
+								<Markdown>{entry.body}</Markdown>
 								<p className='text-dimmer text-xs'>{entry.createdAt.toLocaleString()}</p>
 							</li>
 						))}

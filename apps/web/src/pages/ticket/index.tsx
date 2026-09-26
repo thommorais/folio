@@ -181,7 +181,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 					<ul className='border-border divide-border divide-y border'>
 						{unstamped.map(entry => (
 							<li key={entry.id} className='space-y-1 px-4 py-3'>
-								<p className='text-sm whitespace-pre-line'>{entry.body}</p>
+								<Markdown>{entry.body}</Markdown>
 								<p className='text-dimmer text-xs'>{entry.createdAt.toLocaleString()}</p>
 							</li>
 						))}
