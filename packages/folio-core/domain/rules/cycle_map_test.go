@@ -109,3 +109,16 @@ func TestCheckCycleOwner(t *testing.T) {
 		}
 	}
 }
+
+func TestOpenDecisions(t *testing.T) {
+	children := []domain.Issue{
+		{Kind: domain.IssueTicket, Status: domain.IssueOpen},
+		{Kind: domain.IssueTicket, Status: domain.IssueBlocked},
+		{Kind: domain.IssueTicket, Status: domain.IssueDone},
+		{Kind: domain.IssueTicket, Status: domain.IssueCancelled},
+		{Kind: domain.IssueTodo, Status: domain.IssueOpen},
+	}
+	if got := rules.OpenDecisions(children); got != 2 {
+		t.Fatalf("got %d, want 2", got)
+	}
+}

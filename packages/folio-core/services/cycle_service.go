@@ -92,7 +92,7 @@ func (s *CycleService) AdvancePhase(ctx context.Context, actor ports.Actor, id d
 	if err := rules.CanTransitionPhase(cycle.Phase, phase); err != nil {
 		return domain.Cycle{}, err
 	}
-	if cycle.MapID != "" && cycle.Phase == domain.PhasePlan {
+	if rules.HeldByMap(cycle) {
 		children, err := s.issues.ListByParent(ctx, cycle.MapID)
 		if err != nil {
 			return domain.Cycle{}, err
@@ -119,6 +119,15 @@ func (s *CycleService) ResolveCycle(ctx context.Context, actor ports.Actor, id d
 	}
 	if strings.TrimSpace(resolution) == "" {
 		return domain.Cycle{}, domain.Invalid("resolution", "is required")
+	}
+	if rules.HeldByMap(cycle) {
+		children, err := s.issues.ListByParent(ctx, cycle.MapID)
+		if err != nil {
+			return domain.Cycle{}, err
+		}
+		if err := rules.CheckResolvableCycle(cycle, children); err != nil {
+			return domain.Cycle{}, err
+		}
 	}
 
 	now := s.clock.Now()

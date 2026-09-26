@@ -101,18 +101,36 @@ func CheckCycleMap(c domain.Cycle, m domain.Issue) error {
 	return nil
 }
 
-func CheckPlanClear(c domain.Cycle, to domain.Phase, children []domain.Issue) error {
-	if c.MapID == "" || c.Phase != domain.PhasePlan || to == domain.PhasePlan {
-		return nil
-	}
+func OpenDecisions(children []domain.Issue) int {
 	open := 0
 	for _, child := range children {
 		if child.Kind == domain.IssueTicket && !child.Status.IsTerminal() {
 			open++
 		}
 	}
-	if open > 0 {
+	return open
+}
+
+func HeldByMap(c domain.Cycle) bool {
+	return c.MapID != "" && c.Phase == domain.PhasePlan && !c.IsClosed()
+}
+
+func CheckPlanClear(c domain.Cycle, to domain.Phase, children []domain.Issue) error {
+	if !HeldByMap(c) || to == domain.PhasePlan {
+		return nil
+	}
+	if open := OpenDecisions(children); open > 0 {
 		return domain.Invalid("phase", "plan holds while "+strconv.Itoa(open)+" decision(s) on the map are open")
+	}
+	return nil
+}
+
+func CheckResolvableCycle(c domain.Cycle, children []domain.Issue) error {
+	if !HeldByMap(c) {
+		return nil
+	}
+	if open := OpenDecisions(children); open > 0 {
+		return domain.Invalid("resolution", strconv.Itoa(open)+" decision(s) on the map are open; resolve them or rule them out of scope first")
 	}
 	return nil
 }

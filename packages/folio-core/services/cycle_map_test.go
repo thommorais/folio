@@ -125,3 +125,32 @@ func TestCurrentCycleAndNextPhase(t *testing.T) {
 		t.Fatal("an outsider must not read the cycle")
 	}
 }
+
+func TestAMapHoldsItsCycleOpenToo(t *testing.T) {
+	f := newTicketFixture(t)
+	ctx := t.Context()
+	work := f.ticket(t, f.project, "Wayfinder view")
+	theMap := f.child(t, work.ID, domain.WayfinderMap, "Plan the wayfinder view")
+	question := f.child(t, theMap.ID, domain.WayfinderGrilling, "Tree or graph")
+
+	cycle, err := f.cycleSvc.OpenCycle(ctx, f.owner, work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.cycleSvc.SetCycleMap(ctx, f.owner, cycle.ID, theMap.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.cycleSvc.ResolveCycle(ctx, f.owner, cycle.ID, "Dropped it"); !errors.Is(err, domain.ErrValidation) {
+		t.Fatalf("resolving past an open decision must be refused, got %v", err)
+	}
+
+	if _, err := f.issueSvc.UpdateIssue(ctx, f.owner, question.ID, ports.UpdateIssueInput{
+		Status: ptr(domain.IssueCancelled), Resolution: ptr("Out of scope"),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.cycleSvc.ResolveCycle(ctx, f.owner, cycle.ID, "Dropped it"); err != nil {
+		t.Fatalf("every decision is closed, got %v", err)
+	}
+}

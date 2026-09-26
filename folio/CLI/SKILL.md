@@ -165,8 +165,8 @@ Rules the server holds you to:
 - Phases move one step at a time, forward only. `next` after act is refused:
   resolve instead.
 - A new cycle opens only once the current one is resolved.
-- A cycle planned by a map stays in plan while any decision on the map is
-  open. `next` names how many are left.
+- A cycle planned by a map stays in plan, and cannot be resolved, while any
+  decision on the map is open. The refusal names how many are left.
 - Decisions never run cycles of their own; open the cycle on the work ticket
   the decision serves.
 - Closing a ticket needs a resolution on its **current** cycle. A ticket that
