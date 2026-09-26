@@ -7,6 +7,7 @@ import { useEntry } from '_/app/use-entry'
 import { usePlan } from '_/app/use-plan'
 import { useIssue } from '_/app/use-issue'
 import { Status } from '_/lib/async-status'
+import { collapseCrumbs } from './collapse-crumbs'
 
 const sectionLabels: Record<string, string> = {
 	tickets: 'Tickets',
@@ -124,8 +125,8 @@ export const Breadcrumbs = () => {
 
 	return (
 		<nav aria-label='Breadcrumb' className='text-dim flex min-w-0 items-center gap-2 text-xs tracking-widest uppercase'>
-			{crumbs.map((crumb, index) => {
-				const isLast = index === crumbs.length - 1
+			{collapseCrumbs(crumbs).map((crumb, index, shown) => {
+				const isLast = index === shown.length - 1
 
 				return (
 					<span key={crumb.key} className='flex min-w-0 items-center gap-2'>
