@@ -127,3 +127,21 @@ func TestCycleOpenWithAMapCreatesAndLinksIt(t *testing.T) {
 		t.Errorf("link = %+v", link.body)
 	}
 }
+
+func TestCycleResolveCloseShutsTheTicketToo(t *testing.T) {
+	got := cycleServer(t, "")
+	if err := runCycle(t, "resolve", "tk1", "Shipped behind a flag", "--close"); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(*got) != 2 {
+		t.Fatalf("requests = %+v", *got)
+	}
+	resolve, closeIt := (*got)[0], (*got)[1]
+	if resolve.path != "/api/folio/issues/tk1/cycles/current" || resolve.body["resolution"] != "Shipped behind a flag" {
+		t.Errorf("resolve = %+v", resolve)
+	}
+	if closeIt.method != http.MethodPatch || closeIt.path != "/api/folio/issues/tk1" || closeIt.body["status"] != "done" {
+		t.Errorf("close = %+v", closeIt)
+	}
+}

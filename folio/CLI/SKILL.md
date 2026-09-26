@@ -158,7 +158,7 @@ cycle command takes the ticket's id, or its slug with a project selected.
 folio cycle open <ticket>                    # cycle N at plan
 folio cycle open <ticket> --map "<title>"    # same, planned by a new wayfinder map
 folio cycle next <ticket>                    # one phase forward
-folio cycle resolve <ticket> "<what happened>"
+folio cycle resolve <ticket> "<what happened>"           # add --close on the last round
 folio cycle list <ticket>
 ```
 

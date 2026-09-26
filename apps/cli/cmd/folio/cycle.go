@@ -162,10 +162,16 @@ func cyclePhaseCommand() *cobra.Command {
 }
 
 func cycleResolveCommand() *cobra.Command {
-	return &cobra.Command{
+	var closeTicket bool
+
+	cmd := &cobra.Command{
 		Use:   "resolve <ticket> <resolution>",
 		Short: "Record what happened and close the ticket's current cycle",
-		Args:  cobra.ExactArgs(2),
+		Long: `Record what happened and close the ticket's current cycle. --close also
+marks the ticket done, for the last round of the work.
+
+  folio cycle resolve wayfinder-view "Shipped behind a flag" --close`,
+		Args: cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			folio, err := api()
 			if err != nil {
@@ -179,9 +185,29 @@ func cycleResolveCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderCycle(cycle)
+			if !closeTicket {
+				return renderCycle(cycle)
+			}
+
+			done := "done"
+			closed, err := folio.UpdateTicket(ticket, client.TicketInput{Status: &done})
+			if err != nil {
+				return fmt.Errorf("cycle %d resolved, but the ticket did not close: %w", cycle.Ordinal, err)
+			}
+			if flagJSON {
+				return encode(map[string]any{"cycle": cycle, "ticket": closed})
+			}
+			if err := renderCycle(cycle); err != nil {
+				return err
+			}
+			fmt.Printf("ticket %s: %s\n", closed.ID, closed.Status)
+			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&closeTicket, "close", false, "also mark the ticket done")
+
+	return cmd
 }
 
 func renderCycle(cycle client.Cycle) error {
