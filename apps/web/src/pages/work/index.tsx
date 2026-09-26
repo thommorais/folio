@@ -24,6 +24,7 @@ const issueItem = (scope: Scope, issue: Issue): WorkItem => ({
 	to: '/$client/$domain/$slug/tickets/$ticket',
 	params: { ...scope, ticket: issue.slug },
 	line: <IssueLine issue={issue} />,
+	changedAt: issue.updatedAt.getTime(),
 })
 
 const todoItem = (scope: Scope, todo: Issue): WorkItem => ({
@@ -31,12 +32,14 @@ const todoItem = (scope: Scope, todo: Issue): WorkItem => ({
 	to: '/$client/$domain/$slug/todos/$todo',
 	params: { ...scope, todo: todo.slug },
 	line: <IssueLine issue={todo} strike />,
+	changedAt: todo.updatedAt.getTime(),
 })
 
 const planItem = (scope: Scope, plan: Plan): WorkItem => ({
 	id: plan.id,
 	to: '/$client/$domain/$slug/plans/$plan',
 	params: { ...scope, plan: plan.id },
+	changedAt: plan.updatedAt.getTime(),
 	line: (
 		<div className='flex h-5 items-center gap-3'>
 			<span className={cn('min-w-0 flex-1 truncate text-sm', isPlanTerminal(plan.status) && 'text-dim')}>

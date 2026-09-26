@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { Badge } from '@thom/ui/badge';
 import { Tag } from '_/components/issue/tag';
 import { IssueLine } from '_/components/issue/issue-line';
+import { Flash } from '_/components/motion/flash';
 import { CycleChip } from '_/components/issue/cycle-chip';
 import { PriorityIcon } from '_/components/issue/priority-icon';
 import { StatusIcon } from '_/components/issue/status-icon';
@@ -215,8 +216,9 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 								<Link
 									to='/$client/$domain/$slug/todos/$todo'
 									params={{ client, domain, slug: project, todo: todo.slug }}
-									className='hover:bg-accent/40 active:bg-accent/60 block px-4 py-2.5 transition-colors'
+									className='hover:bg-accent/40 active:bg-accent/60 relative block px-4 py-2.5 transition-colors'
 								>
+									<Flash on={todo.updatedAt.getTime()} />
 									<IssueLine issue={todo} strike />
 								</Link>
 							</li>

@@ -5,6 +5,7 @@ import { Tags } from '_/components/issue/tag'
 import { FilterBar } from '_/components/list/filter-bar'
 import { EmptyState } from '_/components/empty-state'
 import { StaggerItem } from '_/components/motion/stagger'
+import { Flash } from '_/components/motion/flash'
 import { Status } from '_/lib/async-status'
 import type { KnowledgeSearch } from '_/routes/_authenticated/knowledge'
 
@@ -35,8 +36,9 @@ export const KnowledgeList = () => {
 						<Link
 							to='/knowledge/$note'
 							params={{ note: note.slug }}
-							className='hover:bg-accent/40 active:bg-accent/60 flex h-11 items-center gap-3 px-4 transition-colors'
+							className='hover:bg-accent/40 active:bg-accent/60 relative flex h-11 items-center gap-3 px-4 transition-colors'
 						>
+							<Flash on={note.updatedAt.getTime()} />
 							<span className='min-w-0 flex-1 truncate text-sm'>{note.title}</span>
 							<Tags tags={note.tags} className='hidden shrink-0 flex-nowrap sm:flex' />
 							<span className='text-dimmer w-12 shrink-0 text-right text-xs tabular-nums'>

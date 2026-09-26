@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { StaggerItem } from '_/components/motion/stagger'
+import { Flash } from '_/components/motion/flash'
 import { EmptyState } from '_/components/empty-state'
 
 export type WorkItem = {
@@ -8,6 +9,7 @@ export type WorkItem = {
 	readonly to: string
 	readonly params: Record<string, string>
 	readonly line: ReactNode
+	readonly changedAt: number
 }
 
 type Props = {
@@ -49,8 +51,9 @@ export const Section = ({ title, items, message, emptyLabel, command, filtered, 
 						<Link
 							to={item.to}
 							params={item.params}
-							className='hover:bg-accent/40 active:bg-accent/60 block px-4 py-2.5 transition-colors'
+							className='hover:bg-accent/40 active:bg-accent/60 relative block px-4 py-2.5 transition-colors'
 						>
+							<Flash on={item.changedAt} />
 							{item.line}
 						</Link>
 					</StaggerItem>

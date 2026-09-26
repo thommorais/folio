@@ -3,6 +3,7 @@ import { Badge } from '@thom/ui/badge'
 import { Tag } from '_/components/issue/tag'
 import { MarkdownPreview } from '_/components/markdown/preview'
 import { StaggerItem } from '_/components/motion/stagger'
+import { Flash } from '_/components/motion/flash'
 import { EmptyState } from '_/components/empty-state'
 import { useEntries } from '_/app/use-entries'
 import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
@@ -47,8 +48,9 @@ const Journal = () => {
 						<Link
 							to='/$client/$domain/$slug/journal/$entry'
 							params={{ client, domain, slug, entry: entry.slug }}
-							className='hover:bg-accent/40 active:bg-accent/60 block space-y-2 px-4 py-4 transition-colors'
+							className='hover:bg-accent/40 active:bg-accent/60 relative block space-y-2 px-4 py-4 transition-colors'
 						>
+							<Flash on={entry.updatedAt.getTime()} />
 							<div className='flex items-start justify-between gap-4'>
 								<h3 className='text-sm font-medium'>{entry.title}</h3>
 								<span className='flex shrink-0 items-center gap-3'>

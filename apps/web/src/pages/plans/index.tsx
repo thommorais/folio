@@ -2,6 +2,8 @@ import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { cn } from '@thom/libs/cn'
 import { Tag } from '_/components/issue/tag'
 import { StaggerItem } from '_/components/motion/stagger'
+import { Flash } from '_/components/motion/flash'
+import { MarkdownPreview } from '_/components/markdown/preview'
 import { EmptyState } from '_/components/empty-state'
 import { usePlans } from '_/app/use-plans'
 import { DEFAULT_PLAN_STATUSES, PLAN_STATUS, type Plan } from '_/core/domain/plan'
@@ -17,14 +19,15 @@ const Row = ({ plan, project }: { readonly plan: Plan; readonly project: string 
 		<Link
 			to='/$client/$domain/$slug/plans/$plan'
 			params={{ client, domain, slug: project, plan: plan.id }}
-			className='hover:bg-accent/40 active:bg-accent/60 block space-y-2 px-4 py-4 transition-colors'
+			className='hover:bg-accent/40 active:bg-accent/60 relative block space-y-2 px-4 py-4 transition-colors'
 		>
+			<Flash on={plan.updatedAt.getTime()} />
 			<div className='flex items-start justify-between gap-4'>
 				<h3 className={cn('text-sm font-medium', plan.status === PLAN_STATUS.DONE && 'text-dim line-through')}>{plan.title}</h3>
 				<span className='text-dim shrink-0 text-xs'>{PLAN_STATUS_LABELS[plan.status]}</span>
 			</div>
 
-			{plan.goal && <p className='text-dim line-clamp-2 text-sm'>{plan.goal}</p>}
+			{plan.goal && <MarkdownPreview>{plan.goal}</MarkdownPreview>}
 
 			{plan.tags.length > 0 && (
 				<div className='flex flex-wrap items-center gap-2 pt-1'>

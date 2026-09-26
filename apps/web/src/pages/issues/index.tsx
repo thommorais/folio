@@ -5,6 +5,7 @@ import { useIssues } from '_/app/use-issues';
 import { MarkdownPreview } from '_/components/markdown/preview';
 import { ISSUE_LINE_INSET, IssueLine } from '_/components/issue/issue-line';
 import { StaggerItem } from '_/components/motion/stagger';
+import { Flash } from '_/components/motion/flash';
 import { isTerminal, ISSUE_KIND, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
 import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree';
 import type { IssueSortField, Sort } from '_/core/ports/sort';
@@ -72,6 +73,7 @@ const Row = ({
 
 	return (
 		<article className='hover:bg-accent/40 active:bg-accent/60 has-focus-visible:bg-accent/40 relative px-4 py-2.5 transition-colors'>
+			<Flash on={issue.updatedAt.getTime()} />
 			<Guides row={row} />
 
 			<div style={{ paddingLeft: row.depth * INDENT }}>
