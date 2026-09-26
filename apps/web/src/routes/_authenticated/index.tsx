@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { lastProject } from '_/adapters/browser/last-project'
 import { Card, CardDescription, CardHeader, CardTitle } from '@thom/ui/card'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useClients } from '_/app/use-clients'
@@ -61,5 +62,9 @@ const Clients = () => {
 }
 
 export const Route = createFileRoute('/_authenticated/')({
+	beforeLoad: () => {
+		const last = lastProject.resume()
+		if (last) throw redirect({ to: '/$client/$domain/$slug', params: last })
+	},
 	component: Clients,
 })
