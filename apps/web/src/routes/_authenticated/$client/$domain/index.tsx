@@ -4,6 +4,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@thom/ui/card'
 import { StaggerItem } from '_/components/motion/stagger'
 import { useDomain } from '_/app/use-domain'
 import { RecordGone } from '_/components/record/record-gone'
+import { EmptyState } from '_/components/empty-state'
 import { useProjects } from '_/app/use-projects'
 import { MemberRoster } from '_/pages/domain/member-roster'
 import { Status } from '_/lib/async-status'
@@ -41,7 +42,10 @@ const DomainPage = () => {
 			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 
 			{state.status === Status.Ready && state.projects.length === 0 && (
-				<p className='text-dim text-sm'>No projects in this domain yet.</p>
+				<EmptyState
+					message='No projects in this domain yet.'
+					command={`folio project create "<name>" --domain ${client}/${slug}`}
+				/>
 			)}
 
 			{state.status === Status.Ready && state.projects.length > 0 && (

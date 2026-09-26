@@ -3,6 +3,7 @@ import { Heading } from '@thom/ui/heading'
 import { useKnowledgeList } from '_/app/use-knowledge'
 import { Tags } from '_/components/issue/tag'
 import { FilterBar } from '_/components/list/filter-bar'
+import { EmptyState } from '_/components/empty-state'
 import { StaggerItem } from '_/components/motion/stagger'
 import { Status } from '_/lib/async-status'
 import type { KnowledgeSearch } from '_/routes/_authenticated/knowledge'
@@ -22,11 +23,9 @@ export const KnowledgeList = () => {
 		}
 
 		if (state.notes.length === 0) {
-			return (
-				<p className='text-dim text-sm'>
-					{search.q !== undefined ? 'No notes match.' : 'Nothing here yet. Add one with `folio kb add`.'}
-				</p>
-			)
+			if (search.q !== undefined) return <p className='text-dim text-sm'>No notes match.</p>
+
+			return <EmptyState message='No notes yet.' command={'folio kb add "<title>"'} />
 		}
 
 		return (

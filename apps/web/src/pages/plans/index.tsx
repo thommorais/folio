@@ -2,6 +2,7 @@ import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { cn } from '@thom/libs/cn'
 import { Tag } from '_/components/issue/tag'
 import { StaggerItem } from '_/components/motion/stagger'
+import { EmptyState } from '_/components/empty-state'
 import { usePlans } from '_/app/use-plans'
 import { DEFAULT_PLAN_STATUSES, PLAN_STATUS, type Plan } from '_/core/domain/plan'
 import { PlanFilters } from './plan-filters'
@@ -48,14 +49,21 @@ const Plans = () => {
 		sort: search.sort,
 	})
 
+	const filtered =
+		search.q !== undefined || search.statuses !== undefined || search.tags !== undefined || search.ticket !== undefined
+
 	return (
 		<div className='space-y-4'>
 			<PlanFilters />
 
 			{state.status === Status.Failed && <p className='text-destructive text-sm'>{state.message}</p>}
 
-			{state.status === Status.Ready && state.plans.length === 0 && (
+			{state.status === Status.Ready && state.plans.length === 0 && filtered && (
 				<p className='text-dim text-sm'>No plans match.</p>
+			)}
+
+			{state.status === Status.Ready && state.plans.length === 0 && !filtered && (
+				<EmptyState message='No active plans.' command={`folio plan create "<title>" -p ${slug}`} />
 			)}
 
 			{state.status === Status.Ready && state.plans.length > 0 && (

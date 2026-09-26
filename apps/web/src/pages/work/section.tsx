@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { StaggerItem } from '_/components/motion/stagger'
+import { EmptyState } from '_/components/empty-state'
 
 export type WorkItem = {
 	readonly id: string
@@ -14,12 +15,13 @@ type Props = {
 	readonly items: readonly WorkItem[] | undefined
 	readonly message: string | undefined
 	readonly emptyLabel: string
+	readonly command: string
 	readonly filtered: boolean
 	readonly to: string
 	readonly params: Record<string, string>
 }
 
-export const Section = ({ title, items, message, emptyLabel, filtered, to, params }: Props) => (
+export const Section = ({ title, items, message, emptyLabel, command, filtered, to, params }: Props) => (
 	<section className='space-y-2'>
 		<header className='flex items-baseline gap-2'>
 			<Link
@@ -34,8 +36,10 @@ export const Section = ({ title, items, message, emptyLabel, filtered, to, param
 
 		{message !== undefined && <p className='text-destructive text-sm'>{message}</p>}
 
-		{items !== undefined && items.length === 0 && (
-			<p className='text-dim text-sm'>{filtered ? `No ${emptyLabel} match.` : `No ${emptyLabel} yet.`}</p>
+		{items !== undefined && items.length === 0 && filtered && <p className='text-dim text-sm'>No {emptyLabel} match.</p>}
+
+		{items !== undefined && items.length === 0 && !filtered && (
+			<EmptyState message={`No ${emptyLabel} yet.`} command={command} />
 		)}
 
 		{items !== undefined && items.length > 0 && (

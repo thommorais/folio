@@ -105,6 +105,7 @@ const Work = () => {
 						items={tickets.status === Status.Ready ? tickets.issues.map(issue => issueItem(scope, issue)) : undefined}
 						message={tickets.status === Status.Failed ? tickets.message : undefined}
 						emptyLabel='tickets'
+						command={`folio ticket create "<title>" -p ${slug}`}
 						filtered={filtered}
 						to='/$client/$domain/$slug/tickets'
 						params={scope}
@@ -117,6 +118,7 @@ const Work = () => {
 						items={plans.status === Status.Ready ? plans.plans.map(plan => planItem(scope, plan)) : undefined}
 						message={plans.status === Status.Failed ? plans.message : undefined}
 						emptyLabel='plans'
+						command={`folio plan create "<title>" -p ${slug}`}
 						filtered={filtered}
 						to='https://folio.journ.app/welligence/web/xwwp/tickets/xwwp-5227-update-apollo-js/$client/$domain/$slug/plans'
 						params={scope}
@@ -129,6 +131,7 @@ const Work = () => {
 						items={todos.status === Status.Ready ? todos.issues.map(todo => todoItem(scope, todo)) : undefined}
 						message={todos.status === Status.Failed ? todos.message : undefined}
 						emptyLabel='todos'
+						command={`folio todo create "<title>" -p ${slug}`}
 						filtered={filtered}
 						to='/$client/$domain/$slug/todos'
 						params={scope}

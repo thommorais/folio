@@ -10,6 +10,7 @@ import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree';
 import type { IssueSortField, Sort } from '_/core/ports/sort';
 import { Status } from '_/lib/async-status';
 import { useScope } from '_/routing/use-scope';
+import { EmptyState } from '_/components/empty-state';
 import { IssueFilters } from './issue-filters';
 
 type IssuesSearch = {
@@ -141,7 +142,9 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 		}
 
 		if (state.issues.length === 0) {
-			return <p className='text-dim text-sm'>{filtered ? `No ${emptyLabel} match.` : `No ${emptyLabel} yet.`}</p>
+			if (filtered) return <p className='text-dim text-sm'>No {emptyLabel} match.</p>
+
+			return <EmptyState message={`No ${emptyLabel} yet.`} command={`folio ${kind} create "<title>" -p ${slug}`} />
 		}
 
 		const context = filtered && everything.status === Status.Ready ? everything.issues : []

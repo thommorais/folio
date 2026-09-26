@@ -3,6 +3,7 @@ import { Badge } from '@thom/ui/badge'
 import { Tag } from '_/components/issue/tag'
 import { MarkdownPreview } from '_/components/markdown/preview'
 import { StaggerItem } from '_/components/motion/stagger'
+import { EmptyState } from '_/components/empty-state'
 import { useEntries } from '_/app/use-entries'
 import { ADDRESSABLE_KINDS } from '_/core/domain/entry'
 import { JournalFilters } from './journal-filters'
@@ -34,7 +35,9 @@ const Journal = () => {
 		}
 
 		if (state.entries.length === 0) {
-			return <p className='text-dim text-sm'>{filtered ? 'No entries match.' : 'No entries yet.'}</p>
+			if (filtered) return <p className='text-dim text-sm'>No entries match.</p>
+
+			return <EmptyState message='No entries yet.' command={`folio journal write "<title>" -p ${slug}`} />
 		}
 
 		return (
