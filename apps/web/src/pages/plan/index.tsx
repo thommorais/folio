@@ -5,6 +5,7 @@ import { Tag } from '_/components/issue/tag'
 import { Heading } from '@thom/ui/heading'
 import { Markdown } from '_/components/markdown'
 import { RecordGone } from '_/components/record/record-gone'
+import { WorkLog } from '_/components/record/work-log'
 import { ShareSheet } from '_/components/share/share-sheet'
 import { usePlan } from '_/app/use-plan'
 import { IssueRef } from '_/components/issue/issue-ref'
@@ -43,6 +44,8 @@ const PlanBody = ({ plan, project }: { readonly plan: Plan; readonly project: st
 			</header>
 
 			{plan.goal ? <Markdown>{plan.goal}</Markdown> : <p className='text-dim text-sm'>This plan has no goal yet.</p>}
+
+			<WorkLog project={project} planId={plan.id} />
 		</article>
 	)
 }

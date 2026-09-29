@@ -12,12 +12,13 @@ import { useEntries } from '_/app/use-entries';
 import { useIssue } from '_/app/use-issue';
 import { useIssues } from '_/app/use-issues';
 import { usePlans } from '_/app/use-plans';
-import { Markdown } from '_/components/markdown';
+import { Markdown } from '_/components/markdown'
+import { WorkLog } from '_/components/record/work-log';
 import { RecordGone } from '_/components/record/record-gone';
 import { ShareSheet } from '_/components/share/share-sheet';
 import { openBlockers } from '_/core/domain/blocked';
 import { newestFirst } from '_/core/domain/cycle-progress';
-import { ADDRESSABLE_KINDS, ENTRY_KIND } from '_/core/domain/entry';
+import { ADDRESSABLE_KINDS } from '_/core/domain/entry';
 import { ISSUE_KIND, type Issue, type IssueStatus } from '_/core/domain/issue';
 import { Status } from '_/lib/async-status';
 import { ENTRY_KIND_LABELS } from '_/pages/journal/kind-labels';
@@ -110,12 +111,6 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	const childTickets = useIssues(project, { kind: ISSUE_KIND.TICKET, parentId: ticketId })
 	const maps =
 		childTickets.status === Status.Ready ? childTickets.issues.filter(child => child.wayfinder === 'map') : []
-	const workLog = useEntries(project, { kind: ENTRY_KIND.LOG, issueId: ticketId })
-
-	// A log stamped with a cycle is shown on that round in the timeline, so
-	// only the loose ones are left for the section below it.
-	const unstamped = workLog.status === Status.Ready ? workLog.entries.filter(entry => entry.cycleId === undefined) : []
-
 	const current = cycles.status === Status.Ready ? newestFirst(cycles.cycles).at(0) : undefined
 	const siblings = useIssues(project)
 	const parent =
@@ -180,21 +175,6 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 				</Section>
 			)}
 
-			{/* Logs written outside a cycle have no round to sit under, so they
-			    keep a section of their own. */}
-			{unstamped.length > 0 && (
-				<Section title='Work log'>
-					<ul className='border-border divide-border divide-y border'>
-						{unstamped.map(entry => (
-							<li key={entry.id} className='space-y-1 px-4 py-3'>
-								<Markdown>{entry.body}</Markdown>
-								<p className='text-dimmer text-xs'>{entry.createdAt.toLocaleString()}</p>
-							</li>
-						))}
-					</ul>
-				</Section>
-			)}
-
 			<Section title='Plans'>
 				{plans.status === Status.Ready && plans.plans.length === 0 && <Empty what='plans' />}
 				{plans.status === Status.Ready && plans.plans.length > 0 && (
@@ -250,6 +230,8 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 					</ul>
 				)}
 			</Section>
+
+			<WorkLog project={project} issueId={ticketId} />
 		</div>
 	)
 }

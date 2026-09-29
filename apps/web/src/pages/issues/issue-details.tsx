@@ -5,6 +5,7 @@ import { StatusIcon } from '_/components/issue/status-icon'
 import { IssueRef } from '_/components/issue/issue-ref'
 import { PlanRef } from '_/components/issue/plan-ref'
 import { RecordGone } from '_/components/record/record-gone'
+import { WorkLog } from '_/components/record/work-log'
 import { Markdown } from '_/components/markdown'
 import { cn } from '@thom/libs/cn'
 import { useIssueById } from '_/app/use-issue'
@@ -87,6 +88,10 @@ const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonl
 					)}
 				</Field>
 				<Field label='Updated'>{formatDate(todo.updatedAt)}</Field>
+			</div>
+
+			<div className='mt-8'>
+				<WorkLog project={project} issueId={todo.id} />
 			</div>
 		</div>
 	)
