@@ -1,7 +1,7 @@
 import type { Term } from '_/core/domain/interview'
 
 export const Terms = ({ terms }: { readonly terms: readonly Term[] }) => (
-	<section className='mx-6 space-y-2'>
+	<section className='space-y-2 lg:mx-6'>
 		<h2 className='text-sm font-medium'>Terms</h2>
 
 		{terms.length === 0 ? (

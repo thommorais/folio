@@ -90,7 +90,7 @@ export const QuestionCard = ({ question, staged, sent, draft, locked, onDraft, o
 	}
 
 	return (
-		<article className='space-y-6 px-6'>
+		<article className='space-y-6 lg:px-6'>
 			<header className='space-y-2'>
 				<p className='text-dim flex flex-wrap items-center gap-x-3 text-xs'>
 					<span>{question.id}</span>

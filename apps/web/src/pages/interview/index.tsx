@@ -100,7 +100,7 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 
 	return (
 		<div className='flex flex-col gap-4'>
-			<header className='border-border flex items-center justify-between gap-4 border-b pb-4'>
+			<header className='border-border flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b pb-4'>
 				<div className='min-w-0'>
 					<Link
 						to='/$client/$domain/$slug/tickets/$ticket'
@@ -145,12 +145,12 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 
 				<div className='space-y-6'>
 					{locked && (
-						<p className='border-border mx-6 border px-4 py-3 text-sm'>
+						<p className='border-border border px-4 py-3 text-sm lg:mx-6'>
 							Finished {finishedAt.toLocaleString()}. The interview is closed.
 						</p>
 					)}
 
-					{interview.note && <p className='text-dim mx-6 text-sm'>{interview.note}</p>}
+					{interview.note && <p className='text-dim text-sm lg:mx-6'>{interview.note}</p>}
 
 					{showTerms && <Terms terms={interview.terms} />}
 
@@ -167,7 +167,7 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 							onSelect={setChosen}
 						/>
 					) : (
-						<p className='text-dim px-6 text-sm'>The agent has not posted a round yet.</p>
+						<p className='text-dim text-sm lg:px-6'>The agent has not posted a round yet.</p>
 					)}
 				</div>
 

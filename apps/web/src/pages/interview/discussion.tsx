@@ -72,7 +72,10 @@ export const Discussion = ({ question, staged, sent, draft, locked, onDraft, onS
 	}
 
 	return (
-		<aside className='border-border flex flex-col gap-6 border-l pl-6' aria-label='Discussion'>
+		<aside
+			className='border-border flex flex-col gap-6 border-t pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6'
+			aria-label='Discussion'
+		>
 			<ExploreTable question={question} />
 
 			{exploring && (

@@ -13,7 +13,10 @@ export const Nav = ({ questions, selected, staged, sent, onSelect }: Props) => {
 	const latest = currentRound(questions)
 
 	return (
-		<nav className='border-border border-r pr-2' aria-label='Questions'>
+		<nav
+			className='border-border max-h-[24vh] overflow-y-auto border-b pb-2 lg:max-h-none lg:overflow-visible lg:border-r lg:border-b-0 lg:pr-2 lg:pb-0'
+			aria-label='Questions'
+		>
 			{questions.length === 0 && <p className='text-dim px-3 py-2 text-sm'>No questions yet.</p>}
 
 			{rounds(questions).map(([round, group]) => (
