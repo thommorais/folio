@@ -9,6 +9,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"folio/cli/internal/client"
 )
 
 type rawRequest struct {
@@ -17,7 +19,7 @@ type rawRequest struct {
 	body   string
 }
 
-const interviewJSON = `{"id":"iv1","project_id":"pr1","issue_id":"tk1","topic":"Tree or graph","agent_status":"waiting","handled":2,
+const interviewJSON = `{"id":"iv1","project_id":"pr1","issue_id":"tk1","topic":"Tree or graph","agent_status":"waiting","handled":2,"url":"https://folio.example/journ/shed/geral/tickets/tree-or-graph/interview",
 "state":{"terms":[],"questions":[
 	{"id":"q1","round":1,"title":"Tree or graph","status":"answered","deps":[],"options":[],"rec":{"why":"x"},"thread":[]},
 	{"id":"q2","round":2,"title":"What do we call it","status":"open","deps":[],"options":[],"rec":{"why":"x"},"thread":[]},
@@ -111,15 +113,15 @@ func paths(got []rawRequest) []string {
 	return out
 }
 
-func TestInterviewStartPrintsTheLinkFirst(t *testing.T) {
-	got, url := interviewServer(t, "")
+func TestInterviewStartPrintsTheAPIsLinkFirst(t *testing.T) {
+	got, _ := interviewServer(t, "")
 	out, err := runInterview(t, "", "start", "tk1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	lines := strings.Split(strings.TrimSpace(out), "\n")
-	if want := url + "/journ/shed/geral/tickets/tree-or-graph/interview"; lines[0] != want {
+	if want := "https://folio.example/journ/shed/geral/tickets/tree-or-graph/interview"; lines[0] != want {
 		t.Fatalf("first line = %q, want %q", lines[0], want)
 	}
 	if !strings.Contains(out, "Tree or graph") {
@@ -128,6 +130,21 @@ func TestInterviewStartPrintsTheLinkFirst(t *testing.T) {
 	last := (*got)[len(*got)-1]
 	if last.method != http.MethodPost || last.path != "/api/folio/issues/tk1/interview" {
 		t.Errorf("requests = %v", paths(*got))
+	}
+	for _, r := range *got {
+		if strings.HasSuffix(r.path, "/domains") || r.path == "/api/folio/projects/pr1" {
+			t.Errorf("the link comes from the API, got a lookup: %v", paths(*got))
+		}
+	}
+}
+
+func TestInterviewLinkNeedsAURLFromTheAPI(t *testing.T) {
+	if _, err := interviewLink(client.Interview{}); err == nil || !strings.Contains(err.Error(), "no page link") {
+		t.Fatalf("err = %v, want no page link", err)
+	}
+	link, err := interviewLink(client.Interview{URL: "https://x/y"})
+	if err != nil || link != "https://x/y" {
+		t.Fatalf("link = %q, %v", link, err)
 	}
 }
 
@@ -223,12 +240,12 @@ func TestInterviewPendingSaysWhenNothingWasSent(t *testing.T) {
 }
 
 func TestInterviewShowListsTheOpenQuestions(t *testing.T) {
-	_, url := interviewServer(t, "")
+	interviewServer(t, "")
 	out, err := runInterview(t, "", "show", "tk1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"Tree or graph", "round 2", "handled 2", "waiting", "q2", "What do we call it", "q3", "Who answers", url + "/journ/shed/geral/tickets/tree-or-graph/interview"} {
+	for _, want := range []string{"Tree or graph", "round 2", "handled 2", "waiting", "q2", "What do we call it", "q3", "Who answers", "https://folio.example/journ/shed/geral/tickets/tree-or-graph/interview"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("show is missing %q:\n%s", want, out)
 		}

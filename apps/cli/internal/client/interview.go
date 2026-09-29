@@ -18,6 +18,7 @@ type Interview struct {
 	CreatedBy   string          `json:"created_by,omitempty"`
 	CreatedAt   string          `json:"created_at"`
 	UpdatedAt   string          `json:"updated_at"`
+	URL         string          `json:"url,omitempty"`
 }
 
 type InterviewQuestion struct {

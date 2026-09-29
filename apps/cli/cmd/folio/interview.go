@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
-	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -40,28 +38,11 @@ func interviewTicket(folio *client.Client, ref string) (client.Ticket, error) {
 	return bySlugOrID(ref, folio.GetTicketBySlug, folio.GetTicket)
 }
 
-func interviewLink(folio *client.Client, ticket client.Ticket) (string, error) {
-	project, err := folio.GetProject(ticket.ProjectID)
-	if err != nil {
-		return "", err
+func interviewLink(interview client.Interview) (string, error) {
+	if interview.URL == "" {
+		return "", errors.New("no page link: the API sent none, the ticket's project has no domain")
 	}
-	if project.DomainID == "" {
-		return "", fmt.Errorf("no page link: project %s has no domain", project.Slug)
-	}
-	domains, err := folio.ListDomains()
-	if err != nil {
-		return "", err
-	}
-	for _, d := range domains {
-		if d.ID == project.DomainID {
-			parts := []string{d.ClientSlug, d.Slug, project.Slug, "tickets", ticket.Slug, "interview"}
-			for i, p := range parts {
-				parts[i] = url.PathEscape(p)
-			}
-			return folio.BaseURL() + "/" + strings.Join(parts, "/"), nil
-		}
-	}
-	return "", fmt.Errorf("no page link: domain %s of project %s is not visible to you", project.DomainID, project.Slug)
+	return interview.URL, nil
 }
 
 func interviewStartCommand() *cobra.Command {
@@ -78,11 +59,11 @@ func interviewStartCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			link, err := interviewLink(folio, ticket)
+			interview, err := folio.StartInterview(ticket.ID)
 			if err != nil {
 				return err
 			}
-			interview, err := folio.StartInterview(ticket.ID)
+			link, err := interviewLink(interview)
 			if err != nil {
 				return err
 			}
@@ -109,7 +90,7 @@ func interviewShowCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			link, err := interviewLink(folio, ticket)
+			link, err := interviewLink(interview)
 			if err != nil {
 				return err
 			}
