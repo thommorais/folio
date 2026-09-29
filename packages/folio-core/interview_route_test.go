@@ -72,7 +72,8 @@ func TestInterviewRunsOverTheAPI(t *testing.T) {
 	}
 
 	var ticket struct {
-		ID string `json:"id"`
+		ID   string `json:"id"`
+		Slug string `json:"slug"`
 	}
 	res := do(http.MethodPost, "/api/folio/projects/redesign/issues", `{"kind":"ticket","title":"Tree or graph","wayfinder":"grilling"}`)
 	if res.Code != http.StatusCreated {
@@ -92,6 +93,7 @@ func TestInterviewRunsOverTheAPI(t *testing.T) {
 		AgentStatus string `json:"agent_status"`
 		Handled     int    `json:"handled"`
 		FinishedAt  string `json:"finished_at"`
+		URL         string `json:"url"`
 		State       struct {
 			Terms     []any `json:"terms"`
 			Questions []struct {
@@ -108,6 +110,9 @@ func TestInterviewRunsOverTheAPI(t *testing.T) {
 	decode(res, &started)
 	if started.IssueID != ticket.ID || started.Topic != "Tree or graph" || started.AgentStatus != "waiting" || started.State.Terms == nil {
 		t.Fatalf("started = %+v", started)
+	}
+	if want := "http://example.com/acme/web/redesign/tickets/" + ticket.Slug + "/interview"; started.URL != want {
+		t.Fatalf("url = %q, want %q", started.URL, want)
 	}
 	var resumed interview
 	res = do(http.MethodPost, base, "")

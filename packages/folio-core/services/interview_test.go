@@ -188,3 +188,36 @@ func TestFinishMarksTheFinishSendHandled(t *testing.T) {
 		t.Fatalf("handled = %d, want 1: the finish Send is consumed by finishing", finished.Handled)
 	}
 }
+
+func TestPagePathNamesTheTicketByItsSlugs(t *testing.T) {
+	f := newTicketFixture(t)
+	ctx := t.Context()
+	ticket := f.grilling(t, "Tree or graph")
+
+	got, err := f.interviewSvc.PagePath(ctx, f.owner, ticket.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "/acme/web/api/tickets/" + ticket.Slug + "/interview"; got != want {
+		t.Fatalf("path = %q, want %q", got, want)
+	}
+}
+
+func TestPagePathIsEmptyForAProjectWithoutADomain(t *testing.T) {
+	f := newTicketFixture(t)
+	ticket := f.ticket(t, f.other, "Tree or graph")
+
+	got, err := f.interviewSvc.PagePath(t.Context(), f.owner, ticket.ID)
+	if err != nil || got != "" {
+		t.Fatalf("path = %q, %v, want empty", got, err)
+	}
+}
+
+func TestPagePathNeedsReadAccess(t *testing.T) {
+	f := newTicketFixture(t)
+	ticket := f.grilling(t, "Tree or graph")
+
+	if _, err := f.interviewSvc.PagePath(t.Context(), f.outside, ticket.ID); !errors.Is(err, domain.ErrNotFound) && !errors.Is(err, domain.ErrForbidden) {
+		t.Fatalf("a stranger should be refused, got %v", err)
+	}
+}

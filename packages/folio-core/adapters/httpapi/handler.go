@@ -26,6 +26,7 @@ type Handler struct {
 	knowledge  ports.KnowledgeUseCase
 	shares     ports.ShareUseCase
 	interviews ports.InterviewUseCase
+	webURL     string
 }
 
 type Deps struct {
@@ -40,12 +41,16 @@ type Deps struct {
 	Search     ports.SearchUseCase
 	Shares     ports.ShareUseCase
 	Interviews ports.InterviewUseCase
+	// WebURL is the origin of the web app, for links an API response hands
+	// out. Empty means the request's own origin, which is right whenever the
+	// backend serves the app itself.
+	WebURL string
 }
 
 func New(d Deps) *Handler {
 	return &Handler{
 		projects: d.Projects, clients: d.Clients, domains: d.Domains, plans: d.Plans, issues: d.Issues, entries: d.Entries, cycles: d.Cycles, search: d.Search,
-		knowledge: d.Knowledge, shares: d.Shares, interviews: d.Interviews,
+		knowledge: d.Knowledge, shares: d.Shares, interviews: d.Interviews, webURL: d.WebURL,
 	}
 }
 

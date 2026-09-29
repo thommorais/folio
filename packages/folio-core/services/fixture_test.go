@@ -31,7 +31,7 @@ func newTicketFixture(t *testing.T) *ticketFixture {
 	t.Helper()
 
 	projects := newFakeProjects()
-	projects.items["p001"] = domain.Project{ID: "p001", Slug: "api", Name: "API", Members: []domain.Member{
+	projects.items["p001"] = domain.Project{ID: "p001", DomainID: "d001", Slug: "api", Name: "API", Members: []domain.Member{
 		{UserID: "u-owner", Role: domain.RoleOwner},
 		{UserID: "u-viewer", Role: domain.RoleViewer},
 	}}
@@ -40,6 +40,9 @@ func newTicketFixture(t *testing.T) *ticketFixture {
 	projects.items["p002"] = domain.Project{ID: "p002", Slug: "web", Name: "Web", Members: []domain.Member{
 		{UserID: "u-owner", Role: domain.RoleOwner},
 	}}
+
+	domains := newFakeDomains()
+	domains.items["d001"] = domain.Domain{ID: "d001", ClientSlug: "acme", Slug: "web"}
 
 	issues := newFakeIssues()
 	plans := newFakePlans()
@@ -59,7 +62,7 @@ func newTicketFixture(t *testing.T) *ticketFixture {
 		entrySvc: services.NewEntryService(entries, issues, plans, guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),
 		cycleSvc: services.NewCycleService(cycles, issues, guard, clock, &seqIDs{prefix: "cy"}, nopLogger{}),
 		interviews:   interviews,
-		interviewSvc: services.NewInterviewService(interviews, issues, guard, clock, &seqIDs{prefix: "iv"}, nopLogger{}),
+		interviewSvc: services.NewInterviewService(interviews, issues, projects, domains, guard, clock, &seqIDs{prefix: "iv"}, nopLogger{}),
 		owner:      ports.Actor{UserID: "u-owner"},
 		viewer:     ports.Actor{UserID: "u-viewer"},
 		outside:    ports.Actor{UserID: "u-stranger"},

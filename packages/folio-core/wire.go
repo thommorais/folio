@@ -64,7 +64,7 @@ func New(app pbcore.App, logger *slog.Logger) *App {
 		Knowledge:  services.NewKnowledgeService(knowledgeRepo, guard, clock, ids, log),
 		Search:     services.NewSearchService(searchRepo, guard, projectRepo),
 		Shares:     services.NewShareService(shareRepo, issueRepo, planRepo, issues, plans, guard, clock, ids, system.TokenGenerator{}, log),
-		Interviews: services.NewInterviewService(interviewRepo, issueRepo, guard, clock, ids, log),
+		Interviews: services.NewInterviewService(interviewRepo, issueRepo, projectRepo, domainRepo, guard, clock, ids, log),
 	}
 }
 

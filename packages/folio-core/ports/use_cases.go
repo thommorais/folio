@@ -260,6 +260,10 @@ type InterviewUseCase interface {
 	ListInterviews(ctx context.Context, actor Actor, ticket domain.IssueID) ([]domain.Interview, error)
 	PatchInterview(ctx context.Context, actor Actor, ticket domain.IssueID, patch []byte) (InterviewPatchSummary, error)
 	PendingSends(ctx context.Context, actor Actor, ticket domain.IssueID) ([]domain.InterviewEvent, error)
+	// PagePath is where the interview page lives, relative to the web app's
+	// origin. Empty when the ticket's project has no domain, which the page's
+	// route needs.
+	PagePath(ctx context.Context, actor Actor, ticket domain.IssueID) (string, error)
 	SendToInterview(ctx context.Context, actor Actor, ticket domain.IssueID, actions []domain.SendAction) (domain.InterviewEvent, error)
 	FinishInterview(ctx context.Context, actor Actor, ticket domain.IssueID, answer, doc string) (domain.Interview, error)
 }

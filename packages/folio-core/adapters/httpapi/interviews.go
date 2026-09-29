@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/pocketbase/pocketbase/core"
 
@@ -23,6 +24,44 @@ type interviewView struct {
 	CreatedBy   string                `json:"created_by,omitempty"`
 	CreatedAt   string                `json:"created_at"`
 	UpdatedAt   string                `json:"updated_at"`
+	URL         string                `json:"url,omitempty"`
+}
+
+// pageURL joins the web app's origin and a path. An unconfigured base falls
+// back to the origin the request came in on.
+func pageURL(base string, r *http.Request, path string) string {
+	if path == "" {
+		return ""
+	}
+	if base = strings.TrimRight(base, "/"); base == "" {
+		scheme := "http"
+		if r.TLS != nil {
+			scheme = "https"
+		}
+		if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+			scheme = proto
+		}
+		base = scheme + "://" + r.Host
+	}
+	return base + path
+}
+
+func (h *Handler) interviewURL(e *core.RequestEvent) (string, error) {
+	path, err := h.interviews.PagePath(e.Request.Context(), actorOf(e), issueOf(e))
+	if err != nil {
+		return "", err
+	}
+	return pageURL(h.webURL, e.Request, path), nil
+}
+
+func (h *Handler) interviewViewOf(e *core.RequestEvent, i domain.Interview) (interviewView, error) {
+	link, err := h.interviewURL(e)
+	if err != nil {
+		return interviewView{}, err
+	}
+	out := toInterviewView(i)
+	out.URL = link
+	return out, nil
 }
 
 func toInterviewView(i domain.Interview) interviewView {
@@ -66,9 +105,15 @@ func (h *Handler) listInterviews(e *core.RequestEvent) error {
 	if err != nil {
 		return fail(e, err)
 	}
+	link, err := h.interviewURL(e)
+	if err != nil {
+		return fail(e, err)
+	}
 	out := make([]interviewView, 0, len(list))
 	for _, i := range list {
-		out = append(out, toInterviewView(i))
+		view := toInterviewView(i)
+		view.URL = link
+		out = append(out, view)
 	}
 	return e.JSON(http.StatusOK, map[string]any{"interviews": out})
 }
@@ -78,11 +123,15 @@ func (h *Handler) startInterview(e *core.RequestEvent) error {
 	if err != nil {
 		return fail(e, err)
 	}
+	view, err := h.interviewViewOf(e, interview)
+	if err != nil {
+		return fail(e, err)
+	}
 	status := http.StatusOK
 	if created {
 		status = http.StatusCreated
 	}
-	return e.JSON(status, toInterviewView(interview))
+	return e.JSON(status, view)
 }
 
 func (h *Handler) currentInterview(e *core.RequestEvent) error {
@@ -90,7 +139,11 @@ func (h *Handler) currentInterview(e *core.RequestEvent) error {
 	if err != nil {
 		return fail(e, err)
 	}
-	return e.JSON(http.StatusOK, toInterviewView(interview))
+	view, err := h.interviewViewOf(e, interview)
+	if err != nil {
+		return fail(e, err)
+	}
+	return e.JSON(http.StatusOK, view)
 }
 
 func (h *Handler) patchInterview(e *core.RequestEvent) error {
@@ -105,12 +158,16 @@ func (h *Handler) patchInterview(e *core.RequestEvent) error {
 	if err != nil {
 		return fail(e, err)
 	}
+	view, err := h.interviewViewOf(e, summary.Interview)
+	if err != nil {
+		return fail(e, err)
+	}
 	return e.JSON(http.StatusOK, map[string]any{
 		"round":     summary.Round,
 		"added":     summary.Added,
 		"answered":  summary.Answered,
 		"handled":   summary.Handled,
-		"interview": toInterviewView(summary.Interview),
+		"interview": view,
 	})
 }
 
@@ -161,5 +218,9 @@ func (h *Handler) finishInterview(e *core.RequestEvent) error {
 	if err != nil {
 		return fail(e, err)
 	}
-	return e.JSON(http.StatusOK, toInterviewView(interview))
+	view, err := h.interviewViewOf(e, interview)
+	if err != nil {
+		return fail(e, err)
+	}
+	return e.JSON(http.StatusOK, view)
 }

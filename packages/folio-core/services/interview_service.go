@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"net/url"
 	"strings"
 
 	"folio/folio-core/domain"
@@ -10,16 +11,18 @@ import (
 )
 
 type InterviewService struct {
-	repo   ports.InterviewRepository
-	issues ports.IssueRepository
-	guard  ports.Guard
-	clock  ports.Clock
-	ids    ports.IDGenerator
-	log    ports.Logger
+	repo     ports.InterviewRepository
+	issues   ports.IssueRepository
+	projects ports.ProjectRepository
+	domains  ports.DomainRepository
+	guard    ports.Guard
+	clock    ports.Clock
+	ids      ports.IDGenerator
+	log      ports.Logger
 }
 
-func NewInterviewService(repo ports.InterviewRepository, issues ports.IssueRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *InterviewService {
-	return &InterviewService{repo: repo, issues: issues, guard: guard, clock: clock, ids: ids, log: log}
+func NewInterviewService(repo ports.InterviewRepository, issues ports.IssueRepository, projects ports.ProjectRepository, domains ports.DomainRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *InterviewService {
+	return &InterviewService{repo: repo, issues: issues, projects: projects, domains: domains, guard: guard, clock: clock, ids: ids, log: log}
 }
 
 var _ ports.InterviewUseCase = (*InterviewService)(nil)
@@ -143,6 +146,29 @@ func (s *InterviewService) PatchInterview(ctx context.Context, actor ports.Actor
 	return ports.InterviewPatchSummary{
 		Interview: saved, Round: summary.Round, Added: summary.Added, Answered: summary.Answered, Handled: saved.Handled,
 	}, nil
+}
+
+func (s *InterviewService) PagePath(ctx context.Context, actor ports.Actor, id domain.IssueID) (string, error) {
+	ticket, err := s.ticket(ctx, actor, id, false)
+	if err != nil {
+		return "", err
+	}
+	project, err := s.projects.GetByID(ctx, ticket.ProjectID)
+	if err != nil {
+		return "", err
+	}
+	if project.DomainID == "" {
+		return "", nil
+	}
+	dom, err := s.domains.GetByID(ctx, project.DomainID)
+	if err != nil {
+		return "", err
+	}
+	parts := []string{dom.ClientSlug, dom.Slug, project.Slug, "tickets", ticket.Slug, "interview"}
+	for i, part := range parts {
+		parts[i] = url.PathEscape(part)
+	}
+	return "/" + strings.Join(parts, "/"), nil
 }
 
 func (s *InterviewService) PendingSends(ctx context.Context, actor ports.Actor, id domain.IssueID) ([]domain.InterviewEvent, error) {
