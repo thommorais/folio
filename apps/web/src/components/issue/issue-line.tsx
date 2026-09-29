@@ -1,9 +1,9 @@
-import { cn } from '@thom/libs/cn'
-import type { ReactNode } from 'react'
-import { ISSUE_STATUS, isTerminal, type Issue } from '_/core/domain/issue'
-import { PriorityIcon } from './priority-icon'
-import { StatusIcon } from './status-icon'
-import { Tags } from './tag'
+import { cn } from '@thom/libs/cn';
+import { ISSUE_STATUS, isTerminal, type Issue } from '_/core/domain/issue';
+import type { ReactNode } from 'react';
+import { PriorityIcon } from './priority-icon';
+import { StatusIcon } from './status-icon';
+import { Tags } from './tag';
 
 const dayMonth = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' })
 

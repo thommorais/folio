@@ -2,11 +2,14 @@ import { Link, useParams, useSearch } from '@tanstack/react-router';
 import { cn } from '@thom/libs/cn';
 import { Badge } from '@thom/ui/badge';
 import { useIssues } from '_/app/use-issues';
+import { usePlans } from '_/app/use-plans';
+import { GroupHeader } from '_/components/group/group-header';
+import { groupTodos } from '_/core/domain/grouping';
 import { MarkdownPreview } from '_/components/markdown/preview';
 import { ISSUE_LINE_INSET, IssueLine } from '_/components/issue/issue-line';
 import { StaggerItem } from '_/components/motion/stagger';
 import { Flash } from '_/components/motion/flash';
-import { isTerminal, ISSUE_KIND, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
+import { isTerminal, ISSUE_KIND, type Issue, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
 import { buildIssueTree, type IssueRow } from '_/core/domain/issue-tree';
 import type { IssueSortField, Sort } from '_/core/ports/sort';
 import { Status } from '_/lib/async-status';
@@ -111,6 +114,51 @@ const Row = ({
 	)
 }
 
+type TreeProps = {
+	readonly issues: readonly Issue[]
+	readonly context: readonly Issue[]
+	readonly project: string
+	readonly kind: IssueKind
+}
+
+const Tree = ({ issues, context, project, kind }: TreeProps) => {
+	const rows = buildIssueTree(issues, { context })
+
+	return (
+		<div className='border-border border'>
+			{rows.map((row, index) => (
+				<StaggerItem key={row.issue.id} index={index}>
+					<div className={cn(index > 0 && row.depth === 0 && 'border-border border-t')}>
+						<Row row={row} project={project} kind={kind} />
+					</div>
+				</StaggerItem>
+			))}
+		</div>
+	)
+}
+
+const GroupedTodos = ({ issues, context, project }: Omit<TreeProps, 'kind'>) => {
+	const plans = usePlans(project)
+	const tickets = useIssues(project, { kind: ISSUE_KIND.TICKET })
+
+	const groups = groupTodos(
+		issues,
+		plans.status === Status.Ready ? plans.plans : [],
+		tickets.status === Status.Ready ? tickets.issues : [],
+	)
+
+	return (
+		<div className='space-y-6'>
+			{groups.map(({ target, items }) => (
+				<section key={target ? `${target.kind}:${target.id}` : 'none'} className='space-y-2'>
+					{(target !== undefined || groups.length > 1) && <GroupHeader target={target} slug={project} />}
+					<Tree issues={items} context={context} project={project} kind={ISSUE_KIND.TODO} />
+				</section>
+			))}
+		</div>
+	)
+}
+
 type IssuesProps = {
 	readonly kind: IssueKind
 	readonly emptyLabel: string
@@ -154,19 +202,12 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 		}
 
 		const context = narrowed && everything.status === Status.Ready ? everything.issues : []
-		const rows = buildIssueTree(state.issues, { context })
 
-		return (
-			<div className='border-border border'>
-				{rows.map((row, index) => (
-					<StaggerItem key={row.issue.id} index={index}>
-						<div className={cn(index > 0 && row.depth === 0 && 'border-border border-t')}>
-							<Row row={row} project={slug} kind={kind} />
-						</div>
-					</StaggerItem>
-				))}
-			</div>
-		)
+		if (kind === ISSUE_KIND.TODO) {
+			return <GroupedTodos issues={state.issues} context={context} project={slug} />
+		}
+
+		return <Tree issues={state.issues} context={context} project={slug} kind={kind} />
 	})()
 
 	return (

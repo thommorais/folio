@@ -6,6 +6,10 @@ import { Flash } from '_/components/motion/flash'
 import { MarkdownPreview } from '_/components/markdown/preview'
 import { EmptyState } from '_/components/empty-state'
 import { usePlans } from '_/app/use-plans'
+import { useIssues } from '_/app/use-issues'
+import { GroupHeader } from '_/components/group/group-header'
+import { ISSUE_KIND } from '_/core/domain/issue'
+import { groupPlans } from '_/core/domain/grouping'
 import { DEFAULT_PLAN_STATUSES, PLAN_STATUS, type Plan } from '_/core/domain/plan'
 import { PlanFilters } from './plan-filters'
 import { PLAN_STATUS_LABELS } from './status-labels'
@@ -54,6 +58,9 @@ const Plans = () => {
 		sort: search.sort,
 	})
 
+	const tickets = useIssues(slug, { kind: ISSUE_KIND.TICKET })
+	const groups = state.status === Status.Ready ? groupPlans(state.plans, tickets.status === Status.Ready ? tickets.issues : []) : []
+
 	const filtered =
 		search.q !== undefined || search.statuses !== undefined || search.tags !== undefined || search.ticket !== undefined
 
@@ -71,15 +78,19 @@ const Plans = () => {
 				<EmptyState message='No active plans.' command={`folio plan create "<title>" -p ${slug}`} />
 			)}
 
-			{state.status === Status.Ready && state.plans.length > 0 && (
-				<ul className='border-border divide-border divide-y border'>
-					{state.plans.map((plan, index) => (
-						<StaggerItem key={plan.id} index={index} as='li'>
-							<Row plan={plan} project={slug} />
-						</StaggerItem>
-					))}
-				</ul>
-			)}
+			{state.status === Status.Ready &&
+				groups.map(({ target, items }) => (
+					<section key={target ? `${target.kind}:${target.id}` : 'none'} className='space-y-2'>
+						{(target !== undefined || groups.length > 1) && <GroupHeader target={target} slug={slug} />}
+						<ul className='border-border divide-border divide-y border'>
+							{items.map((plan, index) => (
+								<StaggerItem key={plan.id} index={index} as='li'>
+									<Row plan={plan} project={slug} />
+								</StaggerItem>
+							))}
+						</ul>
+					</section>
+				))}
 		</div>
 	)
 }

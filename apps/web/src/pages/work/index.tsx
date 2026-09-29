@@ -6,6 +6,7 @@ import { IssueLine } from '_/components/issue/issue-line';
 import { Tags } from '_/components/issue/tag';
 import { DEFAULT_ISSUE_STATUSES, ISSUE_KIND, type Issue } from '_/core/domain/issue';
 import { isTopLevel } from '_/core/domain/top-level';
+import { groupPlans } from '_/core/domain/grouping';
 import { DEFAULT_PLAN_STATUSES, isTerminal as isPlanTerminal, type Plan } from '_/core/domain/plan';
 import { Status } from '_/lib/async-status';
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels';
@@ -101,6 +102,16 @@ const Work = () => {
 		sort: search.sort,
 	})
 
+	const allTickets = useIssues(slug, { kind: ISSUE_KIND.TICKET })
+
+	const planGroups =
+		plans.status === Status.Ready
+			? groupPlans(plans.plans, allTickets.status === Status.Ready ? allTickets.issues : []).map(group => ({
+					target: group.target,
+					items: group.items.map(plan => planItem(scope, plan)),
+				}))
+			: undefined
+
 	return (
 		<div className='space-y-4'>
 			<WorkFilters />
@@ -124,6 +135,8 @@ const Work = () => {
 						title='Plans'
 						items={plans.status === Status.Ready ? plans.plans.map(plan => planItem(scope, plan)) : undefined}
 						message={plans.status === Status.Failed ? plans.message : undefined}
+						groups={planGroups}
+						slug={slug}
 						emptyLabel='plans'
 						command={`folio plan create "<title>" -p ${slug}`}
 						filtered={filtered}
