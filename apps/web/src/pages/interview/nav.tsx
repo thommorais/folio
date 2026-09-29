@@ -18,9 +18,12 @@ export const Nav = ({ questions, selected, staged, sent, onSelect }: Props) => {
 
 			{rounds(questions).map(([round, group]) => (
 				<section key={round} className='mb-4'>
-					<h2 className='text-dim px-3 py-1 text-xs'>
-						Round {round}
-						{round === latest ? ' (current)' : ''}
+					<h2 className='text-dim flex justify-between px-3 py-1 text-xs'>
+						<span>
+							Round {round}
+							{round === latest ? ' (current)' : ''}
+						</span>
+						<span>{group.length}</span>
 					</h2>
 
 					<ul>
@@ -35,7 +38,10 @@ export const Nav = ({ questions, selected, staged, sent, onSelect }: Props) => {
 										aria-current={question.id === selected ? 'true' : undefined}
 										className='hover:bg-accent/40 aria-[current=true]:bg-accent/60 flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors'
 									>
-										<span className='text-sm'>{question.title}</span>
+										<span className='text-sm'>
+											{question.title}
+											{question.updated && <span className='text-dim ml-2 text-xs'>updated</span>}
+										</span>
 										<span className='text-dim flex items-center gap-2 text-xs'>
 											<span>{question.id}</span>
 											<span className={mark.tone === 'live' ? 'text-foreground' : undefined}>{mark.label}</span>

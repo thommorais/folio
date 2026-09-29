@@ -19,7 +19,7 @@ const status = ({ count, staged, pending, working, error }: Props): string => {
 	if (pending) return 'Sent. Tell the agent to continue.'
 	if (working) return 'The agent is working. Send unlocks when it is waiting.'
 
-	return count === 0 ? 'Nothing staged.' : `Staged: ${summarize(staged)}.`
+	return count === 0 ? 'Nothing staged. Pick an option or write in the discussion.' : `Staged: ${summarize(staged)}.`
 }
 
 export const Footer = (props: Props) => {
@@ -63,7 +63,7 @@ export const Footer = (props: Props) => {
 							Finish
 						</Button>
 						<Button size='sm' loading={sending} disabled={!canSend || count === 0} onClick={() => onSend(false)}>
-							Send
+							{count > 0 ? `Send ${count}` : 'Send'}
 						</Button>
 					</>
 				)}

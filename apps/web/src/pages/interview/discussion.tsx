@@ -1,35 +1,53 @@
 import { Button } from '@thom/ui/button'
-import { stageThread, unstageThreadAt, type Question, type Staged, type StagedMap } from '_/core/domain/interview'
-
+import {
+	isExploring,
+	pendingActions,
+	stageThread,
+	unstageThreadAt,
+	type Question,
+	type Sent,
+	type Staged,
+	type StagedMap,
+} from '_/core/domain/interview'
 import { Field } from './field'
 
 type Props = {
 	readonly question: Question
 	readonly staged: Staged | undefined
+	readonly sent: Sent | undefined
 	readonly draft: string
 	readonly locked: boolean
 	readonly onDraft: (value: string) => void
 	readonly onStage: (change: (map: StagedMap) => StagedMap) => void
 }
 
+const time = (at: Date): string => at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
 const ExploreTable = ({ question }: { readonly question: Question }) => {
 	if (!question.explore) return null
 
 	return (
 		<section className='space-y-2'>
-			<h3 className='text-sm font-medium'>Explored</h3>
+			<h3 className='text-sm font-medium'>
+				Pros and cons <span className='text-dim font-normal'>{time(question.explore.at)}</span>
+			</h3>
 			<div className='border-border divide-border divide-y border'>
+				<div className='text-dim grid grid-cols-[2rem_1fr_1fr] gap-3 px-3 py-2 text-xs'>
+					<span />
+					<span>Pros</span>
+					<span>Cons</span>
+				</div>
 				{question.explore.rows.map(row => (
 					<div key={row.option} className='grid grid-cols-[2rem_1fr_1fr] gap-3 px-3 py-2 text-xs'>
-						<span className='text-dim'>{row.option}</span>
-						<ul className='space-y-1'>
+						<span className={row.option === question.rec.option ? 'text-foreground' : 'text-dim'}>{row.option}</span>
+						<ul className='list-disc space-y-1 pl-3'>
 							{row.pros.map(pro => (
-								<li key={pro}>+ {pro}</li>
+								<li key={pro}>{pro}</li>
 							))}
 						</ul>
-						<ul className='text-dim space-y-1'>
+						<ul className='text-dim list-disc space-y-1 pl-3'>
 							{row.cons.map(con => (
-								<li key={con}>- {con}</li>
+								<li key={con}>{con}</li>
 							))}
 						</ul>
 					</div>
@@ -39,7 +57,11 @@ const ExploreTable = ({ question }: { readonly question: Question }) => {
 	)
 }
 
-export const Discussion = ({ question, staged, draft, locked, onDraft, onStage }: Props) => {
+export const Discussion = ({ question, staged, sent, draft, locked, onDraft, onStage }: Props) => {
+	const sending = pendingActions(sent, question.id).filter(action => action.type === 'thread')
+	const exploring = isExploring(sent, question.id)
+	const empty = question.thread.length === 0 && sending.length === 0 && !staged?.thread.length
+
 	const stage = () => {
 		const text = draft.trim()
 
@@ -53,20 +75,33 @@ export const Discussion = ({ question, staged, draft, locked, onDraft, onStage }
 		<aside className='border-border flex flex-col gap-6 border-l pl-6' aria-label='Discussion'>
 			<ExploreTable question={question} />
 
+			{exploring && (
+				<p className='text-dim text-sm'>Exploring: the agent is writing a pros and cons table for this question.</p>
+			)}
+
 			<section className='space-y-3'>
 				<h3 className='text-sm font-medium'>
 					Thread <span className='text-dim font-normal'>({question.thread.length})</span>
 				</h3>
 
-				{question.thread.length === 0 && !staged?.thread.length && (
-					<p className='text-dim text-sm'>No messages on this question.</p>
+				{empty && (
+					<p className='text-dim text-sm'>Nothing yet. Ask anything about this question; the agent answers here.</p>
 				)}
 
 				<ul className='space-y-3'>
 					{question.thread.map((message, index) => (
 						<li key={`${message.at.getTime()}-${index}`} className='space-y-0.5'>
-							<p className='text-dim text-xs'>{message.who}</p>
+							<p className='text-dim text-xs'>
+								{message.who} {time(message.at)}
+							</p>
 							<p className='text-sm whitespace-pre-wrap'>{message.text}</p>
+						</li>
+					))}
+
+					{sending.map((action, index) => (
+						<li key={`sending-${index}`} className='space-y-0.5 opacity-70'>
+							<p className='text-dim text-xs'>you, sending</p>
+							<p className='text-sm whitespace-pre-wrap'>{action.type === 'thread' ? action.text : ''}</p>
 						</li>
 					))}
 
@@ -88,12 +123,14 @@ export const Discussion = ({ question, staged, draft, locked, onDraft, onStage }
 				</ul>
 			</section>
 
-			<div className='space-y-2'>
-				<Field value={draft} disabled={locked} placeholder='Message the agent about this question' onChange={onDraft} />
-				<Button size='sm' variant='outline' disabled={locked || !draft.trim()} onClick={stage}>
-					Stage message
-				</Button>
-			</div>
+			{!locked && (
+				<div className='space-y-2'>
+					<Field value={draft} disabled={false} placeholder={`Dig deeper on ${question.id}`} onChange={onDraft} />
+					<Button size='sm' variant='outline' disabled={!draft.trim()} onClick={stage}>
+						Add to discussion
+					</Button>
+				</div>
+			)}
 		</aside>
 	)
 }

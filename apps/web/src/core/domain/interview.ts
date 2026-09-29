@@ -226,3 +226,15 @@ export const isPending = (sent: Sent | undefined, handled: number): sent is Sent
 	sent !== undefined && sent.seq > handled
 
 export const isStuck = (since: Date, now: number): boolean => now - since.getTime() > STUCK_AFTER_MS
+
+export const unstageDecision = (map: StagedMap, q: string): StagedMap => {
+	const { answer: _answer, defer: _defer, reopen: _reopen, ...rest } = map[q] ?? empty
+
+	return withEntry(map, q, rest)
+}
+
+export const pendingActions = (sent: Sent | undefined, q: string): readonly SendAction[] =>
+	sent ? sent.actions.filter(action => 'q' in action && action.q === q) : []
+
+export const isExploring = (sent: Sent | undefined, q: string): boolean =>
+	pendingActions(sent, q).some(action => action.type === 'explore')

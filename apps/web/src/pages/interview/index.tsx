@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { Link, useParams } from '@tanstack/react-router'
 import { LoadError } from '_/components/load-error'
 import { RecordGone } from '_/components/record/record-gone'
@@ -92,6 +93,11 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 	const canSend = !locked && !session.sending && !working && !waitingOnAgent
 	const settled = questions.length - open
 
+	useHotkeys('mod+enter', () => void session.send(false), {
+		enableOnFormTags: true,
+		enabled: canSend && session.count > 0,
+	})
+
 	return (
 		<div className='flex flex-col gap-4'>
 			<header className='border-border flex items-center justify-between gap-4 border-b pb-4'>
@@ -115,7 +121,13 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 					>
 						Terms ({interview.terms.length})
 					</button>
-					<span>{locked ? 'finished' : agentStatus === 'working' ? 'agent working' : 'waiting for you'}</span>
+					<span>
+						{locked
+							? 'finished'
+							: agentStatus === 'working'
+								? `agent working since ${agentSince.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+								: `waiting for you${interview.handled > 0 ? `, handled #${interview.handled}` : ''}`}
+					</span>
 					<span>
 						{settled} of {questions.length} settled
 					</span>
@@ -147,6 +159,7 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 							key={selected.id}
 							question={selected}
 							staged={session.staged[selected.id]}
+							sent={session.pending}
 							draft={session.drafts[selected.id]?.text ?? ''}
 							locked={locked}
 							onDraft={value => session.setDraft(selected.id, 'text', value)}
@@ -163,6 +176,7 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 						key={selected.id}
 						question={selected}
 						staged={session.staged[selected.id]}
+						sent={session.pending}
 						draft={session.drafts[selected.id]?.thread ?? ''}
 						locked={locked}
 						onDraft={value => session.setDraft(selected.id, 'thread', value)}
@@ -175,7 +189,7 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 				staged={session.staged}
 				count={session.count}
 				canSend={canSend}
-				canFinish={!locked && open === 0 && questions.length > 0}
+				canFinish={canSend && open === 0 && questions.length > 0}
 				sending={session.sending}
 				pending={session.pending !== undefined}
 				working={working}
