@@ -20,7 +20,7 @@ func interviewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "interview",
 		Short:   "Run a grilling ticket as an interview answered on a folio page",
-		Aliases: []string{"grill"},
+		Aliases: []string{"grill", "wayfinder"},
 		Long: `Run a grilling ticket as an interview. Every command takes the ticket's id,
 or its slug with a project selected, and acts on its active interview.
 

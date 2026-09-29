@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -266,11 +267,10 @@ func TestInterviewFinishNeedsTheDoc(t *testing.T) {
 	}
 }
 
-func TestInterviewIsAliasedGrill(t *testing.T) {
-	for _, alias := range interviewCommand().Aliases {
-		if alias == "grill" {
-			return
+func TestInterviewAliases(t *testing.T) {
+	for _, want := range []string{"grill", "wayfinder"} {
+		if !slices.Contains(interviewCommand().Aliases, want) {
+			t.Errorf("folio interview is aliased folio %s", want)
 		}
 	}
-	t.Fatal("folio interview is aliased folio grill")
 }
