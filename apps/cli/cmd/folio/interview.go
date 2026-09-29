@@ -54,7 +54,7 @@ func interviewLink(folio *client.Client, ticket client.Ticket) (string, error) {
 	}
 	for _, d := range domains {
 		if d.ID == project.DomainID {
-			parts := []string{d.ClientSlug, d.Slug, project.Slug, "tickets", ticket.Slug, "interview"}
+			parts := []string{d.ClientSlug, d.Slug, project.Slug, "grilling", ticket.Slug}
 			for i, p := range parts {
 				parts[i] = url.PathEscape(p)
 			}
