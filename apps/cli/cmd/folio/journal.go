@@ -22,6 +22,9 @@ func bodyFrom(value string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if strings.TrimSpace(string(piped)) == "" {
+		return "", errors.New("stdin is empty: pipe the body in, or drop the flag")
+	}
 	return string(piped), nil
 }
 
