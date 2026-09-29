@@ -194,10 +194,80 @@ The wayfinder skill asks the tracker for these. In folio:
 | Resolve | `folio ticket resolve <id> "<one-line answer>" --detail -` with the reasoning on stdin |
 | Rule out of scope | `folio ticket resolve <id> "<why>" --cancel` |
 | Link an asset or research branch | `folio worklog write "<pointer>" --ticket <id>` |
+| Resolve a grilling ticket | `folio interview finish <id> "<one-line answer>" --doc -`, after the interview below |
 
 A decision cannot close without an answer, so `ticket resolve` is the only
 close. The answer is the gist the map lists; `--detail` becomes a resolution
 entry linked from the ticket and found by `folio search --kind decision`.
+
+## Interviews
+
+A grilling ticket (`--wayfinder grilling`) runs as an interview hosted in folio:
+the agent posts rounds from the CLI, the user answers on a page, and `finish`
+resolves the ticket. The method (frontier per round, durable gates, no filler)
+is /grilling and /domain-modeling; this section is the folio mechanics. Every
+verb takes the ticket's id, or its slug with a project selected, and acts on the
+ticket's active interview. `folio grill` is an alias.
+
+```bash
+folio interview start <ticket>    # first line is the page link; resumes an active interview
+folio interview show <ticket>     # topic, round, open questions, handled, agent status, link
+folio interview pending <ticket>  # Sends past handled, one JSON line each, never blocks
+folio interview patch <ticket>    # JSON on stdin: next round, answers, replies, handled
+folio interview finish <ticket> "<answer>" --doc -
+folio interview list <ticket>     # active and earlier interviews
+```
+
+### Turn loop
+
+The agent never waits on the CLI. Every round is also a chat turn.
+
+1. `start`, then `patch` round 1: one to three independent questions. Print the link and end the turn.
+2. The user answers on the page, presses Send, and tells you they are done in the chat.
+3. Run `pending`. If it prints `nothing sent since handled N`, say so and stop; never invent answers. Each line is the user's own input: act on it without asking to confirm.
+4. Send one `patch` carrying everything: the effect of every action, the next round, and `{"agent":{"handled":<last seq read>}}`. The page clears its "sent" state from `handled`, so never publish the round and `handled` in separate patches.
+
+To resume a session, run `show`, then `pending`, and apply all pending Sends in one turn with one patch whose `handled` is the last seq.
+
+### Handling a Send
+
+A Send is `{seq, at, actions[]}`. Apply each question's actions in this order:
+
+- `answer`: set `status: "answered"` and copy `answer` from the action (`kind` accept, option or text, with `option` or `text`).
+- `defer`: `status: "deferred"`. `reopen`: `status: "reopened"` and `answer: null`.
+- `explore`: set `explore.rows`, one row per option, 2 to 4 pros and 2 to 4 cons each, every item at most 200 characters.
+- `thread`: append `{"who":"user","text":...,"at":<the Send's at>}` and then your reply `{"who":"agent","text":...}`. A thread message never answers the question.
+- `finish`: see Finishing below, after the other actions.
+
+An answer that changes the recommendation of a question still open gets a new `rec` with `updated: true` on that question.
+
+```bash
+folio interview patch <ticket> <<'JSON'
+{"questions":[
+  {"id":"q1","status":"answered","answer":{"kind":"accept","option":"b"}},
+  {"id":"q4","round":2,"title":"Where do edges leave a node","body":"","deps":["q1"],
+   "options":[{"k":"a","text":"Bottom to top"},{"k":"b","text":"Left to right"}],
+   "rec":{"option":"a","why":"Reads like the frontier order."}}],
+ "terms":[{"term":"frontier","def":"decisions with no open blockers","avoid":["queue"]}],
+ "agent":{"handled":1}}
+JSON
+```
+
+Patch rules the server enforces:
+
+- `null` deletes a key. Questions merge by `id`, one level deep, each given field replaced whole. Terms merge by `term`. `thread` only appends.
+- A new question needs `round`, `title` and `rec`. `rec` is `{option, why}` when there are options and `{text, why}` when there are none. Options are absent or 2 to 4, lettered a to d.
+- A round holds at most 3 questions and an interview at most 200. `deps` name existing questions and cannot cycle.
+- Unknown keys are refused, and `agent` takes only `handled`. The server sets the agent to working when `pending` returns Sends and back to waiting on a patch that carries `handled`, and stamps times you omit.
+- `patch` prints one summary line, such as `round 3: 2 questions added, 1 answered, handled 7`, never the state.
+
+### Finishing
+
+`finish` is refused while any question is open, so the user defers what they will not answer. It can start from the page's Finish, which arrives as a `finish` action in a Send, or from the user saying finish in the chat.
+
+Before running it, show the user the proposed one-line answer and the locked decisions in the chat, and run `finish` only once they confirm. The server then writes the doc as the ticket's resolution entry, resolves and closes the ticket, and locks the page in one transaction. A finished interview is read-only; reopening the ticket starts a new one.
+
+The doc is self-contained: summary, Terms with their Avoid lists, Why, Locked decisions with the options rejected and why, Routine choices, Verified facts, Risks, Deferred, Open threads. It must stay under 500000 characters, so summarise routine choices instead of pasting threads. For each deferred question and open thread, ask whether it becomes a decision ticket on the map, fog in the map's Not yet specified, or stays in the doc only.
 
 ## Work logs
 
