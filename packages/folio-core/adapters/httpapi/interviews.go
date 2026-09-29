@@ -51,7 +51,11 @@ func (h *Handler) interviewURL(e *core.RequestEvent) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return pageURL(h.webURL, e.Request, path), nil
+	base := ""
+	if h.webURL != nil {
+		base = h.webURL()
+	}
+	return pageURL(base, e.Request, path), nil
 }
 
 func (h *Handler) interviewViewOf(e *core.RequestEvent, i domain.Interview) (interviewView, error) {

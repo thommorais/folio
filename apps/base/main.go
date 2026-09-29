@@ -44,7 +44,7 @@ func main() {
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		useCases := folio.New(e.App, nil)
 		deps := useCases.Deps()
-		deps.WebURL = os.Getenv("FOLIO_WEB_URL")
+		deps.WebURL = func() string { return e.App.Settings().Meta.AppURL }
 		httpapi.New(deps).Mount(e)
 
 		// Serve the built SPA when a directory is configured. Registered last
