@@ -10,11 +10,13 @@ type Props = {
 	readonly sending: boolean
 	readonly pending: boolean
 	readonly working: boolean
+	readonly locked: boolean
 	readonly error: string | undefined
 	readonly onSend: (finish: boolean) => void
 }
 
-const status = ({ count, staged, pending, working, error }: Props): string => {
+const status = ({ count, staged, pending, working, locked, error }: Props): string => {
+	if (locked) return 'This interview is finished.'
 	if (error) return error
 	if (pending) return 'Sent. Tell the agent to continue.'
 	if (working) return 'The agent is working. Send unlocks when it is waiting.'

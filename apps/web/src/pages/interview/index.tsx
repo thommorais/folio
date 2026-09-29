@@ -193,6 +193,7 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 				sending={session.sending}
 				pending={session.pending !== undefined}
 				working={working}
+				locked={locked}
 				error={session.error}
 				onSend={finish => void session.send(finish)}
 			/>
