@@ -69,7 +69,7 @@ func interviewStartCommand() *cobra.Command {
 		Use:   "start <ticket>",
 		Short: "Start the ticket's interview, or resume the active one, and print its link",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			folio, err := api()
 			if err != nil {
 				return err
@@ -86,7 +86,7 @@ func interviewStartCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderInterview(interview, link)
+			return renderInterviewWithGuide(cmd, args[0], interview, link)
 		},
 	}
 }
@@ -96,7 +96,7 @@ func interviewShowCommand() *cobra.Command {
 		Use:   "show <ticket>",
 		Short: "Print the active interview: round, open questions, handled, agent status, link",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			folio, err := api()
 			if err != nil {
 				return err
@@ -113,9 +113,21 @@ func interviewShowCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderInterview(interview, link)
+			return renderInterviewWithGuide(cmd, args[0], interview, link)
 		},
 	}
+}
+
+func renderInterviewWithGuide(cmd *cobra.Command, ref string, interview client.Interview, link string) error {
+	if err := renderInterview(interview, link); err != nil {
+		return err
+	}
+	state, err := guideState(interview, pendingUnknown, 0)
+	if err != nil {
+		return err
+	}
+	printGuide(cmd.ErrOrStderr(), ref, state)
+	return nil
 }
 
 func renderInterview(interview client.Interview, link string) error {
@@ -161,7 +173,7 @@ agent.handled past the Sends it answers.
   {"questions":[{"id":"q1","status":"answered","answer":{"kind":"accept","option":"b"}}],"agent":{"handled":3}}
   EOF`,
 		Args: cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			raw, err := io.ReadAll(os.Stdin)
 			if err != nil {
 				return err
@@ -190,6 +202,11 @@ agent.handled past the Sends it answers.
 				return encode(summary)
 			}
 			fmt.Printf("round %d: %d questions added, %d answered, handled %d\n", summary.Round, summary.Added, summary.Answered, summary.Handled)
+			state, err := guideState(summary.Interview, pendingUnknown, 0)
+			if err != nil {
+				return err
+			}
+			printGuide(cmd.ErrOrStderr(), args[0], state)
 			return nil
 		},
 	}
@@ -200,7 +217,7 @@ func interviewPendingCommand() *cobra.Command {
 		Use:   "pending <ticket>",
 		Short: "Print the Sends past handled, one JSON line each, without waiting",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			folio, err := api()
 			if err != nil {
 				return err
@@ -218,6 +235,7 @@ func interviewPendingCommand() *cobra.Command {
 			}
 			if len(pending.Sends) == 0 {
 				fmt.Printf("nothing sent since handled %d\n", pending.Handled)
+				printGuide(cmd.ErrOrStderr(), args[0], interviewState{Pending: pendingNone})
 				return nil
 			}
 			for _, send := range pending.Sends {
@@ -227,6 +245,7 @@ func interviewPendingCommand() *cobra.Command {
 				}
 				fmt.Println(string(line))
 			}
+			printGuide(cmd.ErrOrStderr(), args[0], interviewState{Pending: pendingSome, LastSeq: lastSeq(pending.Sends)})
 			return nil
 		},
 	}
@@ -290,7 +309,7 @@ answered or deferred first.
   ...
   EOF`,
 		Args: cobra.ExactArgs(2),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if doc == "" {
 				return errors.New("--doc is required: the design doc, - reads stdin")
 			}
@@ -315,6 +334,11 @@ answered or deferred first.
 				return encode(interview)
 			}
 			fmt.Printf("interview %s finished; ticket %s resolved: %s\n", interview.ID, ticket, args[1])
+			state, err := guideState(interview, pendingUnknown, 0)
+			if err != nil {
+				return err
+			}
+			printGuide(cmd.ErrOrStderr(), args[0], state)
 			return nil
 		},
 	}

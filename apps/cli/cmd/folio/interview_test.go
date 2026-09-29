@@ -68,6 +68,13 @@ func interviewServer(t *testing.T, pending string) (*[]rawRequest, string) {
 func runInterview(t *testing.T, stdin string, args ...string) (string, error) {
 	t.Helper()
 
+	out, _, err := runInterviewErr(t, stdin, args...)
+	return out, err
+}
+
+func runInterviewErr(t *testing.T, stdin string, args ...string) (string, string, error) {
+	t.Helper()
+
 	stdout, in := os.Stdout, os.Stdin
 	outR, outW, err := os.Pipe()
 	if err != nil {
@@ -82,8 +89,9 @@ func runInterview(t *testing.T, stdin string, args ...string) (string, error) {
 	os.Stdout, os.Stdin = outW, inR
 
 	cmd := interviewCommand()
+	var errOut strings.Builder
 	cmd.SetOut(io.Discard)
-	cmd.SetErr(io.Discard)
+	cmd.SetErr(&errOut)
 	cmd.SetArgs(args)
 	runErr := cmd.Execute()
 
@@ -92,7 +100,7 @@ func runInterview(t *testing.T, stdin string, args ...string) (string, error) {
 	printed, _ := io.ReadAll(outR)
 	_ = outR.Close()
 	_ = inR.Close()
-	return string(printed), runErr
+	return string(printed), errOut.String(), runErr
 }
 
 func paths(got []rawRequest) []string {
@@ -272,5 +280,53 @@ func TestInterviewAliases(t *testing.T) {
 		if !slices.Contains(interviewCommand().Aliases, want) {
 			t.Errorf("folio interview is aliased folio %s", want)
 		}
+	}
+}
+
+func TestInterviewGuidesOnStderrAndKeepsStdoutClean(t *testing.T) {
+	interviewServer(t, "")
+	out, guide, err := runInterviewErr(t, "", "start", "tk1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out, "next:") {
+		t.Errorf("stdout must stay parseable, got %q", out)
+	}
+	if !strings.Contains(guide, "next:") || !strings.Contains(guide, "folio interview pending tk1") {
+		t.Errorf("stderr guide = %q", guide)
+	}
+}
+
+func TestInterviewJSONPrintsNoGuide(t *testing.T) {
+	interviewServer(t, "")
+	flagJSON = true
+	_, guide, err := runInterviewErr(t, "", "show", "tk1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if guide != "" {
+		t.Errorf("--json prints no guide, got %q", guide)
+	}
+}
+
+func TestInterviewPendingGuideNamesTheLastSeq(t *testing.T) {
+	interviewServer(t, `{"handled":2,"sends":[{"seq":3,"at":"a","actions":[]},{"seq":5,"at":"b","actions":[]}]}`)
+	_, guide, err := runInterviewErr(t, "", "pending", "tk1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(guide, `"handled":5`) {
+		t.Errorf("guide = %q", guide)
+	}
+}
+
+func TestInterviewPendingGuideStopsWhenNothingWasSent(t *testing.T) {
+	interviewServer(t, `{"handled":2,"sends":[]}`)
+	_, guide, err := runInterviewErr(t, "", "pending", "tk1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(guide, "stop") {
+		t.Errorf("guide = %q", guide)
 	}
 }

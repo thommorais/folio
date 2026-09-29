@@ -39,10 +39,11 @@ func (i Interview) Questions() ([]InterviewQuestion, error) {
 }
 
 type InterviewPatchSummary struct {
-	Round    int `json:"round"`
-	Added    int `json:"added"`
-	Answered int `json:"answered"`
-	Handled  int `json:"handled"`
+	Interview Interview `json:"interview"`
+	Round     int       `json:"round"`
+	Added     int       `json:"added"`
+	Answered  int       `json:"answered"`
+	Handled   int       `json:"handled"`
 }
 
 type InterviewSend struct {
