@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 )
@@ -41,10 +42,23 @@ type apiError struct {
 }
 
 func (e apiError) Error() string {
-	if e.Message == "" {
-		return fmt.Sprintf("%d: request failed", e.status)
+	message := e.Message
+	if message == "" {
+		message = "request failed"
 	}
-	return fmt.Sprintf("%d: %s", e.status, e.Message)
+
+	fields := make([]string, 0, len(e.Data))
+	for name, detail := range e.Data {
+		if detail.Message != "" {
+			fields = append(fields, name+": "+detail.Message)
+		}
+	}
+	sort.Strings(fields)
+
+	if len(fields) == 0 {
+		return fmt.Sprintf("%d: %s", e.status, message)
+	}
+	return fmt.Sprintf("%d: %s (%s)", e.status, message, strings.Join(fields, "; "))
 }
 
 func IsNotFound(err error) bool {
