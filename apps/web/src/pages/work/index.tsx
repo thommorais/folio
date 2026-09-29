@@ -5,6 +5,7 @@ import { DEFAULT_ISSUE_STATUSES, ISSUE_KIND, type Issue } from '_/core/domain/is
 import { isTopLevel } from '_/core/domain/top-level';
 import { Status } from '_/lib/async-status';
 import { useScope } from '_/routing/use-scope';
+import { LastLog } from './last-log';
 import { Section, type WorkItem } from './section';
 import { WorkFilters } from './work-filters';
 
@@ -48,6 +49,8 @@ const Work = () => {
 	return (
 		<div className='space-y-4'>
 			<WorkFilters />
+
+			<LastLog scope={scope} />
 
 			<Section
 				title='Tickets'
