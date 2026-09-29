@@ -240,6 +240,14 @@ func Resolve(urlFlag, tokenFlag string) (Config, error) {
 	}
 	cfg.URL = normalized
 
+	if cfg.Token == "" {
+		if stored, err := load(); err == nil {
+			if storedURL, err := NormalizeURL(stored.URL); err == nil && storedURL == cfg.URL {
+				cfg.Token = stored.Token
+			}
+		}
+	}
+
 	return cfg, nil
 }
 

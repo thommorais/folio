@@ -291,3 +291,39 @@ func TestBindDoesNotTouchCredentials(t *testing.T) {
 		t.Errorf("Token = %q, want the cached token untouched", cfg.Token)
 	}
 }
+
+func TestResolveTakesTheCachedTokenForTheSameHost(t *testing.T) {
+	t.Setenv(EnvURL, "https://remote.example.com/")
+	t.Setenv(EnvToken, "")
+	t.Setenv(EnvHome, t.TempDir())
+
+	if err := Save("https://remote.example.com", "token-from-remote"); err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+
+	cfg, err := Resolve("", "")
+	if err != nil {
+		t.Fatalf("Resolve() error = %v", err)
+	}
+	if cfg.Token != "token-from-remote" {
+		t.Errorf("Token = %q, want the cached token for the same host", cfg.Token)
+	}
+}
+
+func TestResolveLeavesTheCachedTokenForAnotherHost(t *testing.T) {
+	t.Setenv(EnvURL, "https://other.example.com")
+	t.Setenv(EnvToken, "")
+	t.Setenv(EnvHome, t.TempDir())
+
+	if err := Save("https://remote.example.com", "token-from-remote"); err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+
+	cfg, err := Resolve("", "")
+	if err != nil {
+		t.Fatalf("Resolve() error = %v", err)
+	}
+	if cfg.Token != "" {
+		t.Errorf("Token = %q, want none: the cached token belongs to another host", cfg.Token)
+	}
+}
