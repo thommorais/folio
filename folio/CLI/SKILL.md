@@ -235,11 +235,11 @@ A Send is `{seq, at, actions[]}`. Apply each question's actions in this order:
 
 - `answer`: set `status: "answered"` and copy `answer` from the action (`kind` accept, option or text, with `option` or `text`).
 - `defer`: `status: "deferred"`. `reopen`: `status: "reopened"` and `answer: null`.
-- `explore`: set `explore.rows`, one row per option, 2 to 4 pros and 2 to 4 cons each, every item at most 200 characters.
+- `explore`: set `explore.rows`, one row per option as `{"option":"a","pros":[...],"cons":[...]}`, 2 to 4 pros and 2 to 4 cons each, every item at most 200 characters.
 - `thread`: append `{"who":"user","text":...,"at":<the Send's at>}` and then your reply `{"who":"agent","text":...}`. A thread message never answers the question.
 - `finish`: see Finishing below, after the other actions.
 
-An answer that changes the recommendation of a question still open gets a new `rec` with `updated: true` on that question.
+An answer that changes the recommendation of a question still open gets a new `rec` and `"updated":true`, both fields of that question: `{"id":"q3","updated":true,"rec":{"option":"a","why":"..."}}`.
 
 ```bash
 folio interview patch <ticket> <<'JSON'
