@@ -24,3 +24,15 @@ export const markFor = (question: Question, staged: Staged | undefined, sent: Se
 
 	return { label: isOpen(question) ? 'open' : question.status, tone: 'plain' }
 }
+
+export const answerText = (question: Question): string => {
+	const { answer } = question
+
+	if (!answer) return ''
+	if (answer.kind === 'text') return answer.text ?? ''
+
+	const key = answer.kind === 'accept' ? question.rec.option : answer.option
+	const option = question.options.find(candidate => candidate.k === key)
+
+	return option ? `${option.k}. ${option.text}` : (key ?? '')
+}

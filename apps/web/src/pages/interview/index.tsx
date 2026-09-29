@@ -17,7 +17,7 @@ type Params = { readonly client: string; readonly domain: string; readonly slug:
 
 const InterviewPage = () => {
 	const { client, domain, slug, ticket } = useParams({
-		from: '/_authenticated/$client/$domain/$slug/tickets/$ticket_/interview',
+		from: '/_authenticated/$client/$domain/$slug/grilling/$ticket',
 	}) satisfies Params
 
 	const issue = useIssue(slug, ticket)
@@ -93,7 +93,7 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 	const settled = questions.length - open
 
 	return (
-		<div className='grid h-[calc(100dvh-70px-4rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-4'>
+		<div className='flex flex-col gap-4'>
 			<header className='border-border flex items-center justify-between gap-4 border-b pb-4'>
 				<div className='min-w-0'>
 					<Link
@@ -122,7 +122,7 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 				</div>
 			</header>
 
-			<div className='grid min-h-0 grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,2fr)_minmax(0,1fr)]'>
+			<div className='grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,2fr)_minmax(0,1fr)]'>
 				<Nav
 					questions={questions}
 					selected={selected?.id}
@@ -131,7 +131,7 @@ const Room = ({ interview, client, domain, slug, ticketSlug }: RoomProps) => {
 					onSelect={setChosen}
 				/>
 
-				<div className='min-h-0 space-y-6 overflow-y-auto'>
+				<div className='space-y-6'>
 					{locked && (
 						<p className='border-border mx-6 border px-4 py-3 text-sm'>
 							Finished {finishedAt.toLocaleString()}. The interview is closed.

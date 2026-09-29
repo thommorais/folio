@@ -27,7 +27,7 @@ export const Footer = (props: Props) => {
 	const [confirming, setConfirming] = useState(false)
 
 	return (
-		<footer className='border-border flex items-center justify-between gap-4 border-t pt-4'>
+		<footer className='border-border bg-background sticky bottom-0 flex items-center justify-between gap-4 border-t py-4'>
 			<p className={error ? 'text-destructive text-sm' : 'text-dim text-sm'} role='status'>
 				{status(props)}
 			</p>

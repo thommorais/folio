@@ -72,7 +72,13 @@ const sentSchema = z.object({ seq: z.number(), at: z.string(), actions: z.array(
 
 const epoch = new Date(0)
 
-const message = (error: unknown): string => (error instanceof Error ? error.message : 'Unknown error')
+const message = (error: unknown): string => {
+	const served = (error as { response?: { message?: unknown } } | null)?.response?.message
+
+	if (typeof served === 'string' && served) return served
+
+	return error instanceof Error ? error.message : 'Unknown error'
+}
 
 const toMessage = (wire: z.infer<typeof messageSchema>, fallback: Date): Message => ({
 	who: wire.who,

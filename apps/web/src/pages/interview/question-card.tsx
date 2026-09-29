@@ -12,7 +12,7 @@ import {
 	type StagedMap,
 } from '_/core/domain/interview'
 import { Field } from './field'
-import { answerLabel } from './marks'
+import { answerText } from './marks'
 
 type Props = {
 	readonly question: Question
@@ -47,7 +47,11 @@ export const QuestionCard = ({ question, staged, draft, locked, onDraft, onStage
 		}
 
 		onStage(map =>
-			stageAnswer(map, question.id, key === question.rec.option ? { kind: 'accept' } : { kind: 'option', option: key }),
+			stageAnswer(
+				map,
+				question.id,
+				key === question.rec.option ? { kind: 'accept', option: key } : { kind: 'option', option: key },
+			),
 		)
 	}
 
@@ -60,7 +64,7 @@ export const QuestionCard = ({ question, staged, draft, locked, onDraft, onStage
 	}
 
 	return (
-		<article className='min-h-0 space-y-6 overflow-y-auto px-6'>
+		<article className='space-y-6 px-6'>
 			<header className='space-y-2'>
 				<p className='text-dim flex flex-wrap items-center gap-x-3 text-xs'>
 					<span>{question.id}</span>
@@ -92,7 +96,7 @@ export const QuestionCard = ({ question, staged, draft, locked, onDraft, onStage
 				<p className='border-border border px-4 py-3 text-sm'>
 					<span className='text-dim text-xs'>Answer</span>
 					<br />
-					{question.answer.kind === 'text' ? question.answer.text : answerLabel(question)}
+					{answerText(question)}
 				</p>
 			)}
 
@@ -131,7 +135,7 @@ export const QuestionCard = ({ question, staged, draft, locked, onDraft, onStage
 							size='sm'
 							variant='outline'
 							disabled={locked || !open}
-							onClick={() => onStage(map => stageAnswer(map, question.id, { kind: 'accept' }))}
+							onClick={() => onStage(map => stageAnswer(map, question.id, { kind: 'text', text: question.rec.text }))}
 						>
 							Accept
 						</Button>

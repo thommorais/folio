@@ -50,7 +50,7 @@ export const Discussion = ({ question, staged, draft, locked, onDraft, onStage }
 	}
 
 	return (
-		<aside className='border-border flex min-h-0 flex-col gap-6 overflow-y-auto border-l pl-6' aria-label='Discussion'>
+		<aside className='border-border flex flex-col gap-6 border-l pl-6' aria-label='Discussion'>
 			<ExploreTable question={question} />
 
 			<section className='space-y-3'>
