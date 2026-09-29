@@ -111,7 +111,7 @@ func TestInterviewRunsOverTheAPI(t *testing.T) {
 	if started.IssueID != ticket.ID || started.Topic != "Tree or graph" || started.AgentStatus != "waiting" || started.State.Terms == nil {
 		t.Fatalf("started = %+v", started)
 	}
-	if want := "http://example.com/acme/web/redesign/tickets/" + ticket.Slug + "/interview"; started.URL != want {
+	if want := "http://example.com/acme/web/redesign/interview/" + ticket.Slug; started.URL != want {
 		t.Fatalf("url = %q, want %q", started.URL, want)
 	}
 	var resumed interview

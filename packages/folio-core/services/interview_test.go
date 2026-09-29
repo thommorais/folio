@@ -198,7 +198,7 @@ func TestPagePathNamesTheTicketByItsSlugs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := "/acme/web/api/tickets/" + ticket.Slug + "/interview"; got != want {
+	if want := "/acme/web/api/interview/" + ticket.Slug; got != want {
 		t.Fatalf("path = %q, want %q", got, want)
 	}
 }

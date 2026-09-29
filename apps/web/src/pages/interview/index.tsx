@@ -18,7 +18,7 @@ type Params = { readonly client: string; readonly domain: string; readonly slug:
 
 const InterviewPage = () => {
 	const { client, domain, slug, ticket } = useParams({
-		from: '/_authenticated/$client/$domain/$slug_/tickets/$ticket/interview',
+		from: '/_authenticated/$client/$domain/$slug_/interview/$ticket',
 	}) satisfies Params
 
 	const issue = useIssue(slug, ticket)

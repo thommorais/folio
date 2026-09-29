@@ -164,7 +164,7 @@ func (s *InterviewService) PagePath(ctx context.Context, actor ports.Actor, id d
 	if err != nil {
 		return "", err
 	}
-	parts := []string{dom.ClientSlug, dom.Slug, project.Slug, "tickets", ticket.Slug, "interview"}
+	parts := []string{dom.ClientSlug, dom.Slug, project.Slug, "interview", ticket.Slug}
 	for i, part := range parts {
 		parts[i] = url.PathEscape(part)
 	}

@@ -19,7 +19,7 @@ type rawRequest struct {
 	body   string
 }
 
-const interviewJSON = `{"id":"iv1","project_id":"pr1","issue_id":"tk1","topic":"Tree or graph","agent_status":"waiting","handled":2,"url":"https://folio.example/journ/shed/geral/tickets/tree-or-graph/interview",
+const interviewJSON = `{"id":"iv1","project_id":"pr1","issue_id":"tk1","topic":"Tree or graph","agent_status":"waiting","handled":2,"url":"https://folio.example/journ/shed/geral/interview/tree-or-graph",
 "state":{"terms":[],"questions":[
 	{"id":"q1","round":1,"title":"Tree or graph","status":"answered","deps":[],"options":[],"rec":{"why":"x"},"thread":[]},
 	{"id":"q2","round":2,"title":"What do we call it","status":"open","deps":[],"options":[],"rec":{"why":"x"},"thread":[]},
@@ -121,7 +121,7 @@ func TestInterviewStartPrintsTheAPIsLinkFirst(t *testing.T) {
 	}
 
 	lines := strings.Split(strings.TrimSpace(out), "\n")
-	if want := "https://folio.example/journ/shed/geral/tickets/tree-or-graph/interview"; lines[0] != want {
+	if want := "https://folio.example/journ/shed/geral/interview/tree-or-graph"; lines[0] != want {
 		t.Fatalf("first line = %q, want %q", lines[0], want)
 	}
 	if !strings.Contains(out, "Tree or graph") {
@@ -245,7 +245,7 @@ func TestInterviewShowListsTheOpenQuestions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"Tree or graph", "round 2", "handled 2", "waiting", "q2", "What do we call it", "q3", "Who answers", "https://folio.example/journ/shed/geral/tickets/tree-or-graph/interview"} {
+	for _, want := range []string{"Tree or graph", "round 2", "handled 2", "waiting", "q2", "What do we call it", "q3", "Who answers", "https://folio.example/journ/shed/geral/interview/tree-or-graph"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("show is missing %q:\n%s", want, out)
 		}
