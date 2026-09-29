@@ -215,6 +215,13 @@ func (s *InterviewService) FinishInterview(ctx context.Context, actor ports.Acto
 		return domain.Interview{}, err
 	}
 
+	sent, err := s.repo.EventsAfter(ctx, interview.ID, interview.Handled)
+	if err != nil {
+		return domain.Interview{}, err
+	}
+	if len(sent) > 0 {
+		interview.Handled = sent[len(sent)-1].Seq
+	}
 	interview.FinishedAt = &now
 	interview.AgentStatus = domain.AgentWaiting
 	interview.AgentSince = now

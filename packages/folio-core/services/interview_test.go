@@ -161,3 +161,30 @@ func TestFinishResolvesTheTicket(t *testing.T) {
 		t.Fatalf("the finished interview stays listed, got %+v", list)
 	}
 }
+
+func TestFinishMarksTheFinishSendHandled(t *testing.T) {
+	f := newTicketFixture(t)
+	ctx := t.Context()
+	ticket := f.grilling(t, "Tree or graph")
+	if _, _, err := f.interviewSvc.StartInterview(ctx, f.owner, ticket.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.interviewSvc.PatchInterview(ctx, f.owner, ticket.ID, []byte(firstRound)); err != nil {
+		t.Fatal(err)
+	}
+	settle := `{"questions":[{"id":"q1","status":"answered","answer":{"kind":"accept","option":"b"}},{"id":"q2","status":"deferred"}]}`
+	if _, err := f.interviewSvc.PatchInterview(ctx, f.owner, ticket.ID, []byte(settle)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.interviewSvc.SendToInterview(ctx, f.owner, ticket.ID, []domain.SendAction{{Type: domain.SendFinish}}); err != nil {
+		t.Fatal(err)
+	}
+
+	finished, err := f.interviewSvc.FinishInterview(ctx, f.owner, ticket.ID, "A graph.", "# Doc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if finished.Handled != 1 {
+		t.Fatalf("handled = %d, want 1: the finish Send is consumed by finishing", finished.Handled)
+	}
+}
