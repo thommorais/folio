@@ -364,9 +364,11 @@ func renderLogDetail(entry client.JournalEntry) error {
 	fmt.Println(strings.Repeat("=", len(entry.Title)))
 	fmt.Printf("slug: %s\n", entry.Slug)
 
-	for label, value := range map[string]string{"branch": entry.Branch, "pr": entry.PR, "external ref": entry.ExternalRef} {
-		if value != "" {
-			fmt.Printf("%s: %s\n", label, value)
+	for _, field := range []struct{ label, value string }{
+		{"branch", entry.Branch}, {"pr", entry.PR}, {"external ref", entry.ExternalRef},
+	} {
+		if field.value != "" {
+			fmt.Printf("%s: %s\n", field.label, field.value)
 		}
 	}
 	if len(entry.Tags) > 0 {

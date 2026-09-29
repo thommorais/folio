@@ -518,12 +518,12 @@ func renderTicketDetail(ticket client.Ticket) error {
 		fmt.Printf("cycle %d: %s\n", ticket.Cycle, ticket.Phase)
 	}
 
-	for label, value := range map[string]string{
-		"assignee": ticket.Assignee, "external ref": ticket.ExternalRef,
-		"parent": ticket.ParentID, "wayfinder": ticket.Wayfinder,
+	for _, field := range []struct{ label, value string }{
+		{"assignee", ticket.Assignee}, {"external ref", ticket.ExternalRef},
+		{"parent", ticket.ParentID}, {"wayfinder", ticket.Wayfinder},
 	} {
-		if value != "" {
-			fmt.Printf("%s: %s\n", label, value)
+		if field.value != "" {
+			fmt.Printf("%s: %s\n", field.label, field.value)
 		}
 	}
 	if len(ticket.DependsOn) > 0 {
