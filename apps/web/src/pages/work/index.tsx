@@ -5,6 +5,7 @@ import { cn } from '@thom/libs/cn';
 import { IssueLine } from '_/components/issue/issue-line';
 import { Tags } from '_/components/issue/tag';
 import { DEFAULT_ISSUE_STATUSES, ISSUE_KIND, type Issue } from '_/core/domain/issue';
+import { isTopLevel } from '_/core/domain/top-level';
 import { DEFAULT_PLAN_STATUSES, isTerminal as isPlanTerminal, type Plan } from '_/core/domain/plan';
 import { Status } from '_/lib/async-status';
 import { PLAN_STATUS_LABELS } from '_/pages/plans/status-labels';
@@ -89,6 +90,9 @@ const Work = () => {
 		sort: search.sort,
 	})
 
+	const topLevel = (issues: readonly Issue[]): readonly Issue[] =>
+		search.ticket === undefined ? issues.filter(isTopLevel) : issues
+
 	const plans = usePlans(slug, {
 		search: term,
 		status: search.planStatuses ?? DEFAULT_PLAN_STATUSES,
@@ -105,7 +109,7 @@ const Work = () => {
 				{shows('tickets') && (
 					<Section
 						title='Tickets'
-						items={tickets.status === Status.Ready ? tickets.issues.map(issue => issueItem(scope, issue)) : undefined}
+						items={tickets.status === Status.Ready ? topLevel(tickets.issues).map(issue => issueItem(scope, issue)) : undefined}
 						message={tickets.status === Status.Failed ? tickets.message : undefined}
 						emptyLabel='tickets'
 						command={`folio ticket create "<title>" -p ${slug}`}
@@ -131,7 +135,7 @@ const Work = () => {
 				{shows('todos') && (
 					<Section
 						title='Todos'
-						items={todos.status === Status.Ready ? todos.issues.map(todo => todoItem(scope, todo)) : undefined}
+						items={todos.status === Status.Ready ? topLevel(todos.issues).map(todo => todoItem(scope, todo)) : undefined}
 						message={todos.status === Status.Failed ? todos.message : undefined}
 						emptyLabel='todos'
 						command={`folio todo create "<title>" -p ${slug}`}
