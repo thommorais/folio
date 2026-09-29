@@ -288,8 +288,8 @@ func ticketUpdateCommand() *cobra.Command {
 	var parent, wayfinder, dependsOn string
 
 	cmd := &cobra.Command{
-		Use:   "update <id>",
-		Short: "Update a ticket, leaving unset fields alone",
+		Use:   "update <id-or-slug>",
+		Short: "Update a ticket, leaving unset fields alone; a slug needs --project",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			text, err := bodyFrom(body)
@@ -326,7 +326,9 @@ func ticketUpdateCommand() *cobra.Command {
 				return err
 			}
 
-			ticket, err := folio.UpdateTicket(args[0], in)
+			ticket, err := onTicket(folio, args[0], func(id string) (client.Ticket, error) {
+				return folio.UpdateTicket(id, in)
+			})
 			if err != nil {
 				return err
 			}
@@ -411,7 +413,7 @@ out of scope instead of marking it done.
 
 func ticketFrontierCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "frontier <id>",
+		Use:   "frontier <id-or-slug>",
 		Short: "List a map's takeable children: open, unblocked and unassigned",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -419,7 +421,7 @@ func ticketFrontierCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			tickets, err := folio.TicketFrontier(args[0])
+			tickets, err := onTicket(folio, args[0], folio.TicketFrontier)
 			if err != nil {
 				return err
 			}
@@ -458,8 +460,8 @@ func setList(dst **[]string, value string) {
 
 func ticketDeleteCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete <id>",
-		Short: "Delete a ticket, detaching its plans, todos, journal and docs",
+		Use:   "delete <id-or-slug>",
+		Short: "Delete a ticket, detaching its plans, todos, journal and docs; a slug needs --project",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			folio, err := api()
@@ -467,7 +469,10 @@ func ticketDeleteCommand() *cobra.Command {
 				return err
 			}
 
-			if err := folio.DeleteTicket(args[0]); err != nil {
+			_, err = onTicket(folio, args[0], func(id string) (struct{}, error) {
+				return struct{}{}, folio.DeleteTicket(id)
+			})
+			if err != nil {
 				return err
 			}
 			if !flagJSON {

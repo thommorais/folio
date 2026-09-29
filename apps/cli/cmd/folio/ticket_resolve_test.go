@@ -263,3 +263,82 @@ func TestBriefShowsTheCurrentPlan(t *testing.T) {
 		}
 	}
 }
+
+func slugServer(t *testing.T) *[]request {
+	t.Helper()
+
+	var got []request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = append(got, request{method: r.Method, path: r.URL.Path})
+
+		switch {
+		case r.URL.Path == "/api/folio/projects/pr1/issues/tree-or-graph":
+			_, _ = w.Write([]byte(`{"id":"tk1","project_id":"pr1","kind":"ticket","title":"Tree or graph","status":"open","tags":[],"depends_on":[]}`))
+		case strings.Contains(r.URL.Path, "tree-or-graph"):
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"message":"Not found."}`))
+		default:
+			_, _ = w.Write([]byte(`{"id":"tk1","project_id":"pr1","kind":"ticket","title":"Tree or graph","status":"done","tags":[],"depends_on":[]}`))
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	t.Setenv("FOLIO_URL", server.URL)
+	t.Setenv("FOLIO_TOKEN", "tok")
+	t.Setenv("FOLIO_PROJECT", "")
+
+	return &got
+}
+
+func TestTicketVerbsFallBackToTheSlugOnA404(t *testing.T) {
+	cases := []struct {
+		name   string
+		args   []string
+		method string
+		path   string
+	}{
+		{"update", []string{"update", "tree-or-graph", "--status", "done"}, http.MethodPatch, "/api/folio/issues/tk1"},
+		{"delete", []string{"delete", "tree-or-graph"}, http.MethodDelete, "/api/folio/issues/tk1"},
+		{"frontier", []string{"frontier", "tree-or-graph"}, http.MethodGet, "/api/folio/issues/tk1/frontier"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := slugServer(t)
+
+			if err := runTicket(t, "", append(tc.args, "-p", "pr1")...); err != nil {
+				t.Fatal(err)
+			}
+
+			if len(*got) != 3 {
+				t.Fatalf("requests = %+v, want the id attempt, the slug lookup, then the call", *got)
+			}
+			if lookup := (*got)[1]; lookup.path != "/api/folio/projects/pr1/issues/tree-or-graph" {
+				t.Errorf("lookup path = %q", lookup.path)
+			}
+			if call := (*got)[2]; call.method != tc.method || call.path != tc.path {
+				t.Errorf("call = %s %s, want %s %s", call.method, call.path, tc.method, tc.path)
+			}
+		})
+	}
+}
+
+func TestTicketUpdateKeepsTheOriginal404WhenTheSlugIsUnknownToo(t *testing.T) {
+	slugServer(t)
+
+	err := runTicket(t, "", "update", "tree-or-graphs", "--status", "done", "-p", "pr1")
+	if err == nil || !strings.Contains(err.Error(), "404") {
+		t.Fatalf("error = %v, want a 404", err)
+	}
+}
+
+func TestTicketUpdateWithoutAProjectSendsTheIDStraightThrough(t *testing.T) {
+	got := resolveServer(t)
+
+	if err := runTicket(t, "", "update", "tk1", "--status", "done"); err != nil {
+		t.Fatal(err)
+	}
+	if len(*got) != 1 || (*got)[0].path != "/api/folio/issues/tk1" {
+		t.Errorf("requests = %+v, want one PATCH with no lookup", *got)
+	}
+}

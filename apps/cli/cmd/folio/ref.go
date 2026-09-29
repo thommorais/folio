@@ -38,3 +38,20 @@ func resolveMe(folio *client.Client, assignee *string) error {
 	*assignee = id
 	return nil
 }
+
+// onTicket tries the reference as an id first, so an id costs one call, and
+// resolves it as a slug only when that 404s and a project is selected. The 404
+// of a write has no side effect, so the retry is safe.
+func onTicket[T any](folio *client.Client, ref string, call func(id string) (T, error)) (T, error) {
+	result, err := call(ref)
+	project := config.Project(flagProject)
+	if project == "" || !client.IsNotFound(err) {
+		return result, err
+	}
+
+	ticket, lookupErr := folio.GetTicketBySlug(project, ref)
+	if lookupErr != nil {
+		return result, err
+	}
+	return call(ticket.ID)
+}
