@@ -45,9 +45,8 @@ func issueRef(ticket, todo string) (string, error) {
 
 func journalCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "journal",
-		Short:   "Write and read journal entries",
-		Aliases: []string{"log", "logs"},
+		Use:   "journal",
+		Short: "Write and read journal entries",
 	}
 
 	cmd.PersistentFlags().StringVarP(&flagProject, "project", "p", "", "project id or slug")
