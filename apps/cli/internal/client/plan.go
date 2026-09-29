@@ -16,7 +16,7 @@ type Progress struct {
 type Plan struct {
 	ID        string   `json:"id"`
 	ProjectID string   `json:"project_id"`
-	TicketID  string   `json:"ticket_id,omitempty"`
+	TicketID  string   `json:"issue_id,omitempty"`
 	Title     string   `json:"title"`
 	Goal      string   `json:"goal,omitempty"`
 	Status    string   `json:"status"`
@@ -27,7 +27,7 @@ type Plan struct {
 }
 
 type PlanInput struct {
-	TicketID *string   `json:"ticket_id,omitempty"`
+	TicketID *string   `json:"issue_id,omitempty"`
 	Title    *string   `json:"title,omitempty"`
 	Goal     *string   `json:"goal,omitempty"`
 	Status   *string   `json:"status,omitempty"`
@@ -43,9 +43,6 @@ type PlanFilter struct {
 
 func (f PlanFilter) query() string {
 	params := url.Values{}
-	if f.TicketID != "" {
-		params.Set("ticket_id", f.TicketID)
-	}
 	if len(f.Status) > 0 {
 		params.Set("status", strings.Join(f.Status, ","))
 	}
@@ -68,7 +65,17 @@ func (c *Client) ListPlans(project string, filter PlanFilter) ([]Plan, error) {
 	if err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/plans"+filter.query(), nil, &body); err != nil {
 		return nil, err
 	}
-	return body.Plans, nil
+	if filter.TicketID == "" {
+		return body.Plans, nil
+	}
+
+	matching := make([]Plan, 0, len(body.Plans))
+	for _, plan := range body.Plans {
+		if plan.TicketID == filter.TicketID {
+			matching = append(matching, plan)
+		}
+	}
+	return matching, nil
 }
 
 func (c *Client) GetPlan(id string) (Plan, error) {
