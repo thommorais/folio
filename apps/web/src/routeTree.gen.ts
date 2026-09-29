@@ -30,7 +30,7 @@ import { Route as AuthenticatedClientDomainSlugTicketsIndexRouteImport } from '.
 import { Route as AuthenticatedClientDomainSlugTicketsTicketRouteImport } from './routes/_authenticated/$client/$domain/$slug/tickets/$ticket'
 import { Route as AuthenticatedClientDomainSlugTodosIndexRouteImport } from './routes/_authenticated/$client/$domain/$slug/todos/index'
 import { Route as AuthenticatedClientDomainSlugTodosTodoRouteImport } from './routes/_authenticated/$client/$domain/$slug/todos/$todo'
-import { Route as AuthenticatedClientDomainSlugTicketsTicketInterviewRouteImport } from './routes/_authenticated/$client/$domain/$slug/tickets/$ticket_.interview'
+import { Route as AuthenticatedClientDomainSlugTicketsTicketInterviewRouteImport } from './routes/_authenticated/$client/$domain/$slug_.tickets.$ticket.interview'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -154,9 +154,9 @@ const AuthenticatedClientDomainSlugTodosTodoRoute =
   } as any)
 const AuthenticatedClientDomainSlugTicketsTicketInterviewRoute =
   AuthenticatedClientDomainSlugTicketsTicketInterviewRouteImport.update({
-    id: '/tickets/$ticket_/interview',
-    path: '/tickets/$ticket/interview',
-    getParentRoute: () => AuthenticatedClientDomainSlugRoute,
+    id: '/$slug_/tickets/$ticket/interview',
+    path: '/$slug/tickets/$ticket/interview',
+    getParentRoute: () => AuthenticatedClientDomainRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -225,7 +225,7 @@ export interface FileRoutesById {
   '/_authenticated/$client/$domain/$slug/plans/': typeof AuthenticatedClientDomainSlugPlansIndexRoute
   '/_authenticated/$client/$domain/$slug/tickets/': typeof AuthenticatedClientDomainSlugTicketsIndexRoute
   '/_authenticated/$client/$domain/$slug/todos/': typeof AuthenticatedClientDomainSlugTodosIndexRoute
-  '/_authenticated/$client/$domain/$slug/tickets/$ticket_/interview': typeof AuthenticatedClientDomainSlugTicketsTicketInterviewRoute
+  '/_authenticated/$client/$domain/$slug_/tickets/$ticket/interview': typeof AuthenticatedClientDomainSlugTicketsTicketInterviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -294,7 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/$client/$domain/$slug/plans/'
     | '/_authenticated/$client/$domain/$slug/tickets/'
     | '/_authenticated/$client/$domain/$slug/todos/'
-    | '/_authenticated/$client/$domain/$slug/tickets/$ticket_/interview'
+    | '/_authenticated/$client/$domain/$slug_/tickets/$ticket/interview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -452,12 +452,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientDomainSlugTodosTodoRouteImport
       parentRoute: typeof AuthenticatedClientDomainSlugRoute
     }
-    '/_authenticated/$client/$domain/$slug/tickets/$ticket_/interview': {
-      id: '/_authenticated/$client/$domain/$slug/tickets/$ticket_/interview'
-      path: '/tickets/$ticket/interview'
+    '/_authenticated/$client/$domain/$slug_/tickets/$ticket/interview': {
+      id: '/_authenticated/$client/$domain/$slug_/tickets/$ticket/interview'
+      path: '/$slug/tickets/$ticket/interview'
       fullPath: '/$client/$domain/$slug/tickets/$ticket/interview'
       preLoaderRoute: typeof AuthenticatedClientDomainSlugTicketsTicketInterviewRouteImport
-      parentRoute: typeof AuthenticatedClientDomainSlugRoute
+      parentRoute: typeof AuthenticatedClientDomainRoute
     }
   }
 }
@@ -473,7 +473,6 @@ interface AuthenticatedClientDomainSlugRouteChildren {
   AuthenticatedClientDomainSlugPlansIndexRoute: typeof AuthenticatedClientDomainSlugPlansIndexRoute
   AuthenticatedClientDomainSlugTicketsIndexRoute: typeof AuthenticatedClientDomainSlugTicketsIndexRoute
   AuthenticatedClientDomainSlugTodosIndexRoute: typeof AuthenticatedClientDomainSlugTodosIndexRoute
-  AuthenticatedClientDomainSlugTicketsTicketInterviewRoute: typeof AuthenticatedClientDomainSlugTicketsTicketInterviewRoute
 }
 
 const AuthenticatedClientDomainSlugRouteChildren: AuthenticatedClientDomainSlugRouteChildren =
@@ -498,8 +497,6 @@ const AuthenticatedClientDomainSlugRouteChildren: AuthenticatedClientDomainSlugR
       AuthenticatedClientDomainSlugTicketsIndexRoute,
     AuthenticatedClientDomainSlugTodosIndexRoute:
       AuthenticatedClientDomainSlugTodosIndexRoute,
-    AuthenticatedClientDomainSlugTicketsTicketInterviewRoute:
-      AuthenticatedClientDomainSlugTicketsTicketInterviewRoute,
   }
 
 const AuthenticatedClientDomainSlugRouteWithChildren =
@@ -510,6 +507,7 @@ const AuthenticatedClientDomainSlugRouteWithChildren =
 interface AuthenticatedClientDomainRouteChildren {
   AuthenticatedClientDomainSlugRoute: typeof AuthenticatedClientDomainSlugRouteWithChildren
   AuthenticatedClientDomainIndexRoute: typeof AuthenticatedClientDomainIndexRoute
+  AuthenticatedClientDomainSlugTicketsTicketInterviewRoute: typeof AuthenticatedClientDomainSlugTicketsTicketInterviewRoute
 }
 
 const AuthenticatedClientDomainRouteChildren: AuthenticatedClientDomainRouteChildren =
@@ -517,6 +515,8 @@ const AuthenticatedClientDomainRouteChildren: AuthenticatedClientDomainRouteChil
     AuthenticatedClientDomainSlugRoute:
       AuthenticatedClientDomainSlugRouteWithChildren,
     AuthenticatedClientDomainIndexRoute: AuthenticatedClientDomainIndexRoute,
+    AuthenticatedClientDomainSlugTicketsTicketInterviewRoute:
+      AuthenticatedClientDomainSlugTicketsTicketInterviewRoute,
   }
 
 const AuthenticatedClientDomainRouteWithChildren =
