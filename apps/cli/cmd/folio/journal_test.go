@@ -227,3 +227,28 @@ func TestJournalIssueFlagsShareOneField(t *testing.T) {
 		}
 	})
 }
+
+func TestJournalGetFallsBackToTheIDWithAProjectSelected(t *testing.T) {
+	var paths []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		if r.URL.Path == "/api/folio/projects/p1/entries/l1" {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"message":"Not found."}`))
+			return
+		}
+		_, _ = w.Write([]byte(writtenEntry))
+	}))
+	t.Cleanup(server.Close)
+
+	t.Setenv("FOLIO_URL", server.URL)
+	t.Setenv("FOLIO_TOKEN", "tok")
+	t.Setenv("FOLIO_PROJECT", "p1")
+
+	if _, err := runJournal(t, "get", "l1"); err != nil {
+		t.Fatalf("get error = %v, want the id to resolve", err)
+	}
+	if len(paths) != 2 || paths[1] != "/api/folio/entries/l1" {
+		t.Errorf("paths = %v, want the slug route then the id route", paths)
+	}
+}

@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"folio/cli/internal/client"
-	"folio/cli/internal/config"
 	"folio/cli/internal/git"
 )
 
@@ -123,16 +122,7 @@ func journalGetCommand() *cobra.Command {
 				return err
 			}
 
-			// A slug is unique only within a project, so a slug needs the
-			// project route; ids resolve without one.
-			get := folio.GetJournalEntry
-			if project := config.Project(flagProject); project != "" {
-				get = func(ref string) (client.JournalEntry, error) {
-					return folio.GetJournalEntryBySlug(project, ref)
-				}
-			}
-
-			entry, err := get(args[0])
+			entry, err := bySlugOrID(args[0], folio.GetJournalEntryBySlug, folio.GetJournalEntry)
 			if err != nil {
 				return err
 			}
