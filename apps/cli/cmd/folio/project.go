@@ -71,7 +71,7 @@ func projectCreateCommand() *cobra.Command {
 			if err := renderProjectDetail(project); err != nil {
 				return err
 			}
-			fmt.Fprintf(os.Stderr, "\nselect it with: eval \"$(folio use %s)\"\n", project.Slug)
+			fmt.Fprintf(os.Stderr, "\n%s\n", selectHint(project.Slug))
 			return nil
 		},
 	}
@@ -268,6 +268,11 @@ func projectMemberCommand() *cobra.Command {
 	cmd.AddCommand(add, promote, remove)
 
 	return cmd
+}
+
+// eval only lives as long as one shell, so the directory binding comes first.
+func selectHint(slug string) string {
+	return fmt.Sprintf("select it with: folio use %s --here, or in this shell: eval \"$(folio use %s)\"", slug, slug)
 }
 
 // projectRef takes a positional argument when given, else the selection.

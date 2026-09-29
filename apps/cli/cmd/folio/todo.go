@@ -36,7 +36,7 @@ func todoCommand() *cobra.Command {
 }
 
 var errProjectRequired = errors.New(
-	`no project: pass --project, or select one with: eval "$(folio use <project>)"`,
+	`no project: pass --project <slug>, bind this directory with: folio use <project> --here, or select one in this shell with: eval "$(folio use <project>)"`,
 )
 
 func resolveProject() (string, error) {
