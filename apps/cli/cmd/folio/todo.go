@@ -367,13 +367,15 @@ func parseBlockers(value, self string) ([]string, error) {
 // exactly the server's default page when nothing was asked. No list endpoint
 // returns a total, so a full page is the only signal that rows were left
 // behind, and without this a caller reads a truncated page as the whole set.
-// stderr keeps it out of a pipe, and --json callers are paging deliberately.
+// stderr keeps it out of a pipe. A --json caller who passed --limit chose the
+// page, but one who passed nothing is reading the server's default of 50 and
+// would take it for the whole set, so that warning stays on.
 func noteIfPaged(rows, limit int) {
-	if flagJSON || rows == 0 {
+	if rows == 0 {
 		return
 	}
 	switch {
-	case limit > 0 && rows >= limit:
+	case limit > 0 && rows >= limit && !flagJSON:
 		fmt.Fprintf(os.Stderr, "folio: %d rows is the --limit, so there may be more; raise it or pass --offset %d\n", rows, rows)
 	case limit == 0 && rows >= defaultPageSize:
 		fmt.Fprintf(os.Stderr, "folio: %d rows is the default page, so there may be more; pass --limit or --offset %d\n", rows, rows)
