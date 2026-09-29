@@ -58,3 +58,19 @@ func TestLogDetailKeepsAFixedFieldOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestEncodePrintsAnEmptyArrayForANilSlice(t *testing.T) {
+	var tickets []client.Ticket
+
+	got := captureStdout(t, func() error { return encode(tickets) })
+	if got != "[]\n" {
+		t.Errorf("encode(nil slice) = %q, want []", got)
+	}
+}
+
+func TestEncodeLeavesAnObjectAlone(t *testing.T) {
+	got := captureStdout(t, func() error { return encode(map[string]int{"a": 1}) })
+	if got != "{\n  \"a\": 1\n}\n" {
+		t.Errorf("encode(map) = %q", got)
+	}
+}

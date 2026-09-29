@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"slices"
 	"strings"
 	"text/tabwriter"
@@ -434,6 +435,10 @@ func renderTodos(todos []client.Todo) error {
 }
 
 func encode(value any) error {
+	if v := reflect.ValueOf(value); v.Kind() == reflect.Slice && v.IsNil() {
+		value = []any{}
+	}
+
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(value)
