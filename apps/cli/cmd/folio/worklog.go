@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"folio/cli/internal/client"
+	"folio/cli/internal/config"
 )
 
 func workLogCommand() *cobra.Command {
@@ -71,7 +72,7 @@ func workLogListCommand() *cobra.Command {
 				return err
 			}
 
-			project, err := resolveProject()
+			project, err := workLogProject(folio, kind, id)
 			if err != nil {
 				return err
 			}
@@ -146,7 +147,7 @@ func workLogWriteCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			project, err := resolveProject()
+			project, err := workLogProject(folio, kind, id)
 			if err != nil {
 				return err
 			}
@@ -200,6 +201,21 @@ func workLogDeleteCommand() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// The entries routes are project scoped, but the target's id is global, so
+// without a selected project the target says which project it belongs to.
+func workLogProject(folio *client.Client, kind, id string) (string, error) {
+	if project := config.Project(flagProject); project != "" {
+		return project, nil
+	}
+
+	if kind == "plan" {
+		plan, err := folio.GetPlan(id)
+		return plan.ProjectID, err
+	}
+	ticket, err := folio.GetTicket(id)
+	return ticket.ProjectID, err
 }
 
 func firstLine(body string) string {
