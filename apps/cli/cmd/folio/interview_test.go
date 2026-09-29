@@ -110,7 +110,7 @@ func TestInterviewStartPrintsTheLinkFirst(t *testing.T) {
 	}
 
 	lines := strings.Split(strings.TrimSpace(out), "\n")
-	if want := url + "/journ/shed/geral/grilling/tree-or-graph"; lines[0] != want {
+	if want := url + "/journ/shed/geral/tickets/tree-or-graph/interview"; lines[0] != want {
 		t.Fatalf("first line = %q, want %q", lines[0], want)
 	}
 	if !strings.Contains(out, "Tree or graph") {
@@ -219,7 +219,7 @@ func TestInterviewShowListsTheOpenQuestions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"Tree or graph", "round 2", "handled 2", "waiting", "q2", "What do we call it", "q3", "Who answers", url + "/journ/shed/geral/grilling/tree-or-graph"} {
+	for _, want := range []string{"Tree or graph", "round 2", "handled 2", "waiting", "q2", "What do we call it", "q3", "Who answers", url + "/journ/shed/geral/tickets/tree-or-graph/interview"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("show is missing %q:\n%s", want, out)
 		}
