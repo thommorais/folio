@@ -33,8 +33,13 @@ func api() (*client.Client, error) {
 
 func main() {
 	root := &cobra.Command{
-		Use:           "folio",
-		Short:         "Write to the folio project workspace",
+		Use:   "folio",
+		Short: "Write to the folio project workspace",
+		Long: `Write to the folio project workspace.
+
+Exit codes: 0 ok, 1 other failure, 2 not signed in or not allowed, 3 not found,
+4 rejected as invalid. With --json a failure prints
+{"error","status","fields"} on stderr instead of a line of text.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Args:          cobra.NoArgs,
@@ -82,7 +87,11 @@ func main() {
 	)
 
 	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "folio: "+err.Error())
-		os.Exit(1)
+		if flagJSON {
+			fmt.Fprintln(os.Stderr, errorJSON(err))
+		} else {
+			fmt.Fprintln(os.Stderr, "folio: "+err.Error())
+		}
+		os.Exit(exitCode(err))
 	}
 }

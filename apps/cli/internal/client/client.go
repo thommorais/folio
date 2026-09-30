@@ -61,6 +61,34 @@ func (e apiError) Error() string {
 	return fmt.Sprintf("%d: %s (%s)", e.status, message, strings.Join(fields, "; "))
 }
 
+// Status is the HTTP status of an API failure, and false for any other error.
+func Status(err error) (int, bool) {
+	var failure apiError
+	if !errors.As(err, &failure) {
+		return 0, false
+	}
+	return failure.status, true
+}
+
+// FieldErrors maps each rejected field to the reason the API gave.
+func FieldErrors(err error) map[string]string {
+	var failure apiError
+	if !errors.As(err, &failure) {
+		return nil
+	}
+
+	fields := map[string]string{}
+	for name, detail := range failure.Data {
+		if detail.Message != "" {
+			fields[name] = detail.Message
+		}
+	}
+	if len(fields) == 0 {
+		return nil
+	}
+	return fields
+}
+
 func IsNotFound(err error) bool {
 	var failure apiError
 	return errors.As(err, &failure) && failure.status == http.StatusNotFound
