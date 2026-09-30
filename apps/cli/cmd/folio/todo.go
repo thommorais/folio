@@ -185,19 +185,19 @@ func todoUpdateCommand() *cobra.Command {
 		Use:   "update <id>",
 		Short: "Update a todo, leaving unset fields alone",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			in := client.TodoInput{}
 			setIf(&in.Title, title)
-			setIf(&in.Details, details)
+			setFlag(cmd, "details", &in.Details, details)
 			setIf(&in.Status, status)
 			setIf(&in.Priority, priority)
 			if err := setSize(&in.Size, size); err != nil {
 				return err
 			}
-			setIf(&in.PlanID, plan)
-			setIf(&in.TicketID, ticket)
-			setIf(&in.DueDate, due)
-			if err := setTags(&in.Tags, tags); err != nil {
+			setFlag(cmd, "plan", &in.PlanID, plan)
+			setFlag(cmd, "ticket", &in.TicketID, ticket)
+			setFlag(cmd, "due", &in.DueDate, due)
+			if err := setTagsFlag(cmd, &in.Tags, tags); err != nil {
 				return err
 			}
 
@@ -391,6 +391,40 @@ func setIf(target **string, value string) {
 		v := value
 		*target = &v
 	}
+}
+
+// The update commands read the flag as passed rather than as non-empty, so
+// --body "" clears a field instead of being taken for an unset flag. Create
+// keeps setIf, where empty means the server's default.
+func setFlag(cmd *cobra.Command, name string, target **string, value string) {
+	if cmd.Flags().Changed(name) {
+		v := value
+		*target = &v
+	}
+}
+
+func setTagsFlag(cmd *cobra.Command, target **[]string, value string) error {
+	if !cmd.Flags().Changed("tags") {
+		return nil
+	}
+	if strings.TrimSpace(value) == "" {
+		empty := []string{}
+		*target = &empty
+		return nil
+	}
+	return setTags(target, value)
+}
+
+func setListFlag(cmd *cobra.Command, name string, target **[]string, value string) {
+	if !cmd.Flags().Changed(name) {
+		return
+	}
+	if value == "" {
+		empty := []string{}
+		*target = &empty
+		return
+	}
+	setList(target, value)
 }
 
 func setTags(target **[]string, value string) error {

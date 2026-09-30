@@ -143,7 +143,7 @@ func docUpdateCommand() *cobra.Command {
 		Use:   "update <id>",
 		Short: "Update a doc, leaving unset fields alone",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			text, err := bodyFrom(body)
 			if err != nil {
 				return err
@@ -152,9 +152,9 @@ func docUpdateCommand() *cobra.Command {
 			in := client.DocInput{}
 			setIf(&in.Title, title)
 			setIf(&in.Slug, slug)
-			setIf(&in.TicketID, ticket)
-			setIf(&in.Body, text)
-			if err := setTags(&in.Tags, tags); err != nil {
+			setFlag(cmd, "ticket", &in.TicketID, ticket)
+			setFlag(cmd, "body", &in.Body, text)
+			if err := setTagsFlag(cmd, &in.Tags, tags); err != nil {
 				return err
 			}
 

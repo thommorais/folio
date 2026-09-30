@@ -291,7 +291,7 @@ func ticketUpdateCommand() *cobra.Command {
 		Use:   "update <id-or-slug>",
 		Short: "Update a ticket, leaving unset fields alone; a slug needs --project",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			text, err := bodyFrom(body)
 			if err != nil {
 				return err
@@ -299,18 +299,18 @@ func ticketUpdateCommand() *cobra.Command {
 			in := client.TicketInput{}
 			setIf(&in.Slug, slug)
 			setIf(&in.Title, title)
-			setIf(&in.Body, text)
+			setFlag(cmd, "body", &in.Body, text)
 			setIf(&in.Status, status)
 			setIf(&in.Priority, priority)
 			if err := setSize(&in.Size, size); err != nil {
 				return err
 			}
-			setIf(&in.Assignee, assignee)
-			setIf(&in.ExternalRef, externalRef)
-			setIf(&in.ParentID, parent)
-			setIf(&in.Wayfinder, wayfinder)
-			setList(&in.DependsOn, dependsOn)
-			if err := setTags(&in.Tags, tags); err != nil {
+			setFlag(cmd, "assignee", &in.Assignee, assignee)
+			setFlag(cmd, "external-ref", &in.ExternalRef, externalRef)
+			setFlag(cmd, "parent", &in.ParentID, parent)
+			setFlag(cmd, "wayfinder", &in.Wayfinder, wayfinder)
+			setListFlag(cmd, "depends-on", &in.DependsOn, dependsOn)
+			if err := setTagsFlag(cmd, &in.Tags, tags); err != nil {
 				return err
 			}
 

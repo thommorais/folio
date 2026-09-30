@@ -132,13 +132,13 @@ func planUpdateCommand() *cobra.Command {
 		Use:   "update <id>",
 		Short: "Update a plan, leaving unset fields alone",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			in := client.PlanInput{}
 			setIf(&in.Title, title)
-			setIf(&in.Goal, goal)
+			setFlag(cmd, "goal", &in.Goal, goal)
 			setIf(&in.Status, status)
-			setIf(&in.TicketID, ticket)
-			if err := setTags(&in.Tags, tags); err != nil {
+			setFlag(cmd, "ticket", &in.TicketID, ticket)
+			if err := setTagsFlag(cmd, &in.Tags, tags); err != nil {
 				return err
 			}
 

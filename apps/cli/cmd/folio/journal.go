@@ -220,7 +220,7 @@ func journalUpdateCommand() *cobra.Command {
 		Use:   "update <id>",
 		Short: "Update an entry, leaving unset fields alone",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			text, err := bodyFrom(body)
 			if err != nil {
 				return err
@@ -228,12 +228,12 @@ func journalUpdateCommand() *cobra.Command {
 
 			in := client.LogInput{}
 			setIf(&in.Title, title)
-			setIf(&in.Body, text)
-			setIf(&in.Branch, branch)
-			setIf(&in.PR, pr)
-			setIf(&in.TicketID, ticket)
-			setIf(&in.ExternalRef, externalRef)
-			if err := setTags(&in.Tags, tags); err != nil {
+			setFlag(cmd, "body", &in.Body, text)
+			setFlag(cmd, "branch", &in.Branch, branch)
+			setFlag(cmd, "pr", &in.PR, pr)
+			setFlag(cmd, "ticket", &in.TicketID, ticket)
+			setFlag(cmd, "external-ref", &in.ExternalRef, externalRef)
+			if err := setTagsFlag(cmd, &in.Tags, tags); err != nil {
 				return err
 			}
 

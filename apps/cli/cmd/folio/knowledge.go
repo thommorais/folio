@@ -146,7 +146,7 @@ func knowledgeUpdateCommand() *cobra.Command {
 		Use:   "update <id-or-slug>",
 		Short: "Update a note, leaving unset fields alone",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			text, err := bodyFrom(body)
 			if err != nil {
 				return err
@@ -155,9 +155,9 @@ func knowledgeUpdateCommand() *cobra.Command {
 			in := client.KnowledgeInput{}
 			setIf(&in.Title, title)
 			setIf(&in.Slug, slug)
-			setIf(&in.Body, text)
-			setIf(&in.ProjectID, project)
-			setFreeTags(&in.Tags, tags)
+			setFlag(cmd, "body", &in.Body, text)
+			setFlag(cmd, "project", &in.ProjectID, project)
+			setFreeTagsFlag(cmd, &in.Tags, tags)
 
 			if in == (client.KnowledgeInput{}) {
 				return errors.New("nothing to update: pass at least one field")
@@ -217,6 +217,18 @@ func knowledgeDeleteCommand() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func setFreeTagsFlag(cmd *cobra.Command, target **[]string, value string) {
+	if !cmd.Flags().Changed("tags") {
+		return
+	}
+	if strings.TrimSpace(value) == "" {
+		empty := []string{}
+		*target = &empty
+		return
+	}
+	setFreeTags(target, value)
 }
 
 // setFreeTags splits a tag list without checking it against a vocabulary.
