@@ -212,7 +212,7 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 
 	return (
 		<div className='space-y-4'>
-			<IssueFilters kind={kind} defaultStatuses={defaultStatuses} />
+			<IssueFilters kind={kind} project={slug} defaultStatuses={defaultStatuses} />
 			{list}
 		</div>
 	)

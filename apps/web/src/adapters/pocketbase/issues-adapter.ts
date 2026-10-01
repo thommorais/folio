@@ -1,3 +1,4 @@
+import { z } from '_/lib/zod'
 import { sortExpr } from './sort'
 import { projectId as toProjectId, userId as toUserId } from '_/core/domain/project'
 import { planId as toPlanId } from '_/core/domain/plan'
@@ -35,6 +36,8 @@ type IssueColumns = {
 }
 
 const message = (error: unknown): string => (error instanceof Error ? error.message : 'Unknown error')
+
+const createdSchema = z.object({ slug: z.string() })
 
 const toIssue = (record: IssueRecord): Issue => ({
 	id: toIssueId(record.id),
@@ -184,6 +187,20 @@ export const createIssuesAdapter = (): IssuesPort => {
 			return hydrated.error
 				? err(new Error(`Failed to load issue relations: ${hydrated.error.message}`, { cause: hydrated.error }))
 				: ok(hydrated.data)
+		},
+
+		create: async (project, input): Promise<Result<{ readonly slug: string }>> => {
+			const { data, error } = await tryCatch(
+				client.send(`/api/folio/projects/${encodeURIComponent(project)}/issues`, {
+					method: 'POST',
+					body: input,
+				}),
+			)
+			if (error) return err(new Error(`Could not create the ticket: ${error.message}`, { cause: error }))
+
+			const parsed = createdSchema.safeParse(data)
+
+			return parsed.success ? ok({ slug: parsed.data.slug }) : err(new Error('The server sent an unexpected answer.'))
 		},
 
 		subscribeToList: async (project, update, filter = {}): Promise<Result<Unsubscribe>> => {

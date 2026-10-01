@@ -5,6 +5,7 @@ import { SortMenu } from '_/components/list/sort-menu';
 import { ISSUE_KIND, ISSUE_STATUSES, PRIORITIES, type IssueKind, type IssueStatus, type Priority } from '_/core/domain/issue';
 import { TICKET_SORT_FIELDS, TODO_SORT_FIELDS, type IssueSortField, type Sort, type TicketSortField, type TodoSortField } from '_/core/ports/sort';
 import { CONTEXT_TAGS, KIND_TAGS } from '_/pages/issues/tag-vocabulary';
+import { CreateTicketSheet } from './create-ticket-sheet';
 import { ISSUE_STATUS_LABELS } from './status-labels';
 
 const SORT_LABELS: Record<IssueSortField, string> = {
@@ -25,7 +26,13 @@ type IssuesSearch = {
 	readonly sort?: Sort<TicketSortField | TodoSortField>
 }
 
-const IssueFilters = ({ kind, defaultStatuses }: { readonly kind: IssueKind; readonly defaultStatuses?: readonly IssueStatus[] }) => {
+type IssueFiltersProps = {
+	readonly kind: IssueKind
+	readonly project: string
+	readonly defaultStatuses?: readonly IssueStatus[]
+}
+
+const IssueFilters = ({ kind, project, defaultStatuses }: IssueFiltersProps) => {
 	const search = useSearch({ strict: false }) as IssuesSearch
 	const statuses = search.statuses ?? defaultStatuses
 	const navigate = useNavigate()
@@ -76,15 +83,18 @@ const IssueFilters = ({ kind, defaultStatuses }: { readonly kind: IssueKind; rea
 			}}
 			chips={chips}
 			trailing={
-				<SortMenu
-					fields={kind === ISSUE_KIND.TICKET ? TICKET_SORT_FIELDS : TODO_SORT_FIELDS}
-					labels={SORT_LABELS}
-					defaultLabel={kind === ISSUE_KIND.TICKET ? 'Status, priority' : 'Position'}
-					sort={search.sort}
-					onChange={sort => {
-						setFilter({ sort })
-					}}
-				/>
+				<div className='flex items-center gap-2'>
+					<SortMenu
+						fields={kind === ISSUE_KIND.TICKET ? TICKET_SORT_FIELDS : TODO_SORT_FIELDS}
+						labels={SORT_LABELS}
+						defaultLabel={kind === ISSUE_KIND.TICKET ? 'Status, priority' : 'Position'}
+						sort={search.sort}
+						onChange={sort => {
+							setFilter({ sort })
+						}}
+					/>
+					{kind === ISSUE_KIND.TICKET && <CreateTicketSheet project={project} />}
+				</div>
 			}
 		>
 			<FilterMenuItem label='Status'>
