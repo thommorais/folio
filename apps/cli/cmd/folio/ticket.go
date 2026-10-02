@@ -148,27 +148,7 @@ func renderBrief(b client.TicketBrief) error {
 		return err
 	}
 
-	section := func(title string, rows []string) {
-		if len(rows) == 0 {
-			return
-		}
-		fmt.Printf("\n%s\n", title)
-		for _, row := range rows {
-			fmt.Println("  " + row)
-		}
-	}
-
-	if b.Map != nil {
-		state := fmt.Sprintf("%d open", b.Map.Open)
-		if b.Map.Open == 0 {
-			state = "the way is clear"
-		}
-		rows := []string{fmt.Sprintf("%s  %s  %s", b.Map.Ticket.ID, b.Map.Ticket.Title, state)}
-		for _, next := range b.Map.Frontier {
-			rows = append(rows, fmt.Sprintf("next  %s  %s  %s", next.ID, next.Wayfinder, next.Title))
-		}
-		section("cycle plan", rows)
-	}
+	section("cycle plan", mapRows(b.Map))
 
 	plans := make([]string, 0, len(b.Plans))
 	for _, p := range b.Plans {
@@ -209,6 +189,31 @@ func renderBrief(b client.TicketBrief) error {
 	section("docs", docs)
 
 	return nil
+}
+
+func section(title string, rows []string) {
+	if len(rows) == 0 {
+		return
+	}
+	fmt.Printf("\n%s\n", title)
+	for _, row := range rows {
+		fmt.Println("  " + row)
+	}
+}
+
+func mapRows(m *client.MapBrief) []string {
+	if m == nil {
+		return nil
+	}
+	state := fmt.Sprintf("%d open", m.Open)
+	if m.Open == 0 {
+		state = "the way is clear"
+	}
+	rows := []string{fmt.Sprintf("%s  %s  %s", m.Ticket.ID, m.Ticket.Title, state)}
+	for _, next := range m.Frontier {
+		rows = append(rows, fmt.Sprintf("next  %s  %s  %s", next.ID, next.Wayfinder, next.Title))
+	}
+	return rows
 }
 
 func ticketCreateCommand() *cobra.Command {

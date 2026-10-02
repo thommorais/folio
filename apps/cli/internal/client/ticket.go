@@ -221,6 +221,30 @@ func (c *Client) GetTicketBriefBySlug(project, slug string, recentJournal int) (
 	return brief, err
 }
 
+type TicketResume struct {
+	Ticket  Ticket        `json:"issue"`
+	Handoff *JournalEntry `json:"handoff"`
+	Logs    []WorkLog     `json:"logs"`
+	Open    []Ticket      `json:"open"`
+	Closed  int           `json:"closed"`
+	Plans   []Plan        `json:"plans"`
+	Cycle   *Cycle        `json:"cycle,omitempty"`
+	Map     *MapBrief     `json:"map,omitempty"`
+	Docs    []Doc         `json:"docs"`
+}
+
+func (c *Client) GetTicketResume(id string) (TicketResume, error) {
+	var resume TicketResume
+	err := c.do(http.MethodGet, "/api/folio/issues/"+id+"/resume", nil, &resume)
+	return resume, err
+}
+
+func (c *Client) GetTicketResumeBySlug(project, slug string) (TicketResume, error) {
+	var resume TicketResume
+	err := c.do(http.MethodGet, "/api/folio/projects/"+project+"/issues/"+slug+"/resume", nil, &resume)
+	return resume, err
+}
+
 func recentJournalQuery(n int) string {
 	if n <= 0 {
 		return ""
