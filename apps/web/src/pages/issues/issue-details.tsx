@@ -3,6 +3,7 @@ import { Tag } from '_/components/issue/tag'
 import { PriorityIcon } from '_/components/issue/priority-icon'
 import { StatusIcon } from '_/components/issue/status-icon'
 import { IssueRef } from '_/components/issue/issue-ref'
+import { CopyId } from '_/components/issue/copy-id'
 import { PlanRef } from '_/components/issue/plan-ref'
 import { RecordGone } from '_/components/record/record-gone'
 import { WorkLog } from '_/components/record/work-log'
@@ -40,7 +41,10 @@ const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonl
 						<PriorityIcon priority={todo.priority} />
 						{todo.priority}
 					</span>
-					<span>{formatDate(todo.createdAt)}</span>
+					<span className='flex items-center gap-3'>
+						{formatDate(todo.createdAt)}
+						<CopyId id={todo.id} />
+					</span>
 				</div>
 
 				<h2 className={cn('mt-6 mb-3 text-lg', todo.status === ISSUE_STATUS.DONE && 'text-dim line-through')}>

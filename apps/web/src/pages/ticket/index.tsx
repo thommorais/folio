@@ -30,6 +30,7 @@ import { MapFrontier } from './map-frontier';
 import { SHARE_KIND } from '_/core/domain/share';
 import { LoadError } from '_/components/load-error';
 import { ExternalRef } from '_/components/issue/external-ref';
+import { CopyId } from '_/components/issue/copy-id';
 
 const statusLabels: Record<IssueStatus, string> = {
 	open: 'Open',
@@ -124,7 +125,10 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 			<header className='space-y-3'>
 				<div className='flex items-start justify-between gap-4'>
 					<Heading>{ticket.title}</Heading>
-					<ShareSheet target={{ kind: SHARE_KIND.ISSUE, id: ticket.id, projectId: ticket.projectId }} />
+					<div className='flex shrink-0 items-center gap-2'>
+						<CopyId id={ticket.id} />
+						<ShareSheet target={{ kind: SHARE_KIND.ISSUE, id: ticket.id, projectId: ticket.projectId }} />
+					</div>
 				</div>
 
 				<div className='flex flex-wrap items-center gap-2'>
