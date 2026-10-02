@@ -155,8 +155,9 @@ var sources = []indexed{
 		// A log has no title of its own, so the index supplies one; a journal
 		// entry or doc that was saved without one falls back the same way.
 		Kind: `CASE {a}.kind WHEN ` + quote(domain.EntryLog) + ` THEN ` + quote(domain.SearchKindWorkLog) +
+			` WHEN ` + quote(domain.EntryHandoff) + ` THEN ` + quote(domain.SearchKindWorkLog) +
 			` WHEN ` + quote(domain.EntryResolution) + ` THEN ` + quote(domain.SearchKindDecision) + ` ELSE {a}.kind END`,
-		Title:     `CASE WHEN {a}.title != '' THEN {a}.title WHEN {a}.kind = ` + quote(domain.EntryResolution) + ` THEN 'Resolution' ELSE 'Work log' END`,
+		Title:     `CASE WHEN {a}.title != '' THEN {a}.title WHEN {a}.kind = ` + quote(domain.EntryResolution) + ` THEN 'Resolution' WHEN {a}.kind = ` + quote(domain.EntryHandoff) + ` THEN 'Handoff' ELSE 'Work log' END`,
 		Body:      `{a}.body`,
 		Slug:      `{a}.slug`,
 		Refs:      `{a}.slug || ' ' || {a}.external_ref`,

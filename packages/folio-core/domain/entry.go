@@ -9,6 +9,7 @@ const (
 	EntryDoc     EntryKind = "doc"
 	EntryLog        EntryKind = "log"
 	EntryResolution EntryKind = "resolution"
+	EntryHandoff    EntryKind = "handoff"
 )
 
 func (k EntryKind) Addressable() bool {

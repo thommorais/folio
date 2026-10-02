@@ -331,7 +331,7 @@ func ensureEntries(app core.App) error {
 	return app.Save(c)
 }
 
-var entryKinds = []string{"journal", "doc", "log", "resolution"}
+var entryKinds = []string{"journal", "doc", "log", "resolution", "handoff"}
 
 func ensureEntryKinds(app core.App) error {
 	c, err := app.FindCollectionByNameOrId(ColEntries)
