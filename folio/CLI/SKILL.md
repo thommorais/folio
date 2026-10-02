@@ -52,8 +52,8 @@ then the cached login. A token is valid only for the host that issued it, so a
 URL from a flag or the environment uses the cached token only when it names the
 cached host. Default URL is `https://folio.journ.app`.
 
-`--url` accepts a bare host; `localhost` and `127.0.0.1` get `http`, anything
-else `https`.
+`--url` accepts a bare host; loopback (`localhost`, `127.0.0.1`, `[::1]`) gets
+`http`, anything else `https`.
 
 ## Piping and JSON
 

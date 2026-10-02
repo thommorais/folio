@@ -190,8 +190,11 @@ func NormalizeURL(raw string) (string, error) {
 	if !strings.Contains(trimmed, "://") {
 		// Loopback almost never has TLS; anything else is assumed to.
 		scheme := "https"
-		if host, _, _ := strings.Cut(trimmed, ":"); host == "localhost" || host == "127.0.0.1" || host == "[::1]" {
-			scheme = "http"
+		if bare, err := url.Parse("//" + trimmed); err == nil {
+			switch bare.Hostname() {
+			case "localhost", "127.0.0.1", "::1":
+				scheme = "http"
+			}
 		}
 		trimmed = scheme + "://" + trimmed
 	}

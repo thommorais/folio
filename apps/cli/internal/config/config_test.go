@@ -27,6 +27,9 @@ func TestNormalizeURL(t *testing.T) {
 			want: "http://127.0.0.1:8090",
 		},
 		{name: "assumes http for bare localhost", in: "localhost:8090", want: "http://localhost:8090"},
+		{name: "assumes http for bare IPv6 loopback", in: "[::1]:8090", want: "http://[::1]:8090"},
+		{name: "assumes http for IPv6 loopback without a port", in: "[::1]", want: "http://[::1]"},
+		{name: "keeps https for a host that only starts like loopback", in: "localhost.example.com", want: "https://localhost.example.com"},
 		{
 			name: "drops a path, since the client appends its own",
 			in:   "https://folio.example.com/api",
