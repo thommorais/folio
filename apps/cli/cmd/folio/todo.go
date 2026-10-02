@@ -168,6 +168,7 @@ func todoCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&details, "details", "", "longer description")
 	cmd.Flags().StringVar(&status, "status", "", "defaults to open")
 	cmd.Flags().StringVar(&priority, "priority", "", "defaults to medium")
+	cmd.Flags().StringVar(&size, "size", "", "effort: 1, 2, 3, 5 or 8")
 	cmd.Flags().StringVar(&plan, "plan", "", "plan id to file it under")
 	cmd.Flags().StringVar(&ticket, "ticket", "", "ticket id to file it under")
 	cmd.Flags().StringVar(&due, "due", "", "due date, RFC 3339")

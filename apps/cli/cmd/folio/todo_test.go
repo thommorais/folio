@@ -246,3 +246,16 @@ func TestTodoBlock(t *testing.T) {
 		}
 	})
 }
+
+func TestTodoCreateSendsTheSize(t *testing.T) {
+	got := todoServer(t, pendingTodo)
+	t.Setenv("FOLIO_PROJECT", "p1")
+
+	if err := run(t, "create", "Backfill the index", "--size", "2", "--tags", "db,chore"); err != nil {
+		t.Fatal(err)
+	}
+	last := (*got)[len(*got)-1]
+	if last.method != http.MethodPost || last.body["size"] != float64(2) {
+		t.Errorf("request = %+v, want a create carrying size 2", last)
+	}
+}
