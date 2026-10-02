@@ -29,6 +29,7 @@ type Ticket struct {
 	Resolution      string   `json:"resolution,omitempty"`
 	ResolutionEntry string   `json:"resolution_entry_id,omitempty"`
 	Blocked         bool     `json:"blocked"`
+	Archived        bool     `json:"archived"`
 	Cycle           int      `json:"cycle,omitempty"`
 	Phase           string   `json:"phase,omitempty"`
 	Progress        Progress `json:"progress"`
@@ -53,6 +54,7 @@ type TicketInput struct {
 	ExternalRef     *string   `json:"external_ref,omitempty"`
 	Resolution      *string   `json:"resolution,omitempty"`
 	ResolutionEntry *string   `json:"resolution_entry_id,omitempty"`
+	Archived        *bool     `json:"archived,omitempty"`
 }
 
 type TicketFilter struct {
@@ -63,6 +65,7 @@ type TicketFilter struct {
 	Assignee string
 	Tags     []string
 	Search   string
+	Archived bool
 	Limit    int
 	Offset   int
 }
@@ -85,6 +88,9 @@ func (f TicketFilter) query() string {
 	}
 	if len(f.Tags) > 0 {
 		params.Set("tags", strings.Join(f.Tags, ","))
+	}
+	if f.Archived {
+		params.Set("archived", "only")
 	}
 	if f.Limit > 0 {
 		params.Set("limit", strconv.Itoa(f.Limit))

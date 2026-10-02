@@ -353,6 +353,13 @@ explicit status is still `todo update <id> --status blocked`, and the two are
 independent: a todo can carry the status without a dependency, or derive
 blocked without the status.
 
+`ticket update` and `todo update` take `--archive` and `--unarchive`, which are
+mutually exclusive. An archived issue keeps its status and drops out of every
+list, `ticket brief` children, `ticket frontier` and `search`; `ticket list
+--archived` and `todo list --archived` show only the archived ones. `ticket get`
+still finds it by id or slug. An archived blocker no longer blocks, and restoring it
+blocks again. Archiving does not touch an issue's children.
+
 Deletes are not prompted, since an agent cannot answer a prompt.
 `ticket delete` detaches its plans, todos, journal and docs; `plan delete`
 detaches its todos.

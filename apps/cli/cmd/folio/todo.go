@@ -86,6 +86,7 @@ func todoListCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&filter.Search, "query", "q", "", "match the title")
 	cmd.Flags().StringVar(&filter.PlanID, "plan", "", "only todos under this plan")
 	cmd.Flags().StringVar(&filter.TicketID, "ticket", "", "only todos under this ticket")
+	cmd.Flags().BoolVar(&filter.Archived, "archived", false, "list only archived todos")
 	cmd.Flags().IntVar(&filter.Limit, "limit", 0, "maximum rows")
 	cmd.Flags().IntVar(&filter.Offset, "offset", 0, "rows to skip")
 
@@ -181,13 +182,20 @@ func todoCreateCommand() *cobra.Command {
 func todoUpdateCommand() *cobra.Command {
 	var title, details, status, priority, plan, ticket, due, tags string
 	var size string
+	var archive, unarchive bool
 
 	cmd := &cobra.Command{
 		Use:   "update <id>",
 		Short: "Update a todo, leaving unset fields alone",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if archive && unarchive {
+				return errors.New("--archive and --unarchive are mutually exclusive")
+			}
 			in := client.TodoInput{}
+			if archive || unarchive {
+				in.Archived = &archive
+			}
 			setIf(&in.Title, title)
 			setFlag(cmd, "details", &in.Details, details)
 			setIf(&in.Status, status)
@@ -228,6 +236,8 @@ func todoUpdateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&ticket, "ticket", "", "move under this ticket")
 	cmd.Flags().StringVar(&due, "due", "", "due date, RFC 3339")
 	cmd.Flags().StringVar(&tags, "tags", "", "replace the tags; "+tagHelp())
+	cmd.Flags().BoolVar(&archive, "archive", false, "archive the todo")
+	cmd.Flags().BoolVar(&unarchive, "unarchive", false, "restore an archived todo")
 	registerTagCompletion(cmd)
 
 	return cmd

@@ -17,7 +17,7 @@ func resolveServer(t *testing.T) *[]request {
 
 	var got []request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		req := request{method: r.Method, path: r.URL.Path}
+		req := request{method: r.Method, path: r.URL.Path, query: r.URL.RawQuery}
 		if raw, _ := io.ReadAll(r.Body); len(raw) > 0 {
 			_ = json.Unmarshal(raw, &req.body)
 		}

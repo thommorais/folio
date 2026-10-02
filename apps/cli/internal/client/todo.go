@@ -24,6 +24,7 @@ type Todo struct {
 	DependsOn []string `json:"depends_on"`
 	DueDate   string   `json:"due_date,omitempty"`
 	Blocked   bool     `json:"blocked"`
+	Archived  bool     `json:"archived"`
 	CreatedAt string   `json:"created_at"`
 	UpdatedAt string   `json:"updated_at"`
 }
@@ -42,6 +43,7 @@ type TodoInput struct {
 	Position  *int      `json:"position,omitempty"`
 	DependsOn *[]string `json:"depends_on,omitempty"`
 	DueDate   *string   `json:"due_date,omitempty"`
+	Archived  *bool     `json:"archived,omitempty"`
 }
 
 type TodoFilter struct {
@@ -51,6 +53,7 @@ type TodoFilter struct {
 	Priority string
 	Tags     []string
 	Search   string
+	Archived bool
 	Limit    int
 	Offset   int
 }
@@ -75,6 +78,9 @@ func (f TodoFilter) query() string {
 	}
 	if f.Search != "" {
 		params.Set("q", f.Search)
+	}
+	if f.Archived {
+		params.Set("archived", "only")
 	}
 	if f.Limit > 0 {
 		params.Set("limit", strconv.Itoa(f.Limit))

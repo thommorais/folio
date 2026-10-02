@@ -71,6 +71,7 @@ func ticketListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&tags, "tags", "", "comma separated tags")
 	registerTagCompletion(cmd)
 	cmd.Flags().StringVarP(&filter.Search, "query", "q", "", "match the title and body")
+	cmd.Flags().BoolVar(&filter.Archived, "archived", false, "list only archived tickets")
 	cmd.Flags().IntVar(&filter.Limit, "limit", 0, "maximum rows")
 	cmd.Flags().IntVar(&filter.Offset, "offset", 0, "rows to skip")
 
@@ -291,17 +292,24 @@ func ticketUpdateCommand() *cobra.Command {
 	var slug, title, body, status, priority, assignee, externalRef, tags string
 	var size string
 	var parent, wayfinder, dependsOn string
+	var archive, unarchive bool
 
 	cmd := &cobra.Command{
 		Use:   "update <id-or-slug>",
 		Short: "Update a ticket, leaving unset fields alone; a slug needs --project",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if archive && unarchive {
+				return errors.New("--archive and --unarchive are mutually exclusive")
+			}
 			text, err := bodyFrom(body)
 			if err != nil {
 				return err
 			}
 			in := client.TicketInput{}
+			if archive || unarchive {
+				in.Archived = &archive
+			}
 			setIf(&in.Slug, slug)
 			setIf(&in.Title, title)
 			setFlag(cmd, "body", &in.Body, text)
@@ -353,6 +361,8 @@ func ticketUpdateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&parent, "parent", "", "id of the ticket this one sits under")
 	cmd.Flags().StringVar(&wayfinder, "wayfinder", "", wayfinderHelp)
 	cmd.Flags().StringVar(&dependsOn, "depends-on", "", "replace the blockers; comma separated ticket ids")
+	cmd.Flags().BoolVar(&archive, "archive", false, "archive the ticket")
+	cmd.Flags().BoolVar(&unarchive, "unarchive", false, "restore an archived ticket")
 	registerTagCompletion(cmd)
 
 	return cmd

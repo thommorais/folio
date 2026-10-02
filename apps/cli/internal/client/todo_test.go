@@ -168,3 +168,15 @@ func TestGetTodo(t *testing.T) {
 }
 
 func strptr(s string) *string { return &s }
+
+func TestFiltersAskForTheArchivedView(t *testing.T) {
+	if got := (TodoFilter{Archived: true}).query(); got != "?archived=only&kind=todo" {
+		t.Errorf("todo query = %q", got)
+	}
+	if got := (TicketFilter{Archived: true}).query(); got != "?archived=only" {
+		t.Errorf("ticket query = %q", got)
+	}
+	if got := (TicketFilter{}).query(); got != "" {
+		t.Errorf("default ticket query = %q, want none", got)
+	}
+}

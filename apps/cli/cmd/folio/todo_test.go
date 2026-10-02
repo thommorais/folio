@@ -15,6 +15,7 @@ import (
 type request struct {
 	method string
 	path   string
+	query  string
 	body   map[string]any
 }
 
@@ -26,7 +27,7 @@ func todoServer(t *testing.T, todo string) *[]request {
 
 	var got []request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		req := request{method: r.Method, path: r.URL.Path}
+		req := request{method: r.Method, path: r.URL.Path, query: r.URL.RawQuery}
 		if raw, _ := io.ReadAll(r.Body); len(raw) > 0 {
 			_ = json.Unmarshal(raw, &req.body)
 		}
