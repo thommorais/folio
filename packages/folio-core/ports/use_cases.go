@@ -140,6 +140,7 @@ type UpdateIssueInput struct {
 	Resolution      *string
 	ResolutionEntry *domain.EntryID
 	ExternalRef     *string
+	Archived        *bool
 }
 
 type BriefOptions struct {

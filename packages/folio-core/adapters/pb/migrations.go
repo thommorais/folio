@@ -67,6 +67,9 @@ func Register(app core.App) error {
 	if err := ensureIssueResolution(app); err != nil {
 		return fmt.Errorf("issue resolution: %w", err)
 	}
+	if err := ensureIssueArchived(app); err != nil {
+		return fmt.Errorf("issue archived: %w", err)
+	}
 	if err := ensureKnowledge(app); err != nil {
 		return fmt.Errorf("knowledge: %w", err)
 	}

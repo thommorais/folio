@@ -41,6 +41,7 @@ func toIssue(rec *core.Record) domain.Issue {
 		ExternalRef:     rec.GetString("external_ref"),
 		Resolution:      rec.GetString("resolution"),
 		ResolutionEntry: domain.EntryID(rec.GetString("resolution_entry")),
+		Archived:        rec.GetBool("archived"),
 		CreatedBy:       domain.UserID(rec.GetString("created_by")),
 		CreatedAt:       rec.GetDateTime("created").Time(),
 		UpdatedAt:       rec.GetDateTime("updated").Time(),
@@ -64,6 +65,7 @@ func applyIssue(rec *core.Record, i domain.Issue) {
 	rec.Set("external_ref", i.ExternalRef)
 	rec.Set("resolution", i.Resolution)
 	rec.Set("resolution_entry", string(i.ResolutionEntry))
+	rec.Set("archived", i.Archived)
 	if i.CreatedBy != "" {
 		rec.Set("created_by", string(i.CreatedBy))
 	}
@@ -71,6 +73,12 @@ func applyIssue(rec *core.Record, i domain.Issue) {
 
 func (r *IssueRepository) List(ctx context.Context, project domain.ProjectID, f domain.IssueFilter) ([]domain.Issue, error) {
 	exprs := []dbx.Expression{dbx.HashExp{"project": string(project)}}
+	switch f.Archive {
+	case domain.ArchiveLive:
+		exprs = append(exprs, dbx.HashExp{"archived": false})
+	case domain.ArchiveOnly:
+		exprs = append(exprs, dbx.HashExp{"archived": true})
+	}
 	if f.Kind != "" {
 		exprs = append(exprs, dbx.HashExp{"kind": string(f.Kind)})
 	}

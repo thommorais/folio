@@ -216,6 +216,7 @@ type issueView struct {
 	Resolution      string       `json:"resolution,omitempty"`
 	ResolutionEntry string       `json:"resolution_entry_id,omitempty"`
 	Blocked         bool         `json:"blocked"`
+	Archived        bool         `json:"archived"`
 	Cycle           int          `json:"cycle,omitempty"`
 	Phase           string       `json:"phase,omitempty"`
 	Progress        progressView `json:"progress"`
@@ -237,7 +238,7 @@ func toIssueView(i domain.Issue) issueView {
 		Assignee: string(i.Assignee), Tags: orEmpty(i.Tags),
 		Position: i.Position, DueDate: due, ExternalRef: i.ExternalRef,
 		DependsOn: fromIssueIDs(i.DependsOn), RelatedTo: fromIssueIDs(i.RelatedTo),
-		Wayfinder: string(i.Wayfinder), Blocked: i.Blocked,
+		Wayfinder: string(i.Wayfinder), Blocked: i.Blocked, Archived: i.Archived,
 		Resolution: i.Resolution, ResolutionEntry: string(i.ResolutionEntry),
 		Cycle: i.Cycle, Phase: string(i.Phase),
 		Progress:  progressView{Total: i.Progress.Total, Done: i.Progress.Done, Percent: i.Progress.Percent()},

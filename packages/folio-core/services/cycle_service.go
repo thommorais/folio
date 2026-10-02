@@ -98,6 +98,7 @@ func (s *CycleService) AdvancePhase(ctx context.Context, actor ports.Actor, id d
 		if err != nil {
 			return domain.Cycle{}, err
 		}
+		children = liveIssues(children)
 		if err := rules.CheckPlanClear(cycle, phase, children); err != nil {
 			return domain.Cycle{}, err
 		}
@@ -157,6 +158,7 @@ func (s *CycleService) ResolveCycle(ctx context.Context, actor ports.Actor, id d
 		if err != nil {
 			return domain.Cycle{}, err
 		}
+		children = liveIssues(children)
 		if err := rules.CheckResolvableCycle(cycle, children); err != nil {
 			return domain.Cycle{}, err
 		}

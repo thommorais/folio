@@ -376,6 +376,19 @@ func ensureIssueResolution(app core.App) error {
 	return app.Save(c)
 }
 
+func ensureIssueArchived(app core.App) error {
+	c, err := app.FindCollectionByNameOrId(ColIssues)
+	if err != nil {
+		return err
+	}
+	if c.Fields.GetByName("archived") != nil {
+		return nil
+	}
+	c.Fields.Add(&core.BoolField{Name: "archived"})
+
+	return app.Save(c)
+}
+
 func ensureCycleMap(app core.App) error {
 	c, err := app.FindCollectionByNameOrId(ColCycles)
 	if err != nil {

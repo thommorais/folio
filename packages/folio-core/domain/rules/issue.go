@@ -43,7 +43,7 @@ func ApplyLinks(issues []domain.Issue, links []domain.IssueLink) {
 	for _, issue := range byID {
 		for _, dep := range issue.DependsOn {
 			blocker, ok := byID[dep]
-			if ok && !blocker.Status.IsTerminal() {
+			if ok && !blocker.Archived && !blocker.Status.IsTerminal() {
 				issue.Blocked = true
 				break
 			}

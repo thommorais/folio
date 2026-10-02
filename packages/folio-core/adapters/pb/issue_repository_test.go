@@ -1,6 +1,7 @@
 package pb_test
 
 import (
+	"slices"
 	"testing"
 
 	"folio/folio-core/adapters/pb"
@@ -257,5 +258,53 @@ func TestIssueKeepsItsResolution(t *testing.T) {
 	}
 	if got.Resolution != "A graph." || got.ResolutionEntry != domain.EntryID(detail.Id) {
 		t.Fatalf("resolution = %q, entry = %q", got.Resolution, got.ResolutionEntry)
+	}
+}
+
+func TestArchivedFlagRoundTripsAndFiltersTheListing(t *testing.T) {
+	s := setup(t)
+	repo := pb.NewIssueRepository(s.app)
+	project := domain.ProjectID(s.project.Id)
+
+	live := newIssue(t, s, domain.IssueTodo, "live-one")
+	shelved := newIssue(t, s, domain.IssueTodo, "shelved-one")
+
+	shelved.Archived = true
+	if _, err := repo.Update(t.Context(), shelved); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := repo.GetByID(t.Context(), shelved.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Archived {
+		t.Error("archived did not survive the round trip")
+	}
+
+	slugs := func(view domain.ArchiveView) []string {
+		issues, err := repo.List(t.Context(), project, domain.IssueFilter{Archive: view})
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := make([]string, 0, len(issues))
+		for _, i := range issues {
+			out = append(out, i.Slug)
+		}
+		return out
+	}
+
+	has := func(view domain.ArchiveView, slug string) bool {
+		return slices.Contains(slugs(view), slug)
+	}
+
+	if !has(domain.ArchiveLive, live.Slug) || has(domain.ArchiveLive, shelved.Slug) {
+		t.Errorf("live view = %v, want %s without %s", slugs(domain.ArchiveLive), live.Slug, shelved.Slug)
+	}
+	if !has(domain.ArchiveOnly, shelved.Slug) || has(domain.ArchiveOnly, live.Slug) {
+		t.Errorf("archived view = %v, want only %s", slugs(domain.ArchiveOnly), shelved.Slug)
+	}
+	if !has(domain.ArchiveAny, live.Slug) || !has(domain.ArchiveAny, shelved.Slug) {
+		t.Errorf("any view = %v, want both", slugs(domain.ArchiveAny))
 	}
 }

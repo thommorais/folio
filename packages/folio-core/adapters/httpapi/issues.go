@@ -14,7 +14,12 @@ func (h *Handler) listIssues(e *core.RequestEvent) error {
 	if err != nil {
 		return fail(e, err)
 	}
+	archive := domain.ArchiveView(e.Request.URL.Query().Get("archived"))
+	if !archive.Valid() {
+		return e.BadRequestError("archived must be only or any", nil)
+	}
 	filter := domain.IssueFilter{
+		Archive:  archive,
 		Kind:     domain.IssueKind(e.Request.URL.Query().Get("kind")),
 		ParentID: domain.IssueID(e.Request.URL.Query().Get("parent")),
 		PlanID:   domain.PlanID(e.Request.URL.Query().Get("plan")),
@@ -133,6 +138,7 @@ type issueBody struct {
 	ExternalRef     *string   `json:"external_ref"`
 	Resolution      *string   `json:"resolution"`
 	ResolutionEntry *string   `json:"resolution_entry_id"`
+	Archived        *bool     `json:"archived"`
 }
 
 func (b issueBody) toCreate(project domain.ProjectID) ports.CreateIssueInput {
@@ -240,7 +246,7 @@ func (h *Handler) updateIssue(e *core.RequestEvent) error {
 	in := ports.UpdateIssueInput{
 		Slug: body.Slug, Title: body.Title, Body: body.Body,
 		Tags: body.Tags, Position: body.Position, DueDate: body.DueDate,
-		ExternalRef: body.ExternalRef, Resolution: body.Resolution,
+		ExternalRef: body.ExternalRef, Resolution: body.Resolution, Archived: body.Archived,
 	}
 	if body.Kind != nil {
 		kind := domain.IssueKind(*body.Kind)

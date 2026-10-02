@@ -126,3 +126,31 @@ func TestResumeIsFencedByMembership(t *testing.T) {
 		t.Fatal("want a stranger refused")
 	}
 }
+
+func TestResumeLeavesArchivedChildrenOut(t *testing.T) {
+	f := newEntryFixture(t)
+	ctx := t.Context()
+	work, err := f.issueSv.CreateIssue(ctx, f.owner, ports.CreateIssueInput{ProjectID: f.project, Kind: domain.IssueTicket, Title: "Landing page"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, title := range []string{"Coverage", "Shelved"} {
+		child, err := f.issueSv.CreateIssue(ctx, f.owner, ports.CreateIssueInput{ProjectID: f.project, Kind: domain.IssueTodo, Title: title, ParentID: work.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if title == "Shelved" {
+			if _, err := f.issueSv.UpdateIssue(ctx, f.owner, child.ID, ports.UpdateIssueInput{Archived: ptr(true)}); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	resume, err := f.issueSv.GetIssueResume(ctx, f.owner, work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(resume.Open) != 1 || resume.Open[0].Title != "Coverage" {
+		t.Errorf("open = %v, want only Coverage", resume.Open)
+	}
+}

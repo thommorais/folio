@@ -63,7 +63,7 @@ func (s *PlanService) progress(ctx context.Context, id domain.PlanID) (domain.Pr
 	if err != nil {
 		return domain.Progress{}, err
 	}
-	return rules.ProgressOfIssues(todos), nil
+	return rules.ProgressOfIssues(liveIssues(todos)), nil
 }
 
 // CreatePlan writes the plan and any todos supplied with it. The plan is

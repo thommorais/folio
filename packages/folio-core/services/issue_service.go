@@ -52,7 +52,7 @@ func (s *IssueService) decorate(ctx context.Context, project domain.ProjectID, i
 	if err != nil {
 		return err
 	}
-	all, err := s.repo.List(ctx, project, domain.IssueFilter{Limit: MaxPageSize})
+	all, err := s.repo.List(ctx, project, domain.IssueFilter{Archive: domain.ArchiveAny, Limit: MaxPageSize})
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,9 @@ func (s *IssueService) progress(id domain.IssueID, all []domain.Issue, links []d
 	children := make([]domain.Issue, 0)
 	byID := make(map[domain.IssueID]domain.Issue, len(all))
 	for _, i := range all {
-		byID[i.ID] = i
+		if !i.Archived {
+			byID[i.ID] = i
+		}
 	}
 	for _, l := range links {
 		if l.Kind == domain.LinkParent && l.To == id {
@@ -382,6 +384,9 @@ func (s *IssueService) UpdateIssue(ctx context.Context, actor ports.Actor, id do
 	if in.ExternalRef != nil {
 		issue.ExternalRef = *in.ExternalRef
 	}
+	if in.Archived != nil {
+		issue.Archived = *in.Archived
+	}
 	if in.DueDate != nil {
 		due, err := parseDue(in.DueDate)
 		if err != nil {
@@ -583,6 +588,7 @@ func (s *IssueService) Frontier(ctx context.Context, actor ports.Actor, mapID do
 	if err != nil {
 		return nil, err
 	}
+	children = liveIssues(children)
 	if err := s.decorate(ctx, parent.ProjectID, children); err != nil {
 		return nil, err
 	}
@@ -616,6 +622,7 @@ func (s *IssueService) brief(ctx context.Context, issue domain.Issue, in ports.B
 	if err != nil {
 		return domain.IssueBrief{}, err
 	}
+	children = liveIssues(children)
 	if err := s.decorate(ctx, issue.ProjectID, children); err != nil {
 		return domain.IssueBrief{}, err
 	}
@@ -676,10 +683,21 @@ func (s *IssueService) mapBrief(ctx context.Context, project domain.ProjectID, c
 	if err != nil {
 		return nil, err
 	}
+	children = liveIssues(children)
 	if err := s.decorate(ctx, project, children); err != nil {
 		return nil, err
 	}
 	return &domain.MapBrief{Map: theMap, Open: rules.OpenDecisions(children), Frontier: rules.Takeable(children)}, nil
+}
+
+func liveIssues(issues []domain.Issue) []domain.Issue {
+	out := make([]domain.Issue, 0, len(issues))
+	for _, i := range issues {
+		if !i.Archived {
+			out = append(out, i)
+		}
+	}
+	return out
 }
 
 func sortOpenFirstIssues(issues []domain.Issue) {

@@ -412,3 +412,34 @@ func TestBackfillIndexesPreexistingRows(t *testing.T) {
 		t.Error("backfill did not index a row that predated the index")
 	}
 }
+
+func TestArchivedIssueLeavesTheIndexUntilRestored(t *testing.T) {
+	s := setup(t)
+	repo := pb.NewIssueRepository(s.app)
+
+	issue := newIssue(t, s, domain.IssueTicket, "quokka-migration")
+	found := func() bool {
+		_, ok := find(search(t, s.app, s.project.Id, domain.SearchQuery{Text: "quokka"}), string(issue.ID))
+		return ok
+	}
+
+	if !found() {
+		t.Fatal("a live issue is not indexed")
+	}
+
+	issue.Archived = true
+	if _, err := repo.Update(t.Context(), issue); err != nil {
+		t.Fatal(err)
+	}
+	if found() {
+		t.Error("an archived issue still turns up in search")
+	}
+
+	issue.Archived = false
+	if _, err := repo.Update(t.Context(), issue); err != nil {
+		t.Fatal(err)
+	}
+	if !found() {
+		t.Error("a restored issue is not searchable again")
+	}
+}

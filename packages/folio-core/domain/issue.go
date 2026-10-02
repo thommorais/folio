@@ -94,6 +94,7 @@ type Issue struct {
 	CreatedBy       UserID
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	Archived        bool
 
 	// Derived on read, never persisted.
 	ParentID  IssueID
@@ -115,7 +116,18 @@ func (i Issue) Score() float64 {
 	return weight / float64(i.Size)
 }
 
+type ArchiveView string
+
+const (
+	ArchiveLive ArchiveView = ""
+	ArchiveOnly ArchiveView = "only"
+	ArchiveAny  ArchiveView = "any"
+)
+
+func (v ArchiveView) Valid() bool { return v == ArchiveLive || v == ArchiveOnly || v == ArchiveAny }
+
 type IssueFilter struct {
+	Archive  ArchiveView
 	Kind     IssueKind
 	ParentID IssueID
 	PlanID   PlanID

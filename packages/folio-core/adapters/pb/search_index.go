@@ -171,6 +171,7 @@ var sources = []indexed{
 		Slug:       `{a}.slug`,
 		Refs:       `{a}.slug || ' ' || {a}.external_ref`,
 		TagTarget:  ports.TagIssue,
+		Where:      `{a}.archived = 0`,
 	},
 	{
 		Collection: ColPlans,

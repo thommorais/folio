@@ -50,6 +50,7 @@ func (s *IssueService) resume(ctx context.Context, issue domain.Issue) (domain.I
 	if err != nil {
 		return domain.IssueResume{}, err
 	}
+	children = liveIssues(children)
 	if err := s.decorate(ctx, issue.ProjectID, children); err != nil {
 		return domain.IssueResume{}, err
 	}

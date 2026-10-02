@@ -36,6 +36,12 @@ func (r *fakeIssues) List(_ context.Context, project domain.ProjectID, f domain.
 		if f.Kind != "" && issue.Kind != f.Kind {
 			continue
 		}
+		if f.Archive == domain.ArchiveLive && issue.Archived {
+			continue
+		}
+		if f.Archive == domain.ArchiveOnly && !issue.Archived {
+			continue
+		}
 		if f.PlanID != "" && issue.PlanID != f.PlanID {
 			continue
 		}

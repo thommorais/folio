@@ -316,3 +316,192 @@ func TestDeleteDetachesRatherThanCascades(t *testing.T) {
 		t.Errorf("child still points at the deleted parent %q", survivor.ParentID)
 	}
 }
+
+func archive(t *testing.T, f *issueFixture, id domain.IssueID, archived bool) {
+	t.Helper()
+	if _, err := f.svc.UpdateIssue(t.Context(), f.owner, id, ports.UpdateIssueInput{Archived: &archived}); err != nil {
+		t.Fatalf("set archived=%v: %v", archived, err)
+	}
+}
+
+func listed(t *testing.T, f *issueFixture, view domain.ArchiveView) []domain.Issue {
+	t.Helper()
+	issues, err := f.svc.ListIssues(t.Context(), f.owner, f.project, domain.IssueFilter{Archive: view})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return issues
+}
+
+func TestArchivedIssueLeavesTheDefaultListing(t *testing.T) {
+	f := newIssueFixture(t)
+	keep := f.create(t, domain.IssueTicket, "Keep")
+	shelved := f.create(t, domain.IssueTicket, "Shelved")
+
+	archive(t, f, shelved.ID, true)
+
+	live := listed(t, f, domain.ArchiveLive)
+	if len(live) != 1 || live[0].ID != keep.ID {
+		t.Errorf("default listing = %v, want only %q", live, keep.ID)
+	}
+}
+
+func TestArchiveViewListsOnlyArchivedIssues(t *testing.T) {
+	f := newIssueFixture(t)
+	f.create(t, domain.IssueTicket, "Keep")
+	shelved := f.create(t, domain.IssueTicket, "Shelved")
+
+	archive(t, f, shelved.ID, true)
+
+	only := listed(t, f, domain.ArchiveOnly)
+	if len(only) != 1 || only[0].ID != shelved.ID || !only[0].Archived {
+		t.Errorf("archived listing = %v, want only %q marked archived", only, shelved.ID)
+	}
+}
+
+func TestRestoredIssueReturnsToTheDefaultListing(t *testing.T) {
+	f := newIssueFixture(t)
+	shelved := f.create(t, domain.IssueTicket, "Shelved")
+
+	archive(t, f, shelved.ID, true)
+	archive(t, f, shelved.ID, false)
+
+	if got := listed(t, f, domain.ArchiveLive); len(got) != 1 {
+		t.Errorf("default listing has %d issues after restore, want 1", len(got))
+	}
+	if got := listed(t, f, domain.ArchiveOnly); len(got) != 0 {
+		t.Errorf("archived listing has %d issues after restore, want 0", len(got))
+	}
+}
+
+func TestArchivedIssueIsStillReadableByID(t *testing.T) {
+	f := newIssueFixture(t)
+	shelved := f.create(t, domain.IssueTicket, "Shelved")
+	archive(t, f, shelved.ID, true)
+
+	got, err := f.svc.GetIssue(t.Context(), f.owner, shelved.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Archived {
+		t.Error("a fetched archived issue must report archived, or the UI cannot offer Restore")
+	}
+}
+
+func TestArchiveLeavesStatusAlone(t *testing.T) {
+	f := newIssueFixture(t)
+	issue := f.create(t, domain.IssueTodo, "Half done")
+	if _, err := f.svc.UpdateIssue(t.Context(), f.owner, issue.ID, ports.UpdateIssueInput{Status: ptr(domain.IssueInProgress)}); err != nil {
+		t.Fatal(err)
+	}
+
+	archive(t, f, issue.ID, true)
+	archive(t, f, issue.ID, false)
+
+	got, err := f.svc.GetIssue(t.Context(), f.owner, issue.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != domain.IssueInProgress {
+		t.Errorf("status after archive and restore = %q, want %q", got.Status, domain.IssueInProgress)
+	}
+}
+
+func TestArchivedChildLeavesTheBrief(t *testing.T) {
+	f := newIssueFixture(t)
+	parent := f.create(t, domain.IssueTicket, "Parent")
+	kept, err := f.svc.CreateIssue(t.Context(), f.owner, ports.CreateIssueInput{
+		ProjectID: f.project, Kind: domain.IssueTodo, Title: "Kept", ParentID: parent.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	shelved, err := f.svc.CreateIssue(t.Context(), f.owner, ports.CreateIssueInput{
+		ProjectID: f.project, Kind: domain.IssueTodo, Title: "Shelved", ParentID: parent.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive(t, f, shelved.ID, true)
+
+	brief, err := f.svc.GetIssueBrief(t.Context(), f.owner, parent.ID, ports.BriefOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(brief.Children) != 1 || brief.Children[0].ID != kept.ID {
+		t.Errorf("brief children = %v, want only %q", brief.Children, kept.ID)
+	}
+}
+
+func TestArchivedBlockerNoLongerBlocks(t *testing.T) {
+	f := newIssueFixture(t)
+	blocker := f.create(t, domain.IssueTodo, "Blocker")
+	blocked, err := f.svc.CreateIssue(t.Context(), f.owner, ports.CreateIssueInput{
+		ProjectID: f.project, Kind: domain.IssueTodo, Title: "Blocked", DependsOn: []domain.IssueID{blocker.ID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	archive(t, f, blocker.ID, true)
+
+	got, err := f.svc.GetIssue(t.Context(), f.owner, blocked.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Blocked {
+		t.Error("an archived blocker is out of the graph and must not hold what it blocks")
+	}
+
+	archive(t, f, blocker.ID, false)
+
+	got, err = f.svc.GetIssue(t.Context(), f.owner, blocked.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Blocked {
+		t.Error("restoring an open blocker must block again")
+	}
+}
+
+func TestViewerCannotArchive(t *testing.T) {
+	f := newIssueFixture(t)
+	issue := f.create(t, domain.IssueTicket, "Mine")
+	archived := true
+
+	_, err := f.svc.UpdateIssue(t.Context(), f.viewer, issue.ID, ports.UpdateIssueInput{Archived: &archived})
+	if err == nil {
+		t.Error("a viewer archived an issue")
+	}
+}
+
+func TestArchivedChildDoesNotCountTowardProgress(t *testing.T) {
+	f := newIssueFixture(t)
+	parent := f.create(t, domain.IssueTicket, "Parent")
+	for _, title := range []string{"Done one", "Shelved one"} {
+		if _, err := f.svc.CreateIssue(t.Context(), f.owner, ports.CreateIssueInput{
+			ProjectID: f.project, Kind: domain.IssueTodo, Title: title, ParentID: parent.ID,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	issues := listed(t, f, domain.ArchiveLive)
+	for _, i := range issues {
+		switch i.Title {
+		case "Done one":
+			if _, err := f.svc.SetIssueStatus(t.Context(), f.owner, i.ID, domain.IssueDone); err != nil {
+				t.Fatal(err)
+			}
+		case "Shelved one":
+			archive(t, f, i.ID, true)
+		}
+	}
+
+	got, err := f.svc.GetIssue(t.Context(), f.owner, parent.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Progress.Total != 1 || got.Progress.Done != 1 {
+		t.Errorf("progress = %d/%d, want 1/1 with the archived child left out", got.Progress.Done, got.Progress.Total)
+	}
+}

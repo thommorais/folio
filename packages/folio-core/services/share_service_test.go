@@ -217,3 +217,33 @@ func TestOnlyWritersCanRevoke(t *testing.T) {
 		t.Errorf("share stopped opening after refused revokes: %v", err)
 	}
 }
+
+func TestArchivedTodoDoesNotCountTowardPlanProgress(t *testing.T) {
+	f := newTicketFixture(t)
+	plan, err := f.planSvc.CreatePlan(t.Context(), f.owner, ports.CreatePlanInput{
+		ProjectID: f.project, Title: "Ship it",
+		Todos: []ports.CreateIssueInput{{Title: "Kept"}, {Title: "Shelved"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	todos, err := f.issues.ListByPlan(t.Context(), plan.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, todo := range todos {
+		if todo.Title == "Shelved" {
+			if _, err := f.issueSvc.UpdateIssue(t.Context(), f.owner, todo.ID, ports.UpdateIssueInput{Archived: ptr(true)}); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	got, err := f.planSvc.GetPlan(t.Context(), f.owner, plan.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Progress.Total != 1 {
+		t.Errorf("plan progress total = %d, want 1 with the archived todo left out", got.Progress.Total)
+	}
+}

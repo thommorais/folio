@@ -264,3 +264,30 @@ func TestAMapWithItsOwnOpenCycleStaysOpen(t *testing.T) {
 		t.Fatalf("a map with an unresolved cycle of its own must not close, got %s", kept.Status)
 	}
 }
+
+func TestAnArchivedDecisionNoLongerHoldsTheCycleInPlan(t *testing.T) {
+	f := newTicketFixture(t)
+	ctx := t.Context()
+	work := f.ticket(t, f.project, "Wayfinder view")
+	theMap := f.child(t, work.ID, domain.WayfinderMap, "Plan the wayfinder view")
+	question := f.child(t, theMap.ID, domain.WayfinderGrilling, "Tree or graph")
+
+	cycle, err := f.cycleSvc.OpenCycle(ctx, f.owner, work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.cycleSvc.SetCycleMap(ctx, f.owner, cycle.ID, theMap.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.cycleSvc.AdvancePhase(ctx, f.owner, cycle.ID, domain.PhaseDo); !errors.Is(err, domain.ErrValidation) {
+		t.Fatalf("an open decision must hold plan, got %v", err)
+	}
+
+	if _, err := f.issueSvc.UpdateIssue(ctx, f.owner, question.ID, ports.UpdateIssueInput{Archived: ptr(true)}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.cycleSvc.AdvancePhase(ctx, f.owner, cycle.ID, domain.PhaseDo); err != nil {
+		t.Fatalf("an archived decision is out of the way, got %v", err)
+	}
+}
