@@ -312,13 +312,14 @@ folio worklog write "Mapbox rejects feature-state in a filter" --ticket <id>
 folio worklog write - --plan <id> <<'EOF'
 Longer note from stdin.
 EOF
-folio worklog list --ticket <id>
+folio worklog list --ticket <id> --cycle <cycle-id>
 ```
 
 `list` and `write` take exactly one of `--ticket`, `--plan` or `--todo`;
-`delete` takes only the entry id. The CLI sends no cycle, so its work logs carry
-none and `list --cycle` matches none of them. Deleting the ticket or plan
-detaches its work logs, the way it detaches plans and docs.
+`delete` takes only the entry id. A ticket work log written while a cycle is
+open is stamped with that cycle, which is what `list --cycle` filters on.
+Deleting the ticket or plan detaches its work logs, the way it detaches plans
+and docs.
 
 ## Writing
 

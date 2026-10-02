@@ -59,7 +59,7 @@ func newTicketFixture(t *testing.T) *ticketFixture {
 		issueSvc: issueSvc,
 		guard:    guard,
 		planSvc:  services.NewPlanService(plans, issues, issueSvc, guard, clock, &seqIDs{prefix: "pl"}, nopLogger{}),
-		entrySvc: services.NewEntryService(entries, issues, plans, guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),
+		entrySvc: services.NewEntryService(entries, issues, plans, cycles, guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),
 		cycleSvc: services.NewCycleService(cycles, issues, guard, clock, &seqIDs{prefix: "cy"}, nopLogger{}),
 		interviews:   interviews,
 		interviewSvc: services.NewInterviewService(interviews, issues, projects, domains, guard, clock, &seqIDs{prefix: "iv"}, nopLogger{}),

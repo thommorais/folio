@@ -14,14 +14,15 @@ type EntryService struct {
 	repo   ports.EntryRepository
 	issues ports.IssueRepository
 	plans  ports.PlanRepository
+	cycles ports.CycleRepository
 	guard  ports.Guard
 	clock  ports.Clock
 	ids    ports.IDGenerator
 	log    ports.Logger
 }
 
-func NewEntryService(repo ports.EntryRepository, issues ports.IssueRepository, plans ports.PlanRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *EntryService {
-	return &EntryService{repo: repo, issues: issues, plans: plans, guard: guard, clock: clock, ids: ids, log: log}
+func NewEntryService(repo ports.EntryRepository, issues ports.IssueRepository, plans ports.PlanRepository, cycles ports.CycleRepository, guard ports.Guard, clock ports.Clock, ids ports.IDGenerator, log ports.Logger) *EntryService {
+	return &EntryService{repo: repo, issues: issues, plans: plans, cycles: cycles, guard: guard, clock: clock, ids: ids, log: log}
 }
 
 var _ ports.EntryUseCase = (*EntryService)(nil)
@@ -100,6 +101,15 @@ func (s *EntryService) WriteEntry(ctx context.Context, actor ports.Actor, in por
 			return domain.Entry{}, err
 		}
 		entry.Slug = slug
+	}
+	if kind == domain.EntryLog && entry.IssueID != "" && entry.CycleID == "" {
+		cycles, err := s.cycles.ListByIssue(ctx, entry.IssueID)
+		if err != nil {
+			return domain.Entry{}, err
+		}
+		if current, ok := rules.CurrentCycle(cycles); ok && !current.IsClosed() {
+			entry.CycleID = current.ID
+		}
 	}
 	if err := rules.ValidateEntry(entry); err != nil {
 		return domain.Entry{}, err

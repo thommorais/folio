@@ -41,7 +41,7 @@ func newEntryFixture(t *testing.T) *entryFixture {
 	return &entryFixture{
 		entries: entries,
 		issues:  issues,
-		svc:     services.NewEntryService(entries, issues, plans, guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),
+		svc:     services.NewEntryService(entries, issues, plans, newFakeCycles(), guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),
 		issueSv: services.NewIssueService(issues, plans, entries, newFakeCycles(), guard, clock, &seqIDs{prefix: "is"}, nopLogger{}),
 		owner:   ports.Actor{UserID: "u-owner"},
 		viewer:  ports.Actor{UserID: "u-viewer"},

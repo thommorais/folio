@@ -22,7 +22,7 @@ func TestSeedWritesTheDemoAndReruns(t *testing.T) {
 		Projects: services.NewProjectService(projects, newFakeDomains(), guard, clock, &seqIDs{prefix: "pr"}, nopLogger{}),
 		Plans:    services.NewPlanService(plans, issues, issueSvc, guard, clock, &seqIDs{prefix: "pl"}, nopLogger{}),
 		Issues:   issueSvc,
-		Entries:  services.NewEntryService(entries, issues, plans, guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),
+		Entries:  services.NewEntryService(entries, issues, plans, newFakeCycles(), guard, clock, &seqIDs{prefix: "e"}, nopLogger{}),
 		Cycles:   services.NewCycleService(cycles, issues, guard, clock, &seqIDs{prefix: "cy"}, nopLogger{}),
 	}
 	actor := ports.Actor{UserID: "u-owner"}
