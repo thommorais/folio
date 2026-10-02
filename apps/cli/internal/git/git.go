@@ -54,6 +54,27 @@ func PR(dir string) string {
 	return view.URL
 }
 
+func Commit(dir string) string {
+	return run(context.Background(), dir, "git", "rev-parse", "HEAD")
+}
+
+func Changes(dir string) []string {
+	cmd := exec.Command("git", "status", "--porcelain")
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+
+	var paths []string
+	for _, line := range strings.Split(string(out), "\n") {
+		if len(line) > 3 {
+			paths = append(paths, line[3:])
+		}
+	}
+	return paths
+}
+
 // run returns trimmed stdout, or empty for any failure at all.
 func run(ctx context.Context, dir, name string, args ...string) string {
 	cmd := exec.CommandContext(ctx, name, args...)

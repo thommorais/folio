@@ -20,6 +20,9 @@ func exitCode(err error) int {
 	if errors.Is(err, config.ErrNoToken) || errors.Is(err, client.ErrNoToken) {
 		return exitAuth
 	}
+	if errors.Is(err, errUncommitted) {
+		return exitValidation
+	}
 
 	switch status, _ := client.Status(err); status {
 	case http.StatusUnauthorized, http.StatusForbidden:

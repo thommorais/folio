@@ -26,16 +26,17 @@ type JournalEntry struct {
 }
 
 type LogInput struct {
-	Kind        *string   `json:"kind,omitempty"`
-	TicketID    *string   `json:"issue_id,omitempty"`
-	PlanID      *string   `json:"plan_id,omitempty"`
-	Slug        *string   `json:"slug,omitempty"`
-	Title       *string   `json:"title,omitempty"`
-	Body        *string   `json:"body,omitempty"`
-	Branch      *string   `json:"branch,omitempty"`
-	PR          *string   `json:"pr,omitempty"`
-	ExternalRef *string   `json:"external_ref,omitempty"`
-	Tags        *[]string `json:"tags,omitempty"`
+	Kind        *string         `json:"kind,omitempty"`
+	TicketID    *string         `json:"issue_id,omitempty"`
+	PlanID      *string         `json:"plan_id,omitempty"`
+	Slug        *string         `json:"slug,omitempty"`
+	Title       *string         `json:"title,omitempty"`
+	Body        *string         `json:"body,omitempty"`
+	Branch      *string         `json:"branch,omitempty"`
+	PR          *string         `json:"pr,omitempty"`
+	ExternalRef *string         `json:"external_ref,omitempty"`
+	Tags        *[]string       `json:"tags,omitempty"`
+	Meta        *map[string]any `json:"meta,omitempty"`
 }
 
 type JournalFilter struct {

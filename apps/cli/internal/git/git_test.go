@@ -129,3 +129,46 @@ func TestPR(t *testing.T) {
 		}
 	})
 }
+
+func TestCommit(t *testing.T) {
+	t.Run("reads the HEAD sha", func(t *testing.T) {
+		dir := repo(t)
+		want := run(t.Context(), dir, "git", "rev-parse", "HEAD")
+
+		if got := Commit(dir); got != want || len(got) != 40 {
+			t.Errorf("Commit = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("is empty outside a repository", func(t *testing.T) {
+		if got := Commit(t.TempDir()); got != "" {
+			t.Errorf("Commit = %q, want empty", got)
+		}
+	})
+}
+
+func TestChanges(t *testing.T) {
+	t.Run("is empty on a clean tree", func(t *testing.T) {
+		if got := Changes(repo(t)); len(got) != 0 {
+			t.Errorf("Changes = %v, want none", got)
+		}
+	})
+
+	t.Run("lists modified and untracked paths", func(t *testing.T) {
+		dir := repo(t)
+		if err := os.WriteFile(filepath.Join(dir, "new.go"), []byte("package x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		got := Changes(dir)
+		if len(got) != 1 || got[0] != "new.go" {
+			t.Errorf("Changes = %v, want [new.go]", got)
+		}
+	})
+
+	t.Run("is empty outside a repository", func(t *testing.T) {
+		if got := Changes(t.TempDir()); len(got) != 0 {
+			t.Errorf("Changes = %v, want none", got)
+		}
+	})
+}

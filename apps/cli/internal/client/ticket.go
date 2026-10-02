@@ -118,6 +118,7 @@ const (
 	KindDoc        = "doc"
 	KindLog        = "log"
 	KindResolution = "resolution"
+	KindHandoff    = "handoff"
 )
 
 func (c *Client) TicketFrontier(id string) ([]Ticket, error) {

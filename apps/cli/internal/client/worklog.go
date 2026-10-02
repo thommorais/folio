@@ -83,3 +83,28 @@ func (c *Client) WritePlanLog(project, plan, body string) (WorkLog, error) {
 func (c *Client) DeleteWorkLog(id string) error {
 	return c.do(http.MethodDelete, "/api/folio/entries/"+id, nil, nil)
 }
+
+type Handoff struct {
+	Body   string
+	Branch string
+	PR     string
+	Meta   map[string]any
+}
+
+func (c *Client) WriteHandoff(project, issue string, h Handoff) (WorkLog, error) {
+	kind := KindHandoff
+	in := LogInput{Kind: &kind, TicketID: &issue, Body: &h.Body}
+	if len(h.Meta) > 0 {
+		in.Meta = &h.Meta
+	}
+	if h.Branch != "" {
+		in.Branch = &h.Branch
+	}
+	if h.PR != "" {
+		in.PR = &h.PR
+	}
+
+	var entry WorkLog
+	err := c.do(http.MethodPost, "/api/folio/projects/"+project+"/entries", in, &entry)
+	return entry, err
+}
