@@ -15,7 +15,6 @@ import { usePlans } from '_/app/use-plans';
 import { Markdown } from '_/components/markdown'
 import { WorkLog } from '_/components/record/work-log';
 import { RecordGone } from '_/components/record/record-gone';
-import { ShareSheet } from '_/components/share/share-sheet';
 import { openBlockers } from '_/core/domain/blocked';
 import { newestFirst } from '_/core/domain/cycle-progress';
 import { ADDRESSABLE_KINDS } from '_/core/domain/entry';
@@ -31,6 +30,7 @@ import { SHARE_KIND } from '_/core/domain/share';
 import { LoadError } from '_/components/load-error';
 import { ExternalRef } from '_/components/issue/external-ref';
 import { CopyId } from '_/components/issue/copy-id';
+import { IssueMenu } from '_/components/issue/issue-menu';
 
 const statusLabels: Record<IssueStatus, string> = {
 	open: 'Open',
@@ -102,6 +102,7 @@ type BodyProps = {
 
 const TicketBody = ({ project, ticket }: BodyProps) => {
 	const { client, domain } = useScope()
+	const navigate = useNavigate()
 	const ticketId = ticket.id
 	const plans = usePlans(project, { ticketId })
 	const todos = useIssues(project, { kind: ISSUE_KIND.TODO, parentId: ticketId })
@@ -127,7 +128,11 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 					<Heading>{ticket.title}</Heading>
 					<div className='flex shrink-0 items-center gap-2'>
 						<CopyId id={ticket.id} />
-						<ShareSheet target={{ kind: SHARE_KIND.ISSUE, id: ticket.id, projectId: ticket.projectId }} />
+						<IssueMenu
+							id={ticket.id}
+							share={{ kind: SHARE_KIND.ISSUE, id: ticket.id, projectId: ticket.projectId }}
+							onDeleted={() => void navigate({ to: '/$client/$domain/$slug/tickets', params: { client, domain, slug: project } })}
+						/>
 					</div>
 				</div>
 

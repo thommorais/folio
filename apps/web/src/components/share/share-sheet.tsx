@@ -2,7 +2,7 @@ import { Check, Copy, Link2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@thom/ui/button'
 import { Input } from '@thom/ui/input'
-import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@thom/ui/sheet'
+import { Sheet, SheetContent, SheetHeader } from '@thom/ui/sheet'
 import { toast } from '@thom/ui/toast'
 import { useShareLinks } from '_/app/use-share-links'
 import { SHARE_LABEL_MAX, shareUrl, SHARE_KIND, type ShareLink, type ShareTarget } from '_/core/domain/share'
@@ -177,18 +177,28 @@ const SharePanel = ({ target }: { readonly target: ShareTarget }) => {
 	)
 }
 
+type ControlledProps = {
+	readonly target: ShareTarget
+	readonly open: boolean
+	readonly onOpenChange: (open: boolean) => void
+}
+
+export const ShareSheetPanel = ({ target, open, onOpenChange }: ControlledProps) => (
+	<Sheet open={open} onOpenChange={onOpenChange}>
+		<SheetContent title='Share'>{open && <SharePanel target={target} />}</SheetContent>
+	</Sheet>
+)
+
 export const ShareSheet = ({ target }: { readonly target: ShareTarget }) => {
 	const [open, setOpen] = useState(false)
 
 	return (
-		<Sheet open={open} onOpenChange={setOpen}>
-			<SheetTrigger asChild>
-				<Button variant='outline' size='sm'>
-					<Link2 data-slot='icon' />
-					Share
-				</Button>
-			</SheetTrigger>
-			<SheetContent title='Share'>{open && <SharePanel target={target} />}</SheetContent>
-		</Sheet>
+		<>
+			<Button variant='outline' size='sm' onClick={() => setOpen(true)}>
+				<Link2 data-slot='icon' />
+				Share
+			</Button>
+			<ShareSheetPanel target={target} open={open} onOpenChange={setOpen} />
+		</>
 	)
 }

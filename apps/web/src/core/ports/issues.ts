@@ -31,6 +31,7 @@ export type IssuesPort = {
 	readonly get: (project: string, slug: string) => Promise<Result<Issue>>
 	readonly getById: (project: string, id: string) => Promise<Result<Issue>>
 	readonly create: (project: string, input: CreateIssueInput) => Promise<Result<{ readonly slug: string }>>
+	readonly remove: (id: string) => Promise<Result<void>>
 	readonly subscribeToList: (
 		project: string,
 		update: (issue: Issue, action: ActionEvent) => void,

@@ -1,9 +1,10 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { Tag } from '_/components/issue/tag'
 import { PriorityIcon } from '_/components/issue/priority-icon'
 import { StatusIcon } from '_/components/issue/status-icon'
 import { IssueRef } from '_/components/issue/issue-ref'
 import { CopyId } from '_/components/issue/copy-id'
+import { IssueMenu } from '_/components/issue/issue-menu'
 import { PlanRef } from '_/components/issue/plan-ref'
 import { RecordGone } from '_/components/record/record-gone'
 import { WorkLog } from '_/components/record/work-log'
@@ -32,6 +33,7 @@ const formatDate = (date: Date): string =>
 const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonly project: string; readonly linked?: boolean }) => {
 	const { client, domain } = useScope()
 	const closePreview = usePreviewStore(state => state.closePreview)
+	const navigate = useNavigate()
 
 	return (
 		<div className='scrollbar-hide h-full overflow-auto pb-6'>
@@ -44,6 +46,13 @@ const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonl
 					<span className='flex items-center gap-3'>
 						{formatDate(todo.createdAt)}
 						<CopyId id={todo.id} />
+						<IssueMenu
+							id={todo.id}
+							onDeleted={() => {
+								closePreview()
+								if (!linked) void navigate({ to: '/$client/$domain/$slug/todos', params: { client, domain, slug: project } })
+							}}
+						/>
 					</span>
 				</div>
 

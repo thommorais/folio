@@ -255,6 +255,14 @@ export const createIssuesAdapter = (): IssuesPort => {
 			}
 		},
 
+		remove: async (id): Promise<Result<void>> => {
+			const { error } = await tryCatch(
+				client.send(`/api/folio/issues/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+			)
+
+			return error ? err(new Error(`Could not delete the issue: ${error.message}`, { cause: error })) : ok(undefined)
+		},
+
 		subscribeToRecord: async (_project, id, onChange, onGone): Promise<Result<Unsubscribe>> =>
 			subscribe(
 				collection(),
