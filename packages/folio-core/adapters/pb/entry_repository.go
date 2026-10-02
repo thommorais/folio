@@ -91,7 +91,11 @@ func (r *EntryRepository) List(ctx context.Context, project domain.ProjectID, f 
 		exprs = append(exprs, dbx.NewExp("created <= {:until}", dbx.Params{"until": f.Until.UTC().Format("2006-01-02 15:04:05.000Z")}))
 	}
 
-	records, err := r.app.FindAllRecords(ColEntries, exprs...)
+	var records []*core.Record
+	err := r.app.RecordQuery(ColEntries).
+		AndWhere(dbx.And(exprs...)).
+		OrderBy("created DESC", "rowid DESC").
+		All(&records)
 	if err != nil {
 		return nil, mapErr(err)
 	}

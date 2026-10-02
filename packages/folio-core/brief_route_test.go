@@ -86,13 +86,32 @@ func TestBriefHonoursRecentJournal(t *testing.T) {
 			t.Fatalf("%s = %d %s", path, res.Code, res.Body)
 		}
 		var brief struct {
-			Journal []json.RawMessage `json:"journal"`
+			Journal []struct {
+				Title string `json:"title"`
+			} `json:"journal"`
 		}
 		if err := json.Unmarshal(res.Body.Bytes(), &brief); err != nil {
 			t.Fatal(err)
 		}
-		if len(brief.Journal) != 1 {
-			t.Errorf("%s: journal = %d entries, want 1", path, len(brief.Journal))
+		if len(brief.Journal) != 1 || brief.Journal[0].Title != "entry 2" {
+			t.Errorf("%s: journal = %+v, want only the newest, entry 2", path, brief.Journal)
 		}
+	}
+
+	res := do(http.MethodGet, "/api/folio/projects/redesign/entries?kind=journal", "")
+	var list struct {
+		Entries []struct {
+			Title string `json:"title"`
+		} `json:"entries"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &list); err != nil {
+		t.Fatal(err)
+	}
+	titles := []string{}
+	for _, e := range list.Entries {
+		titles = append(titles, e.Title)
+	}
+	if strings.Join(titles, ",") != "entry 2,entry 1,entry 0" {
+		t.Errorf("entries = %v, want newest first", titles)
 	}
 }
