@@ -22,6 +22,7 @@ const FILTER_KEY = {
 	KINDS: 'kinds',
 	TYPES: 'types',
 	TICKET: 'ticket',
+	ARCHIVED: 'archived',
 } as const
 
 const FilterMenuItem = ({ label, children }: { readonly label: string; readonly children: React.ReactNode }) => (

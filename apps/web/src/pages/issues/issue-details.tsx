@@ -1,4 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
+import { Badge } from '@thom/ui/badge'
 import { Tag } from '_/components/issue/tag'
 import { PriorityIcon } from '_/components/issue/priority-icon'
 import { StatusIcon } from '_/components/issue/status-icon'
@@ -35,6 +36,11 @@ const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonl
 	const closePreview = usePreviewStore(state => state.closePreview)
 	const navigate = useNavigate()
 
+	const leave = () => {
+		closePreview()
+		if (!linked) void navigate({ to: '/$client/$domain/$slug/todos', params: { client, domain, slug: project } })
+	}
+
 	return (
 		<div className='scrollbar-hide h-full overflow-auto pb-6'>
 			<header className='mb-8'>
@@ -48,10 +54,8 @@ const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonl
 						<CopyId issue={todo} />
 						<IssueMenu
 							issue={todo}
-							onDeleted={() => {
-								closePreview()
-								if (!linked) void navigate({ to: '/$client/$domain/$slug/todos', params: { client, domain, slug: project } })
-							}}
+							onDeleted={leave}
+							onArchived={leave}
 						/>
 					</span>
 				</div>
@@ -76,6 +80,7 @@ const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonl
 						<StatusIcon status={todo.status} />
 						{ISSUE_STATUS_LABELS[todo.status]}
 					</span>
+					{todo.archived && <Badge color='neutral'>Archived</Badge>}
 					{todo.tags.map(tag => (
 						<Tag key={tag} tag={tag} />
 					))}

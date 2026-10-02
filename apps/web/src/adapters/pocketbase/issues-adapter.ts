@@ -31,6 +31,7 @@ type IssueColumns = {
 	body: string
 	status: IssueStatus
 	priority: Priority
+	archived: boolean
 	created: Date
 	updated: Date
 }
@@ -65,6 +66,7 @@ const toIssue = (record: IssueRecord): Issue => ({
 	dependsOn: [],
 	relatedTo: [],
 	blocked: false,
+	archived: record.archived ?? false,
 })
 
 const hydrate = async (issues: readonly Issue[]): Promise<readonly Issue[]> => {
@@ -102,6 +104,7 @@ const columns = (project: string, filter: IssueFilter) =>
 		{ field: 'status', comparator: 'anyOf', value: filter.status },
 		{ field: 'priority', comparator: 'eq', value: filter.priority },
 		{ field: 'title', comparator: 'contains', value: filter.search },
+		{ field: 'archived', comparator: 'eq', value: filter.archived === true },
 	])
 
 const matchesTags = (issue: Issue, tags: readonly string[] | undefined): boolean => {
@@ -217,6 +220,7 @@ export const createIssuesAdapter = (): IssuesPort => {
 					{ field: 'id', comparator: 'eq', value: id },
 					{ field: 'project.slug', comparator: 'eq', value: project },
 					{ field: 'kind', comparator: 'eq', value: filter.kind },
+					{ field: 'archived', comparator: 'eq', value: filter.archived === true },
 				])
 
 				void collection()
@@ -264,6 +268,16 @@ export const createIssuesAdapter = (): IssuesPort => {
 			)
 
 			return error ? err(new Error(`Could not save the issue: ${error.message}`, { cause: error })) : ok(undefined)
+		},
+
+		setArchived: async (id, archived): Promise<Result<void>> => {
+			const { error } = await tryCatch(
+				client.send(`/api/folio/issues/${encodeURIComponent(id)}`, { method: 'PATCH', body: { archived } }),
+			)
+
+			return error
+				? err(new Error(`Could not ${archived ? 'archive' : 'restore'} the issue: ${error.message}`, { cause: error }))
+				: ok(undefined)
 		},
 
 		remove: async (id): Promise<Result<void>> => {

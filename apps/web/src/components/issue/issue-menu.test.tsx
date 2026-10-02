@@ -26,6 +26,7 @@ const mount = (remove: ReturnType<typeof vi.fn>, props: { readonly share?: boole
 			<IssueMenu
 				issue={issue}
 				onDeleted={onDeleted}
+				onArchived={() => {}}
 				share={props.share ? { kind: 'issue', id: 'i1', projectId: projectId('p1') } : undefined}
 			/>
 		</ContainerProvider>,

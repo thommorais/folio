@@ -104,6 +104,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 	const { client, domain } = useScope()
 	const navigate = useNavigate()
 	const ticketId = ticket.id
+	const leave = () => void navigate({ to: '/$client/$domain/$slug/tickets', params: { client, domain, slug: project } })
 	const plans = usePlans(project, { ticketId })
 	const todos = useIssues(project, { kind: ISSUE_KIND.TODO, parentId: ticketId })
 	const journal = useEntries(project, { kinds: ADDRESSABLE_KINDS, issueId: ticketId })
@@ -131,7 +132,8 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 						<IssueMenu
 							issue={ticket}
 							share={{ kind: SHARE_KIND.ISSUE, id: ticket.id, projectId: ticket.projectId }}
-							onDeleted={() => void navigate({ to: '/$client/$domain/$slug/tickets', params: { client, domain, slug: project } })}
+							onDeleted={leave}
+							onArchived={leave}
 						/>
 					</div>
 				</div>
@@ -145,6 +147,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 						<PriorityIcon priority={ticket.priority} />
 						{ticket.priority}
 					</span>
+					{ticket.archived && <Badge color='neutral'>Archived</Badge>}
 					{ticket.wayfinder && <Badge color='neutral'>{ticket.wayfinder}</Badge>}
 					{current && <CycleChip cycle={current} />}
 					{ticket.externalRef && <ExternalRef value={ticket.externalRef} />}

@@ -24,6 +24,7 @@ type IssuesSearch = {
 	readonly priority?: Priority
 	readonly tags?: readonly string[]
 	readonly q?: string
+	readonly archived?: true
 	readonly sort?: Sort<IssueSortField>
 }
 
@@ -168,7 +169,7 @@ type IssuesProps = {
 const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 	const { slug } = useParams({ strict: false }) as { readonly slug: string }
 	const search = useSearch({ strict: false }) as IssuesSearch
-	const statuses = search.statuses ?? defaultStatuses
+	const statuses = search.archived ? search.statuses : (search.statuses ?? defaultStatuses)
 
 	const state = useIssues(slug, {
 		kind,
@@ -176,6 +177,7 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 		priority: search.priority,
 		tags: search.tags,
 		search: search.q,
+		archived: search.archived,
 		sort: search.sort,
 	})
 
@@ -183,7 +185,8 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 		search.q !== undefined ||
 		search.statuses !== undefined ||
 		search.tags !== undefined ||
-		search.priority !== undefined
+		search.priority !== undefined ||
+		search.archived !== undefined
 	const narrowed = filtered || statuses !== undefined
 
 	const everything = useIssues(slug, { kind, sort: search.sort })
@@ -201,7 +204,7 @@ const Issues = ({ kind, emptyLabel, defaultStatuses }: IssuesProps) => {
 			return <EmptyState message={`No ${emptyLabel} yet.`} command={`folio ${kind} create "<title>" -p ${slug}`} />
 		}
 
-		const context = narrowed && everything.status === Status.Ready ? everything.issues : []
+		const context = narrowed && !search.archived && everything.status === Status.Ready ? everything.issues : []
 
 		if (kind === ISSUE_KIND.TODO) {
 			return <GroupedTodos issues={state.issues} context={context} project={slug} />

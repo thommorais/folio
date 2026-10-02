@@ -16,6 +16,8 @@ export const asMembers = <T extends string>(allowed: readonly T[], value: unknow
 	return parsed.length > 0 ? parsed : undefined
 }
 
+export const asFlag = (value: unknown): true | undefined => (value === true || value === 'true' ? true : undefined)
+
 export const asStrings = (value: unknown): readonly string[] | undefined => {
 	const raw = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : []
 	const parsed = raw.map(asString).filter((entry): entry is string => entry !== undefined)

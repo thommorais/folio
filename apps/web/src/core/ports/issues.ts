@@ -13,6 +13,7 @@ export type IssueFilter = {
 	readonly priority?: Priority
 	readonly tags?: readonly string[]
 	readonly search?: string
+	readonly archived?: boolean
 	readonly limit?: number
 	readonly offset?: number
 }
@@ -39,6 +40,7 @@ export type IssuesPort = {
 	readonly getById: (project: string, id: string) => Promise<Result<Issue>>
 	readonly create: (project: string, input: CreateIssueInput) => Promise<Result<{ readonly slug: string }>>
 	readonly update: (id: string, input: UpdateIssueInput) => Promise<Result<void>>
+	readonly setArchived: (id: string, archived: boolean) => Promise<Result<void>>
 	readonly remove: (id: string) => Promise<Result<void>>
 	readonly subscribeToList: (
 		project: string,

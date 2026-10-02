@@ -96,6 +96,7 @@ export type Issue = {
 	readonly dependsOn: readonly IssueId[]
 	readonly relatedTo: readonly IssueId[]
 	readonly blocked: boolean
+	readonly archived: boolean
 }
 
 export const isTerminal = (status: IssueStatus): boolean => status === ISSUE_STATUS.DONE || status === ISSUE_STATUS.CANCELLED

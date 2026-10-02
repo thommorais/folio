@@ -23,6 +23,7 @@ type IssuesSearch = {
 	readonly priority?: Priority
 	readonly tags?: readonly string[]
 	readonly q?: string
+	readonly archived?: true
 	readonly sort?: Sort<TicketSortField | TodoSortField>
 }
 
@@ -34,7 +35,7 @@ type IssueFiltersProps = {
 
 const IssueFilters = ({ kind, project, defaultStatuses }: IssueFiltersProps) => {
 	const search = useSearch({ strict: false }) as IssuesSearch
-	const statuses = search.statuses ?? defaultStatuses
+	const statuses = search.archived ? search.statuses : (search.statuses ?? defaultStatuses)
 	const navigate = useNavigate()
 
 	const setFilter = (patch: Partial<IssuesSearch>) => {
@@ -45,6 +46,7 @@ const IssueFilters = ({ kind, project, defaultStatuses }: IssueFiltersProps) => 
 
 	const hiding =
 		defaultStatuses &&
+		!search.archived &&
 		defaultChip(FILTER_KEY.STATUSES, search.statuses, ISSUE_STATUSES, defaultStatuses, status => ISSUE_STATUS_LABELS[status].toLowerCase(), all => {
 			setFilter({ statuses: all })
 		})
@@ -55,6 +57,15 @@ const IssueFilters = ({ kind, project, defaultStatuses }: IssueFiltersProps) => 
 			setFilter({ statuses })
 		}),
 	)
+	if (search.archived) {
+		chips.push({
+			key: FILTER_KEY.ARCHIVED,
+			label: 'Archived',
+			onRemove: () => {
+				setFilter({ archived: undefined })
+			},
+		})
+	}
 	if (search.priority !== undefined) {
 		chips.push({
 			key: FILTER_KEY.PRIORITY,
@@ -122,6 +133,14 @@ const IssueFilters = ({ kind, project, defaultStatuses }: IssueFiltersProps) => 
 					/>
 				))}
 			</FilterMenuItem>
+
+			<FilterCheckboxItem
+				label='Archived'
+				checked={search.archived === true}
+				onCheckedChange={() => {
+					setFilter({ archived: search.archived ? undefined : true })
+				}}
+			/>
 
 			<FilterMenuItem label='Tags'>
 				<div className='max-h-75 overflow-y-auto'>

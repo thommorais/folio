@@ -239,6 +239,7 @@ export const JournIssuesWayfinderOptions = {
 } as const
 export type JournIssuesWayfinderOptions = typeof JournIssuesWayfinderOptions[keyof typeof JournIssuesWayfinderOptions]
 export type JournIssuesRecord<Ttags = unknown> = {
+	archived?: boolean
 	assignee?: RecordIdString
 	body?: HTMLString
 	created: IsoAutoDateString

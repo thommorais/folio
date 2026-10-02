@@ -31,6 +31,7 @@ export const anIssue = (id: string, over: Partial<Issue> = {}): Issue => ({
 	dependsOn: [],
 	relatedTo: [],
 	blocked: false,
+	archived: false,
 	...over,
 })
 
