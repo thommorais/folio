@@ -20,20 +20,23 @@ help output does not say.
 
 ## Before anything else: select a project
 
-Every read and write except `project` and `config` needs a project. Without one
-they fail with `no project: pass --project, or select one with: eval "$(folio use <project>)"`.
+Tickets, todos, plans, journal, docs, tags and search need a project; without
+one they fail with an error naming the three ways to give one. Commands that
+address a record by its global id need none: `cycle`, `worklog`, `interview`,
+`kb`, and `ticket get`, `ticket brief`, `doc get`, `resume` and `stop` given an
+id.
 
 ```bash
+folio use folio --here      # binds this directory and everything below it
 eval "$(folio use folio)"   # exports FOLIO_PROJECT for this shell
 folio use                   # prints the current selection to stderr
-eval "$(folio use --clear)" # unsets it
+eval "$(folio use --clear)" # unsets the export; --clear --here drops the binding
 ```
 
-The selection lives in the environment, never on disk, so two terminals can sit
-on different projects. `folio use <project>` resolves the reference against the
-API before printing, so a typo fails there rather than on the next command.
-
-Per-command override: `-p/--project <id-or-slug>`.
+Precedence: `-p/--project`, then `FOLIO_PROJECT`, then the directory binding.
+An agent whose every shell call starts fresh loses the export between calls, so
+bind with `--here`. `folio use <project>` resolves the reference against the API
+first, so a typo fails there rather than on the next command.
 
 ## Authentication
 
@@ -45,11 +48,12 @@ folio config set url https://folio.example.com
 ```
 
 Precedence for url and token: flag, then environment (`FOLIO_URL`, `FOLIO_TOKEN`),
-then the cached login. The cache is taken as a **pair** — the URL and token are
-only read together, because a token is valid only for the host that issued it.
-Default URL is `https://folio.journ.app`.
+then the cached login. A token is valid only for the host that issued it, so a
+URL from a flag or the environment uses the cached token only when it names the
+cached host. Default URL is `https://folio.journ.app`.
 
-`--url` accepts a bare host; loopback gets `http`, anything else `https`.
+`--url` accepts a bare host; `localhost` and `127.0.0.1` get `http`, anything
+else `https`.
 
 ## Piping and JSON
 
@@ -68,8 +72,10 @@ Tagged and pushed. The migration ran clean.
 EOF
 ```
 
-`--body -` works on `journal write`, `journal update`, `doc create`, `doc update`,
-`ticket create`, `ticket update`;
+`--body -` works on `journal write/update`, `doc create/update`,
+`ticket create/update`, `kb add/update` and `worklog write`. The same `-` reads
+stdin for `worklog write -`, `ticket resolve --detail -`,
+`interview finish --doc -` and `stop <ticket> -`.
 `journal append --section -` adds to an existing entry without rewriting it.
 
 ## Tickets and todos are the same record
@@ -108,7 +114,7 @@ findable only by title. Tag todos you create.
 
 Open every session on a known ticket with `folio resume <ticket>` and end it
 with `folio stop <ticket> -`. Resume prints the latest handoff, the work logs
-written since, open children, live plans, the map's next steps, doc pointers,
+written since, the map's next steps, open children, live plans, doc pointers,
 then the body: the one read a session needs. A `drift:` line means the checkout
 differs from the handoff; check out the handed-off branch, or tell the user why
 not, before working.
@@ -138,8 +144,10 @@ first row, and each row names its kind; journal entries are the 10 most recent,
 `cycle plan` section names the map, how many decisions are open, and the
 takeable ones as `next` rows, so the next decision needs no second call.
 
-`folio search` hits journal, docs, todos and plans in one call, newest first, each
-hit with a snippet. Reach for it when you do not know where something lives;
+`folio search` hits tickets, todos, plans, docs, journal, work logs, resolutions,
+decisions and knowledge in one call, each hit with a snippet. With a term, hits
+rank by relevance; with only `--tags`, newest first. `--all` searches every
+project you can read. Reach for it when you do not know where something lives;
 reach for `ticket brief` when you already know the ticket.
 
 ```bash
@@ -147,9 +155,10 @@ folio search "index strategy" --kind journal,doc --limit 5 --json
 folio search --tags decision
 ```
 
-List commands take `--query/-q`, `--tags`, `--limit`, `--offset`, and
-kind-specific filters (`--status`, `--priority`, `--ticket`, `--plan`,
-`--branch`, `--since`, `--until`). `--status` and `--tags` are comma separated.
+List commands take `--limit` and kind-specific filters such as `--status`,
+`--priority`, `--ticket`, `--plan`, `--branch`, `--since` and `--until`; most
+also take `--query/-q`, `--tags` and `--offset`, and `<cmd> list --help` names
+the exact set. `--status` and `--tags` are comma separated.
 Journal, work log, doc and kb lists come back newest first, so `--limit N` is
 the newest N.
 
@@ -200,7 +209,7 @@ Rules the server holds you to:
 - Decisions never run cycles of their own; open the cycle on the work ticket
   the decision serves.
 - Closing a ticket needs a resolution on its **current** cycle. A ticket that
-  never opened a cycle closes freely.
+  never opened a cycle needs none, though a decision still needs its answer.
 
 A second pass is a new cycle with a new map: `cycle open <ticket> --map` on
 cycle 2 files the map beside cycle 1's, under the same work ticket.
@@ -213,7 +222,7 @@ The wayfinder skill asks the tracker for these. In folio:
 |---|---|
 | Create the map | `folio cycle open <work> --map "<title>"` when it plans a cycle, else `folio ticket create "<title>" --wayfinder map --parent <work>` |
 | Map body: Destination, Notes, Not yet specified, Out of scope | `folio ticket update <map> --body -` with the markdown on stdin |
-| Decisions so far | derived: `folio ticket brief <map>` prints each closed child as `title: answer`; keep no such section in the body |
+| Decisions so far | derived: `folio ticket brief <map>` ends each answered child's row with `title: answer`; keep no such section in the body |
 | Create a ticket | `folio ticket create "<title>" --parent <map> --wayfinder <type> --body -` with `## Question` on stdin |
 | Wire blocking (second pass) | `folio ticket update <id> --depends-on <ids>` |
 | Frontier | `folio ticket frontier <map>` |
@@ -282,15 +291,15 @@ JSON
 
 Patch rules the server enforces:
 
-- `null` deletes a key. Questions merge by `id`, one level deep, each given field replaced whole. Terms merge by `term`. `thread` only appends.
+- `null` deletes an optional key: `note`, and a question's `deps`, `body`, `options`, `durable`, `updated`, `answer` or `explore`; the other question fields refuse it. Questions merge by `id`, one level deep, each given field replaced whole. Terms merge by `term`. `thread` only appends.
 - A new question needs `round`, `title` and `rec`. `rec` is `{option, why}` when there are options and `{text, why}` when there are none. Options are absent or 2 to 4, lettered a to d.
 - A round holds at most 3 questions and an interview at most 200. `deps` name existing questions and cannot cycle.
-- Unknown keys are refused, and `agent` takes only `handled`. The server sets the agent to working when `pending` returns Sends and back to waiting on a patch that carries `handled`, and stamps times you omit.
+- Unknown keys are refused, and `agent` takes only `handled`. The server sets the agent to working when `pending` returns Sends and back to waiting on a patch that carries `handled` or on `finish`, and stamps times you omit.
 - `patch` prints one summary line, such as `round 3: 2 questions added, 1 answered, handled 7`, never the state.
 
 ### Finishing
 
-`finish` is refused while any question is open, so the user defers what they will not answer. It can start from the page's Finish, which arrives as a `finish` action in a Send, or from the user saying finish in the chat.
+`finish` is refused before the first question and while any question is open, so the user defers what they will not answer. It can start from the page's Finish, which arrives as a `finish` action in a Send, or from the user saying finish in the chat.
 
 Before running it, show the user the proposed one-line answer and the locked decisions in the chat, and run `finish` only once they confirm. The server then writes the doc as the ticket's resolution entry, resolves and closes the ticket, and locks the page in one transaction. A finished interview is read-only; reopening the ticket starts a new one.
 
@@ -303,13 +312,13 @@ folio worklog write "Mapbox rejects feature-state in a filter" --ticket <id>
 folio worklog write - --plan <id> <<'EOF'
 Longer note from stdin.
 EOF
-folio worklog list --ticket <id> --cycle <cycle-id>
+folio worklog list --ticket <id>
 ```
 
-Exactly one of `--ticket`, `--plan` or `--todo` is required on every subcommand.
-A ticket work log written while a cycle is open is **stamped with that cycle**
-automatically, which is what `--cycle` then filters on. Work logs cascade with
-their parent rather than detaching the way plans and docs do.
+`list` and `write` take exactly one of `--ticket`, `--plan` or `--todo`;
+`delete` takes only the entry id. The CLI sends no cycle, so its work logs carry
+none and `list --cycle` matches none of them. Deleting the ticket or plan
+detaches its work logs, the way it detaches plans and docs.
 
 ## Writing
 
@@ -343,8 +352,9 @@ explicit status is still `todo update <id> --status blocked`, and the two are
 independent: a todo can carry the status without a dependency, or derive
 blocked without the status.
 
-Deletes cascade downward and are not prompted, since an agent cannot answer a
-prompt. `ticket delete` detaches its plans, todos, journal and docs.
+Deletes are not prompted, since an agent cannot answer a prompt.
+`ticket delete` detaches its plans, todos, journal and docs; `plan delete`
+detaches its todos.
 `project delete` destroys everything under the project and refuses to run
 without `--yes`.
 
