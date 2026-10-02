@@ -97,6 +97,8 @@ type IssueUseCase interface {
 	Frontier(ctx context.Context, actor Actor, mapID domain.IssueID) ([]domain.Issue, error)
 	GetIssueBrief(ctx context.Context, actor Actor, id domain.IssueID, in BriefOptions) (domain.IssueBrief, error)
 	GetIssueBriefBySlug(ctx context.Context, actor Actor, project domain.ProjectID, slug string, in BriefOptions) (domain.IssueBrief, error)
+	GetIssueResume(ctx context.Context, actor Actor, id domain.IssueID) (domain.IssueResume, error)
+	GetIssueResumeBySlug(ctx context.Context, actor Actor, project domain.ProjectID, slug string) (domain.IssueResume, error)
 }
 
 type CreateIssueInput struct {

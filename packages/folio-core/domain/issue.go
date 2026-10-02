@@ -138,6 +138,18 @@ type IssueBrief struct {
 	Map      *MapBrief
 }
 
+type IssueResume struct {
+	Issue   Issue
+	Handoff *Entry
+	Logs    []Entry
+	Open    []Issue
+	Closed  int
+	Plans   []Plan
+	Cycle   *Cycle
+	Map     *MapBrief
+	Docs    []Entry
+}
+
 type MapBrief struct {
 	Map      Issue
 	Open     int

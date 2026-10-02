@@ -309,6 +309,72 @@ func toIssueBriefView(b domain.IssueBrief) issueBriefView {
 	return out
 }
 
+type issueResumeView struct {
+	Issue   issueView      `json:"issue"`
+	Handoff *entryView     `json:"handoff"`
+	Logs    []entryView    `json:"logs"`
+	Open    []issueRefView `json:"open"`
+	Closed  int            `json:"closed"`
+	Plans   []planView     `json:"plans"`
+	Cycle   *cycleView     `json:"cycle,omitempty"`
+	Map     *mapBriefView  `json:"map,omitempty"`
+	Docs    []entryRefView `json:"docs"`
+}
+
+type issueRefView struct {
+	ID        string `json:"id"`
+	Kind      string `json:"kind"`
+	Title     string `json:"title"`
+	Status    string `json:"status"`
+	Priority  string `json:"priority"`
+	Wayfinder string `json:"wayfinder,omitempty"`
+	Blocked   bool   `json:"blocked"`
+}
+
+type entryRefView struct {
+	ID    string `json:"id"`
+	Slug  string `json:"slug"`
+	Title string `json:"title"`
+}
+
+func toIssueResumeView(r domain.IssueResume) issueResumeView {
+	out := issueResumeView{
+		Issue:  toIssueView(r.Issue),
+		Logs:   make([]entryView, 0, len(r.Logs)),
+		Open:   make([]issueRefView, 0, len(r.Open)),
+		Closed: r.Closed,
+		Plans:  make([]planView, 0, len(r.Plans)),
+		Docs:   make([]entryRefView, 0, len(r.Docs)),
+	}
+	if r.Handoff != nil {
+		handoff := toEntryView(*r.Handoff)
+		out.Handoff = &handoff
+	}
+	for _, l := range r.Logs {
+		out.Logs = append(out.Logs, toEntryView(l))
+	}
+	for _, i := range r.Open {
+		out.Open = append(out.Open, issueRefView{
+			ID: string(i.ID), Kind: string(i.Kind), Title: i.Title, Status: string(i.Status),
+			Priority: string(i.Priority), Wayfinder: string(i.Wayfinder), Blocked: i.Blocked,
+		})
+	}
+	for _, p := range r.Plans {
+		out.Plans = append(out.Plans, toPlanView(p))
+	}
+	if r.Cycle != nil {
+		cycle := toCycleView(*r.Cycle)
+		out.Cycle = &cycle
+	}
+	if r.Map != nil {
+		out.Map = &mapBriefView{Issue: toIssueView(r.Map.Map), Open: r.Map.Open, Frontier: issueViews(r.Map.Frontier)}
+	}
+	for _, d := range r.Docs {
+		out.Docs = append(out.Docs, entryRefView{ID: string(d.ID), Slug: d.Slug, Title: d.Title})
+	}
+	return out
+}
+
 type entryView struct {
 	ID          string         `json:"id"`
 	Kind        string         `json:"kind"`

@@ -86,6 +86,26 @@ func (h *Handler) getIssueBriefBySlug(e *core.RequestEvent) error {
 	return e.JSON(http.StatusOK, toIssueBriefView(brief))
 }
 
+func (h *Handler) getIssueResume(e *core.RequestEvent) error {
+	resume, err := h.issues.GetIssueResume(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("issue")))
+	if err != nil {
+		return fail(e, err)
+	}
+	return e.JSON(http.StatusOK, toIssueResumeView(resume))
+}
+
+func (h *Handler) getIssueResumeBySlug(e *core.RequestEvent) error {
+	project, err := h.resolveProject(e)
+	if err != nil {
+		return fail(e, err)
+	}
+	resume, err := h.issues.GetIssueResumeBySlug(e.Request.Context(), actorOf(e), project, e.Request.PathValue("slug"))
+	if err != nil {
+		return fail(e, err)
+	}
+	return e.JSON(http.StatusOK, toIssueResumeView(resume))
+}
+
 func (h *Handler) issueFrontier(e *core.RequestEvent) error {
 	issues, err := h.issues.Frontier(e.Request.Context(), actorOf(e), domain.IssueID(e.Request.PathValue("issue")))
 	if err != nil {
