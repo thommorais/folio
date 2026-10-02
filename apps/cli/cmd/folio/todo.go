@@ -161,7 +161,7 @@ func todoCreateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderTodo(todo)
+			return written(todo, todo.ID, blockedLine(todo.Blocked))
 		},
 	}
 
@@ -214,7 +214,7 @@ func todoUpdateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderTodo(todo)
+			return written(todo, todo.ID, blockedLine(todo.Blocked))
 		},
 	}
 
@@ -273,7 +273,7 @@ func todoStatusCommand(name, status, short string) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderTodo(todo)
+			return written(todo, todo.ID, blockedLine(todo.Blocked))
 		},
 	}
 }
@@ -340,7 +340,7 @@ func todoBlockCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderTodo(todo)
+			return written(todo, todo.ID, blockedLine(todo.Blocked))
 		},
 	}
 

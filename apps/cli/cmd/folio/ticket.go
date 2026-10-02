@@ -267,7 +267,7 @@ func ticketCreateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderTicket(ticket)
+			return written(ticket, ticket.ID, slugLine(ticket.Slug), blockedLine(ticket.Blocked))
 		},
 	}
 
@@ -337,7 +337,7 @@ func ticketUpdateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderTicket(ticket)
+			return written(ticket, ticket.ID, blockedLine(ticket.Blocked))
 		},
 	}
 
@@ -403,10 +403,7 @@ out of scope instead of marking it done.
 			if err != nil {
 				return err
 			}
-			if flagJSON {
-				return encode(resolved)
-			}
-			return renderTicketDetail(resolved)
+			return written(resolved, resolved.ID, "status: "+resolved.Status)
 		},
 	}
 
@@ -486,13 +483,6 @@ func ticketDeleteCommand() *cobra.Command {
 			return nil
 		},
 	}
-}
-
-func renderTicket(ticket client.Ticket) error {
-	if flagJSON {
-		return encode(ticket)
-	}
-	return renderTickets([]client.Ticket{ticket})
 }
 
 func renderTickets(tickets []client.Ticket) error {

@@ -127,7 +127,7 @@ func knowledgeAddCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderKnowledge(note)
+			return written(note, note.ID, slugLine(note.Slug))
 		},
 	}
 
@@ -178,7 +178,7 @@ func knowledgeUpdateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderKnowledge(note)
+			return written(note, note.ID)
 		},
 	}
 
@@ -248,13 +248,6 @@ func setFreeTags(target **[]string, value string) {
 	if len(tags) > 0 {
 		*target = &tags
 	}
-}
-
-func renderKnowledge(note client.Knowledge) error {
-	if flagJSON {
-		return encode(note)
-	}
-	return renderKnowledgeList([]client.Knowledge{note})
 }
 
 func renderKnowledgeList(notes []client.Knowledge) error {

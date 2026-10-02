@@ -112,7 +112,7 @@ func planCreateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderPlan(plan)
+			return written(plan, plan.ID)
 		},
 	}
 
@@ -155,7 +155,7 @@ func planUpdateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderPlan(plan)
+			return written(plan, plan.ID)
 		},
 	}
 

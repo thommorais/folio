@@ -195,7 +195,7 @@ func journalWriteCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderLog(entry)
+			return written(entry, entry.ID, slugLine(entry.Slug))
 		},
 	}
 
@@ -250,7 +250,7 @@ func journalUpdateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderLog(entry)
+			return written(entry, entry.ID)
 		},
 	}
 
@@ -291,7 +291,7 @@ func journalAppendCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderLog(entry)
+			return written(entry, entry.ID)
 		},
 	}
 
@@ -320,13 +320,6 @@ func journalDeleteCommand() *cobra.Command {
 			return nil
 		},
 	}
-}
-
-func renderLog(entry client.JournalEntry) error {
-	if flagJSON {
-		return encode(entry)
-	}
-	return renderLogs([]client.JournalEntry{entry})
 }
 
 func renderLogs(entries []client.JournalEntry) error {

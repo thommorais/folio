@@ -123,7 +123,7 @@ func docCreateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderDoc(doc)
+			return written(doc, doc.ID, slugLine(doc.Slug))
 		},
 	}
 
@@ -171,7 +171,7 @@ func docUpdateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return renderDoc(doc)
+			return written(doc, doc.ID)
 		},
 	}
 
@@ -205,13 +205,6 @@ func docDeleteCommand() *cobra.Command {
 			return nil
 		},
 	}
-}
-
-func renderDoc(doc client.Doc) error {
-	if flagJSON {
-		return encode(doc)
-	}
-	return renderDocs([]client.Doc{doc})
 }
 
 func renderDocs(docs []client.Doc) error {
