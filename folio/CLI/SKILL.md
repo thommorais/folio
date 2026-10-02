@@ -150,6 +150,8 @@ folio search --tags decision
 List commands take `--query/-q`, `--tags`, `--limit`, `--offset`, and
 kind-specific filters (`--status`, `--priority`, `--ticket`, `--plan`,
 `--branch`, `--since`, `--until`). `--status` and `--tags` are comma separated.
+Journal, work log, doc and kb lists come back newest first, so `--limit N` is
+the newest N.
 
 Tickets and todos are one kind of record and share one status set:
 `open,in_progress,blocked,done,cancelled`. Plans keep their own:
@@ -316,6 +318,11 @@ agent. Write it terse: one fact per line, ids instead of restated titles.
 
 `update` is a patch: unset flags are left alone, and passing no field at all is
 an error rather than a no-op. `create` takes the title as a positional argument.
+
+A write prints the record's id on the first line, then only what the server
+decided: `slug:` when a create made one, `blocked` when a dependency is open,
+`status:` on `ticket resolve`. Take the first line to chain the id into the
+next command.
 
 ```bash
 folio ticket create "Mobile nav" --body "No nav below md." --tags frontend,bug
