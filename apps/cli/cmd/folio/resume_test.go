@@ -60,7 +60,7 @@ func TestResumeRendersWhatTheNextSessionNeeds(t *testing.T) {
 	if strings.Contains(out, "drift") {
 		t.Errorf("no drift on the same checkout:\n%s", out)
 	}
-	if !strings.HasSuffix(out, "stop: folio stop tk1 -\n") {
+	if !strings.HasSuffix(out, "stop: folio stop tk1 - (terse: state, next, traps)\n") {
 		t.Errorf("want the stop command last:\n%s", out)
 	}
 	if strings.Index(out, "The spec.") < strings.Index(out, "docs") {

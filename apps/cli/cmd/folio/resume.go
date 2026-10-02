@@ -121,7 +121,7 @@ func renderResume(r client.TicketResume, here checkout) error {
 		fmt.Println()
 		fmt.Println(strings.TrimRight(body, "\n"))
 	}
-	fmt.Printf("\nstop: folio stop %s -\n", r.Ticket.ID)
+	fmt.Printf("\nstop: folio stop %s - (terse: state, next, traps)\n", r.Ticket.ID)
 	return nil
 }
 

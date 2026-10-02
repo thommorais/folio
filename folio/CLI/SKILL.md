@@ -1,6 +1,6 @@
 ---
 name: folio-cli
-description: How to drive the folio CLI — the `folio` command for projects, tickets, plans, todos, cycles, work logs, journal and docs. Use when reading or writing anything in a folio workspace, when a task mentions folio tickets/todos/plans/cycles/worklogs/journal/docs, when running wayfinder or a PDCA cycle against folio, or when `folio` appears in a command.
+description: How to drive the folio CLI — the `folio` command for projects, tickets, plans, todos, cycles, work logs, journal and docs. Use when reading or writing anything in a folio workspace, when a task mentions folio tickets/todos/plans/cycles/worklogs/journal/docs, when resuming or ending a session on a ticket, when running wayfinder or a PDCA cycle against folio, or when `folio` appears in a command.
 ---
 
 # folio CLI
@@ -53,8 +53,9 @@ Default URL is `https://folio.journ.app`.
 
 ## Piping and JSON
 
-`--json` is a persistent flag on every command. Use it whenever you are parsing
-output — the default is a `tabwriter` table meant for a human.
+`--json` is a persistent flag on every command. Use it when a program parses
+the output. To read output yourself, take the default table: it costs fewer
+tokens than the JSON.
 
 Bare `folio` on a terminal opens the TUI. In a pipe or CI it prints help
 instead, so it is safe to call from a script.
@@ -103,12 +104,36 @@ current tags first if you mean to add one.
 `todo create` without `--tags` warns on stderr but succeeds: an untagged todo is
 findable only by title. Tag todos you create.
 
+## Sessions on a ticket
+
+Open every session on a known ticket with `folio resume <ticket>` and end it
+with `folio stop <ticket> -`. Resume prints the latest handoff, the work logs
+written since, open children, live plans, the map's next steps, doc pointers,
+then the body: the one read a session needs. A `drift:` line means the checkout
+differs from the handoff; check out the handed-off branch, or tell the user why
+not, before working.
+
+`stop` exits 4 on uncommitted changes and lists them. It never commits: get the
+commit approved as the user's rules require, commit, rerun. `--allow-dirty`
+records the paths instead, for when the user chose to leave work uncommitted.
+
+The handoff note is the next session's whole briefing, so stop before context
+runs out. Write it terse, one fact per line:
+
+```bash
+folio stop <ticket> - <<'EOF'
+State: coverage widget renders; no entitlement lock.
+Next: hasFeature gate on product rows (c1).
+Trap: subscribedCountries empty in dev seed.
+EOF
+```
+
 ## Reading
 
 `folio ticket brief <id-or-slug>` returns a ticket with its children, plans,
-journal and docs in one call. This is what to run when opening a session on a
-known ticket. Children come back open first, so the next step is the first row,
-and each row names its kind; journal entries are the 10 most recent,
+journal and docs in one call, closed children included: the full picture when
+`resume` is not enough. Children come back open first, so the next step is the
+first row, and each row names its kind; journal entries are the 10 most recent,
 `--recent-journal` overrides. When the current cycle is planned by a map, a
 `cycle plan` section names the map, how many decisions are open, and the
 takeable ones as `next` rows, so the next decision needs no second call.
@@ -132,8 +157,8 @@ Tickets and todos are one kind of record and share one status set:
 
 `ticket get` and `doc get` accept an id or a slug, but a **slug only resolves
 with a project selected** — it is unique within a project, not globally. The
-same holds for `ticket brief`. With a project selected the argument is tried as
-a slug first and then as an id, so either works.
+same holds for `ticket brief`, `resume` and `stop`. With a project selected the
+argument is tried as a slug first and then as an id, so either works.
 
 ## Tickets form a graph
 
@@ -285,6 +310,9 @@ automatically, which is what `--cycle` then filters on. Work logs cascade with
 their parent rather than detaching the way plans and docs do.
 
 ## Writing
+
+Every body you write (handoff, work log, resolution, journal) is read by a later
+agent. Write it terse: one fact per line, ids instead of restated titles.
 
 `update` is a patch: unset flags are left alone, and passing no field at all is
 an error rather than a no-op. `create` takes the title as a positional argument.
