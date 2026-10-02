@@ -129,7 +129,7 @@ const TicketBody = ({ project, ticket }: BodyProps) => {
 					<div className='flex shrink-0 items-center gap-2'>
 						<CopyId id={ticket.id} />
 						<IssueMenu
-							id={ticket.id}
+							issue={ticket}
 							share={{ kind: SHARE_KIND.ISSUE, id: ticket.id, projectId: ticket.projectId }}
 							onDeleted={() => void navigate({ to: '/$client/$domain/$slug/tickets', params: { client, domain, slug: project } })}
 						/>

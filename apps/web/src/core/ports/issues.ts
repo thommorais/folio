@@ -25,12 +25,20 @@ export type CreateIssueInput = {
 	readonly size?: Size
 }
 
+export type UpdateIssueInput = {
+	readonly title: string
+	readonly body: string
+	readonly priority: Priority
+	readonly size: Size | null
+}
+
 export type IssuesPort = {
 	readonly count: (project: string, filter?: IssueFilter) => Promise<Result<number>>
 	readonly list: (project: string, filter?: IssueFilter) => Promise<Result<ReadonlyArray<Issue>>>
 	readonly get: (project: string, slug: string) => Promise<Result<Issue>>
 	readonly getById: (project: string, id: string) => Promise<Result<Issue>>
 	readonly create: (project: string, input: CreateIssueInput) => Promise<Result<{ readonly slug: string }>>
+	readonly update: (id: string, input: UpdateIssueInput) => Promise<Result<void>>
 	readonly remove: (id: string) => Promise<Result<void>>
 	readonly subscribeToList: (
 		project: string,

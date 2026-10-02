@@ -45,9 +45,9 @@ const Body = ({ todo, project, linked = false }: { readonly todo: Issue; readonl
 					</span>
 					<span className='flex items-center gap-3'>
 						{formatDate(todo.createdAt)}
-						<CopyId id={todo.id} />
+						<CopyId issue={todo} />
 						<IssueMenu
-							id={todo.id}
+							issue={todo}
 							onDeleted={() => {
 								closePreview()
 								if (!linked) void navigate({ to: '/$client/$domain/$slug/todos', params: { client, domain, slug: project } })

@@ -1,21 +1,25 @@
-import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@thom/ui/button'
 import { Input } from '@thom/ui/input'
-import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@thom/ui/sheet'
+import { Sheet, SheetContent, SheetHeader } from '@thom/ui/sheet'
 import { toast } from '@thom/ui/toast'
-import { useContainer } from '_/app/container'
+import { useUpdateIssue } from '_/app/use-update-issue'
 import { controlClasses, FieldLabel, Hint } from '_/components/issue/form-fields'
-import { ISSUE_KIND, PRIORITIES, PRIORITY, SIZES, isSize, type Priority } from '_/core/domain/issue'
+import { ISSUE_KIND, PRIORITIES, SIZES, isSize, type Issue, type Priority } from '_/core/domain/issue'
 
-const CreateTicketForm = ({ project, onCreated }: { readonly project: string; readonly onCreated: () => void }) => {
-	const { issues } = useContainer()
-	const [title, setTitle] = useState('')
-	const [body, setBody] = useState('')
-	const [priority, setPriority] = useState<Priority>(PRIORITY.MEDIUM)
-	const [size, setSize] = useState('')
+type FormProps = {
+	readonly issue: Issue
+	readonly onSaved: () => void
+}
+
+const EditIssueForm = ({ issue, onSaved }: FormProps) => {
+	const updateIssue = useUpdateIssue()
+	const [title, setTitle] = useState(issue.title)
+	const [body, setBody] = useState(issue.body)
+	const [priority, setPriority] = useState<Priority>(issue.priority)
+	const [size, setSize] = useState(issue.size === undefined ? '' : String(issue.size))
 	const [error, setError] = useState<string>()
-	const [creating, setCreating] = useState(false)
+	const [saving, setSaving] = useState(false)
 
 	const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
@@ -23,53 +27,53 @@ const CreateTicketForm = ({ project, onCreated }: { readonly project: string; re
 
 		const points = Number(size)
 
-		setCreating(true)
+		setSaving(true)
 		setError(undefined)
-		const result = await issues.create(project, {
-			kind: ISSUE_KIND.TICKET,
+		const result = await updateIssue(issue.id, {
 			title: title.trim(),
-			body: body.trim() === '' ? undefined : body,
+			body,
 			priority,
-			size: isSize(points) ? points : undefined,
+			size: isSize(points) ? points : null,
 		})
-		setCreating(false)
+		setSaving(false)
 
 		if (!result.success) {
 			setError(result.error.message)
 			return
 		}
 
-		toast.success(`Created ${result.value.slug}.`)
-		onCreated()
+		toast.success('Saved.')
+		onSaved()
 	}
+
+	const noun = issue.kind === ISSUE_KIND.TICKET ? 'ticket' : 'todo'
 
 	return (
 		<form onSubmit={onSubmit} className='flex h-full flex-col gap-8'>
 			<SheetHeader>
-				<h2 className='font-serif text-lg'>Create ticket</h2>
+				<h2 className='font-serif text-lg'>Edit {noun}</h2>
 			</SheetHeader>
 
 			<div className='min-h-0 flex-1 space-y-8 overflow-y-auto'>
 				<div className='space-y-2'>
-					<FieldLabel htmlFor='ticket-title'>Title</FieldLabel>
+					<FieldLabel htmlFor='issue-title'>Title</FieldLabel>
 					<Input
-						id='ticket-title'
+						id='issue-title'
 						type='text'
 						value={title}
 						onChange={event => setTitle(event.target.value)}
-						placeholder='What needs doing?'
 						autoComplete='off'
 						autoFocus
 						required
 						aria-invalid={error ? true : undefined}
 					/>
-					<Hint>The slug is derived from it.</Hint>
+					<Hint>The slug stays {issue.slug}.</Hint>
 				</div>
 
 				<div className='space-y-2'>
-					<FieldLabel htmlFor='ticket-body'>Description</FieldLabel>
+					<FieldLabel htmlFor='issue-body'>Description</FieldLabel>
 					<textarea
-						id='ticket-body'
+						id='issue-body'
 						value={body}
 						onChange={event => setBody(event.target.value)}
 						rows={8}
@@ -80,9 +84,9 @@ const CreateTicketForm = ({ project, onCreated }: { readonly project: string; re
 
 				<div className='flex gap-4'>
 					<div className='flex-1 space-y-2'>
-						<FieldLabel htmlFor='ticket-priority'>Priority</FieldLabel>
+						<FieldLabel htmlFor='issue-priority'>Priority</FieldLabel>
 						<select
-							id='ticket-priority'
+							id='issue-priority'
 							value={priority}
 							onChange={event => setPriority(event.target.value as Priority)}
 							className={`${controlClasses} h-9`}
@@ -96,9 +100,9 @@ const CreateTicketForm = ({ project, onCreated }: { readonly project: string; re
 					</div>
 
 					<div className='flex-1 space-y-2'>
-						<FieldLabel htmlFor='ticket-size'>Size</FieldLabel>
+						<FieldLabel htmlFor='issue-size'>Size</FieldLabel>
 						<select
-							id='ticket-size'
+							id='issue-size'
 							value={size}
 							onChange={event => setSize(event.target.value)}
 							className={`${controlClasses} h-9`}
@@ -116,26 +120,21 @@ const CreateTicketForm = ({ project, onCreated }: { readonly project: string; re
 				{error && <p className='text-destructive text-sm'>{error}</p>}
 			</div>
 
-			<Button type='submit' fullWidth loading={creating} disabled={title.trim() === ''}>
-				Create
+			<Button type='submit' fullWidth loading={saving} disabled={title.trim() === ''}>
+				Save
 			</Button>
 		</form>
 	)
 }
 
-export const CreateTicketSheet = ({ project }: { readonly project: string }) => {
-	const [open, setOpen] = useState(false)
-
-	return (
-		<Sheet open={open} onOpenChange={setOpen}>
-			<SheetTrigger asChild>
-				<Button variant='outline' size='icon' aria-label='Create ticket'>
-					<Plus data-slot='icon' />
-				</Button>
-			</SheetTrigger>
-			<SheetContent title='Create ticket'>
-				{open && <CreateTicketForm project={project} onCreated={() => setOpen(false)} />}
-			</SheetContent>
-		</Sheet>
-	)
+type Props = {
+	readonly issue: Issue
+	readonly open: boolean
+	readonly onOpenChange: (open: boolean) => void
 }
+
+export const EditIssueSheet = ({ issue, open, onOpenChange }: Props) => (
+	<Sheet open={open} onOpenChange={onOpenChange}>
+		<SheetContent title='Edit'>{open && <EditIssueForm issue={issue} onSaved={() => onOpenChange(false)} />}</SheetContent>
+	</Sheet>
+)

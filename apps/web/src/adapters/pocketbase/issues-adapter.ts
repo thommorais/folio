@@ -255,6 +255,17 @@ export const createIssuesAdapter = (): IssuesPort => {
 			}
 		},
 
+		update: async (id, input): Promise<Result<void>> => {
+			const { error } = await tryCatch(
+				client.send(`/api/folio/issues/${encodeURIComponent(id)}`, {
+					method: 'PATCH',
+					body: { title: input.title, body: input.body, priority: input.priority, size: input.size ?? 0 },
+				}),
+			)
+
+			return error ? err(new Error(`Could not save the issue: ${error.message}`, { cause: error })) : ok(undefined)
+		},
+
 		remove: async (id): Promise<Result<void>> => {
 			const { error } = await tryCatch(
 				client.send(`/api/folio/issues/${encodeURIComponent(id)}`, { method: 'DELETE' }),
